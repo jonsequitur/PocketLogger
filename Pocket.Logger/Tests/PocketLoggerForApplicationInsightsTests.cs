@@ -68,7 +68,7 @@ namespace Pocket.For.ApplicationInsights.Tests
             actual.Id.Should().Be(expected.Id);
             actual.Name.Should().Be(expected.Name);
             actual.Success.Should().Be(expected.Success);
-            actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
+            actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 2000);
         }
 
         [Fact(Skip = "Not implemented yet")]
