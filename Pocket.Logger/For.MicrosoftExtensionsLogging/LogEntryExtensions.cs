@@ -30,8 +30,6 @@ namespace Pocket.For.MicrosoftExtensionsLogging
                 logEntry.MessageTemplate,
                 logEntry.Select(_ => _.Value).ToArray());
 
-
-
             return logValues;
         }
 
