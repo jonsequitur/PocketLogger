@@ -301,7 +301,7 @@ namespace Pocket.Tests
             }
 
             log[0].ElapsedMilliseconds.Should().BeInRange(0, 50);
-            log[1].ElapsedMilliseconds.Should().BeInRange(200, 250);
+            log[1].ElapsedMilliseconds.Should().BeGreaterOrEqualTo(200);
         }
 
         [Fact]
@@ -435,7 +435,6 @@ namespace Pocket.Tests
             using (Subscribe(log.Add))
             {
                 Logger.Default.Info("hello");
-                Info("hello");
             }
 
             log.Should().OnlyContain(e => e.Category == "");

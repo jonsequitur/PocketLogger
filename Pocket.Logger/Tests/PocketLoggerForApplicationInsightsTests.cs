@@ -11,7 +11,7 @@ using Xunit.Abstractions;
 
 namespace Pocket.For.ApplicationInsights.Tests
 {
-    public class PocketLoggerForApplicationInsightsTests
+    public class PocketLoggerForApplicationInsightsTests : IDisposable
     {
         private readonly TelemetryClient client;
         private readonly ITestOutputHelper output;
@@ -31,8 +31,13 @@ namespace Pocket.For.ApplicationInsights.Tests
             client = new TelemetryClient(
                 new TelemetryConfiguration(
                     "<instrumentation key>",
-                    new FakeTelemetryChannel(telemetrySent.Add)));
+                    new FakeTelemetryChannel(telemetrySent.Add)
+                    {
+                        DeveloperMode = true
+                    }));
         }
+
+        public void Dispose() => disposables.Dispose();
 
         [Fact]
         public async Task Log_events_can_be_used_to_trigger_dependency_tracking_on_section_complete()
@@ -59,7 +64,7 @@ namespace Pocket.For.ApplicationInsights.Tests
             var actual = (DependencyTelemetry) telemetrySent[1];
 
             actual.Data.Should().Be(expected.Data);
-            actual.Duration.Should().BeCloseTo(expected.Duration, 30);
+            actual.Duration.Should().BeGreaterOrEqualTo(expected.Duration);
             actual.Id.Should().Be(expected.Id);
             actual.Name.Should().Be(expected.Name);
             actual.Success.Should().Be(expected.Success);
