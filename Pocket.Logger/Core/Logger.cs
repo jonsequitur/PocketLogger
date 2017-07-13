@@ -39,20 +39,19 @@ namespace Pocket
 
         public LogSection(
             bool requireConfirm = false,
-            string name = null,
+            [CallerMemberName] string callingMethod = null,
             string category = null,
             string id = null,
-            [CallerMemberName] string callingMethod = null,
             params object[] args) : base(category)
         {
             Id = id ?? Guid.NewGuid().ToString();
             RequireConfirm = requireConfirm;
 
-            Name = name ?? callingMethod;
+            Name = callingMethod;
 
             logEntries.Add(new LogEntry(
                                LogLevel.Information,
-                               name,
+                               callingMethod,
                                null,
                                category,
                                callingMethod,
@@ -79,6 +78,8 @@ namespace Pocket
                 return;
             }
 
+            logEntries.Add(logEntry);
+
             base.Log(logEntry);
         }
 
@@ -86,7 +87,6 @@ namespace Pocket
             bool isSuccessful,
             string message = null,
             Exception exception = null,
-            [CallerMemberName] string callingMethod = null,
             params object[] args)
         {
             if (IsComplete)
@@ -104,7 +104,6 @@ namespace Pocket
             Log(new LogEntry(initialLogEntry.LogLevel,
                              message,
                              exception: exception,
-                             callingMethod: callingMethod,
                              category: initialLogEntry.Category,
                              section: this,
                              args: args));
@@ -115,15 +114,13 @@ namespace Pocket
         public void Fail(
             Exception exception = null,
             string message = null,
-            [CallerMemberName] string callingMethod = null,
             params object[] args) =>
-            Complete(false, message, exception, callingMethod, args);
+            Complete(false, message, exception, args);
 
         public void Success(
             string message = "",
-            [CallerMemberName] string callingMethod = null,
             params object[] args) =>
-            Complete(true, message, null, callingMethod, args);
+            Complete(true, message, null, args);
 
         public void Dispose()
         {
@@ -348,17 +345,13 @@ namespace Pocket
         public void Add(string key, object value) => properties.Add(new KeyValuePair<string, object>(key, value));
 
         public override string ToString() =>
-            $"{Timestamp:o} {ScopeString()}[{LogLevelString()}] {Message} {Exception}";
+            $"{Timestamp:o} {CategoryString()}{OperationString()}[{LogLevelString()}] {Message} {Exception}";
 
-        private string ScopeString()
-        {
-            if (string.IsNullOrWhiteSpace(Category))
-            {
-                return "";
-            }
+        private string CategoryString() =>
+            string.IsNullOrWhiteSpace(Category) ? "" : $"[{Category}] ";
 
-            return $"[{Category}] ";
-        }
+        private string OperationString() =>
+            string.IsNullOrWhiteSpace(CallingMethod) ? "" : $"[{CallingMethod}] ";
 
         public IEnumerator<KeyValuePair<string, object>> GetEnumerator() =>
             properties.GetEnumerator();
@@ -376,9 +369,5 @@ namespace Pocket
         public IEnumerable<T> Properties<T>() =>
             properties.Select(p => p.Value)
                       .OfType<T>();
-    }
-
-    internal interface ILogEntryEnricher
-    {
     }
 }
