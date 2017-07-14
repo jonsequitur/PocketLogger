@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Example.Instrumented.Library;
 using FluentAssertions;
 using Xunit;
@@ -17,7 +18,7 @@ namespace Pocket.Tests
         }
 
         [Fact]
-        public void Loggers_in_referenced_assemblies_can_be_discovered_and_subscribed()
+        public async Task Loggers_in_referenced_assemblies_can_be_discovered_and_subscribed()
         {
             var log = new List<IReadOnlyCollection<KeyValuePair<string, object>>>();
 
@@ -25,6 +26,7 @@ namespace Pocket.Tests
 
             using (Log.DiscoverAndSubscribe(log.Add))
             {
+                await Task.Delay(100);
                 Class1.EmitSomeLogEvents(message);
             }
 
@@ -37,12 +39,13 @@ namespace Pocket.Tests
         }
 
         [Fact]
-        public void Loggers_in_referenced_assemblies_can_be_unsubscribed()
+        public async Task Loggers_in_referenced_assemblies_can_be_unsubscribed()
         {
             var log = new List<IReadOnlyCollection<KeyValuePair<string, object>>>();
 
             using (Log.DiscoverAndSubscribe(log.Add))
             {
+                await Task.Delay(100);
                 Class1.EmitSomeLogEvents($"before unsubscribe");
             }
 
