@@ -40,10 +40,10 @@ namespace Pocket
 
                 var formatStr = match.Groups["format"].Success ? match.Groups["format"].Captures[0].Value : null;
 
-                string formattedParam = null;
-
                 void format(StringBuilder sb, object value)
                 {
+                    string formattedParam = null;
+
                     if (!string.IsNullOrEmpty(formatStr))
                     {
                         var formattableParamValue = value as IFormattable;

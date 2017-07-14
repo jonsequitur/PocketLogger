@@ -45,6 +45,18 @@ namespace Pocket.Tests
         }
 
         [Fact]
+        public void Formatter_can_be_reused_with_different_arguments()
+        {
+            var formatter = Formatter.Parse("The value is {i}");
+
+            var result1 = formatter.Format(1);
+            var result2 = formatter.Format(2);
+
+            result1.ToString().Should().Be("The value is 1");
+            result2.ToString().Should().Be("The value is 2");
+        }
+
+        [Fact]
         public void IFormattable_args_can_have_their_format_specified_in_the_template()
         {
             var formatter = Formatter.Parse("The hour is {time:HH}");
