@@ -11,10 +11,13 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="1.1.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0" />
     <PackageReference Include="newtonsoft.json" Version="10.0.3" />
-    <PackageReference Include="pocket.typediscovery" Version="0.3.9" />
+    <PackageReference Include="pocket.typediscovery" Version="0.3.10" />
     <PackageReference Include="System.ValueTuple" Version="4.3.1" />
     <PackageReference Include="xunit" Version="2.2.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Example.Instrumented.Library\Example.Instrumented.Library.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
