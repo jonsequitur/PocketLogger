@@ -26,8 +26,8 @@ namespace Pocket.Tests
 
             using (Log.DiscoverAndSubscribe(log.Add))
             {
-                await Task.Delay(100);
                 Class1.EmitSomeLogEvents(message);
+                await Task.Delay(100);
             }
 
             foreach (var e in log)
@@ -45,8 +45,8 @@ namespace Pocket.Tests
 
             using (Log.DiscoverAndSubscribe(log.Add))
             {
-                await Task.Delay(100);
                 Class1.EmitSomeLogEvents($"before unsubscribe");
+                await Task.Delay(100);
             }
 
             Class1.EmitSomeLogEvents($"after unsubscribe");
