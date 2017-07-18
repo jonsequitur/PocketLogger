@@ -15,10 +15,10 @@ namespace Pocket
 
         private static readonly Regex tokenRegex = new Regex(
             @"{(?<key>[^{}:]*)(?:\:(?<format>.+))?}",
-            RegexOptions.IgnoreCase
-            | RegexOptions.Multiline
-            | RegexOptions.CultureInvariant
-            | RegexOptions.Compiled
+            RegexOptions.IgnoreCase |
+            RegexOptions.Multiline |
+            RegexOptions.CultureInvariant |
+            RegexOptions.Compiled
         );
 
         private readonly List<Action<StringBuilder, object>> argumentFormatters = new List<Action<StringBuilder, object>>();
@@ -29,7 +29,6 @@ namespace Pocket
         {
             this.template = template;
             var matches = tokenRegex.Matches(template);
-            var position = 0;
 
             foreach (Match match in matches)
             {
@@ -40,10 +39,10 @@ namespace Pocket
 
                 var formatStr = match.Groups["format"].Success ? match.Groups["format"].Captures[0].Value : null;
 
-                string formattedParam = null;
-
                 void format(StringBuilder sb, object value)
                 {
+                    string formattedParam = null;
+
                     if (!string.IsNullOrEmpty(formatStr))
                     {
                         var formattableParamValue = value as IFormattable;
@@ -61,8 +60,6 @@ namespace Pocket
                     sb.Replace(replacementTarget, formattedParam);
                 }
 
-                position++;
-
                 argumentFormatters.Add(format);
             }
         }
@@ -71,6 +68,11 @@ namespace Pocket
 
         public FormatterResult Format(IReadOnlyList<object> args)
         {
+            if (args == null)
+            {
+                args = new object[argumentFormatters.Count];
+            }
+
             var stringBuilder = new StringBuilder(template);
             var result = new FormatterResult(stringBuilder);
 
@@ -102,16 +104,13 @@ namespace Pocket
             return result;
         }
 
-        public FormatterResult Format(params object[] args)
-        {
-            return Format((IReadOnlyList<object>) args);
-        }
+        public FormatterResult Format(params object[] args) => Format((IReadOnlyList<object>) args);
 
         private static string Format(object objectToFormat)
         {
             if (objectToFormat == null)
             {
-                return "";
+                return "[null]";
             }
 
             var enumerable = objectToFormat as IEnumerable;

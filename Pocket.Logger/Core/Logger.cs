@@ -4,26 +4,97 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using static Pocket.Logger;
 
 namespace Pocket
 {
     internal static partial class Log
     {
-        public static IDisposable DiscoverAndSubscribe(
-            Action<IReadOnlyCollection<KeyValuePair<string, object>>> onEntryPosted)
-        {
-            EntryPosted += onEntryPosted ??
-                           throw new ArgumentNullException(nameof(onEntryPosted));
+        public static void Trace(
+            string message,
+            params object[] args) =>
+            Logger.Default.Trace(message, args);
 
-            return Disposable.Create(() => { EntryPosted -= onEntryPosted; });
+        public static void Info(
+            string message,
+            params object[] args) =>
+            Logger.Default.Info(message, args);
+
+        public static void Warning(
+            string message,
+            Exception exception = null,
+            params object[] args) =>
+            Logger.Default.Warning(message, exception, args);
+
+        public static void Error(
+            string message,
+            Exception exception = null,
+            params object[] args) =>
+            Logger.Default.Error(message, exception, args);
+   
+        public static LogSection OnEnterAndExit(
+            bool requireConfirm = false,
+            [CallerMemberName] string name = null,
+            string id = null)
+        {
+            var section = new LogSection(
+                requireConfirm,
+                name,
+                id: id);
+
+            section.Log(section[0]);
+
+            return section;
+        }
+
+        public static LogSection OnExit(
+            bool requireConfirm = false,
+            [CallerMemberName] string name = null,
+            string id = null) =>
+            new LogSection(
+                requireConfirm,
+                name,
+                id: id);
+
+        public static LogSection Confirm(
+            [CallerMemberName] string name = null,
+            string id = null) =>
+            new LogSection(
+                true,
+                name,
+                id: id);
+
+        public static void Event(
+            [CallerMemberName] string name = null,
+            params (string name, double value)[] metrics)
+        {
+            var args = new List<object>
+            {
+                name
+            };
+
+            if (metrics != null)
+            {
+                foreach (var metric in metrics)
+                {
+                    args.Add(metric);
+                }
+            }
+
+            Logger.Default.Log(
+                new LogEntry(LogLevel.Trace,
+                             message: "{name}",
+                             callingMethod: name,
+                             category: nameof(Event),
+                             isTelemetry: true,
+                             args: args.ToArray()
+                ));
         }
     }
 
     internal interface ILogSection : IReadOnlyList<LogEntry>
     {
         bool IsComplete { get; }
-        bool IsSuccessful { get; }
+        bool? IsSuccessful { get; }
         long ElapsedMilliseconds { get; }
         string Id { get; }
         string Name { get; }
@@ -51,7 +122,7 @@ namespace Pocket
 
             logEntries.Add(new LogEntry(
                                LogLevel.Information,
-                               callingMethod,
+                               null,
                                null,
                                category,
                                callingMethod,
@@ -69,7 +140,7 @@ namespace Pocket
 
         public bool IsComplete { get; private set; }
 
-        public bool IsSuccessful { get; private set; }
+        public bool? IsSuccessful { get; private set; }
 
         public override void Log(LogEntry logEntry)
         {
@@ -84,7 +155,7 @@ namespace Pocket
         }
 
         private void Complete(
-            bool isSuccessful,
+            bool? isSuccessful,
             string message = null,
             Exception exception = null,
             params object[] args)
@@ -124,13 +195,20 @@ namespace Pocket
 
         public void Dispose()
         {
-            if (RequireConfirm && !IsSuccessful)
+            if (RequireConfirm)
             {
-                Fail();
+                if (IsSuccessful != true)
+                {
+                    Fail();
+                }
+                else
+                {
+                    Success();
+                }
             }
             else
             {
-                Success();
+                Complete(null, this[0].Message);
             }
         }
 
@@ -180,6 +258,23 @@ namespace Pocket
 
     internal static class LoggerExtensions
     {
+        public static TLogger Trace<TLogger>(
+            this TLogger logger,
+            string message,
+            params object[] args)
+            where TLogger : Logger
+        {
+            logger.Log(
+                CreateLogEntry(
+                    logger,
+                    message,
+                    LogLevel.Trace,
+                    exception: null,
+                    args: args));
+
+            return logger;
+        }
+
         public static TLogger Info<TLogger>(
             this TLogger logger,
             string message,
@@ -267,23 +362,32 @@ namespace Pocket
             LogLevel = logLevel;
             Exception = exception;
             Category = category;
-            CallingMethod = callingMethod;
             Section = section;
             IsTelemetry = isTelemetry;
 
             if (section != null)
             {
                 ElapsedMilliseconds = section.ElapsedMilliseconds;
+                IsStartOfSection = section.Count == 0;
                 IsSectionComplete = section.IsComplete;
-                IsSectionSuccessful = section.IsSuccessful;
-                SectionId = section.Id;
+                SectionId = section?.Id;
+                CallingMethod = callingMethod ?? section.Name;
+
+                if (section.IsSuccessful != null)
+                {
+                    IsSectionSuccessful = section.IsSuccessful == true;
+                }
+            }
+            else
+            {
+                CallingMethod = callingMethod;
             }
 
-            MessageTemplate = message;
+            MessageTemplate = message ?? "";
 
             if (args == null || args.Length == 0)
             {
-                Message = message;
+                Message = MessageTemplate;
             }
             else
             {
@@ -298,6 +402,8 @@ namespace Pocket
             }
         }
 
+        public bool IsStartOfSection { get; }
+
         public bool? IsSectionSuccessful { get; }
 
         public bool? IsSectionComplete { get; }
@@ -311,29 +417,6 @@ namespace Pocket
         // QUESTION: (LogEntry) rename to Operation? Activity?
         public ILogSection Section { get; }
 
-        private string LogLevelString()
-        {
-            // 💩👀☠️👓⏱🔎🔍❗️⁉️✖️✔️👣👀⏰⚠️ℹ️☑️
-
-            switch (LogLevel)
-            {
-                case LogLevel.Trace:
-                    return "👣";
-                case LogLevel.Debug:
-                    return "🔍";
-                case LogLevel.Information:
-                    return "ℹ️";
-                case LogLevel.Warning:
-                    return "⚠️";
-                case LogLevel.Error:
-                    return "✖️";
-                case LogLevel.Critical:
-                    return "💩";
-                default:
-                    return "ℹ️";
-            }
-        }
-
         public string Message { get; }
 
         public DateTimeOffset Timestamp { get; } = DateTimeOffset.Now;
@@ -343,16 +426,7 @@ namespace Pocket
         public Exception Exception { get; }
 
         public void Add(string key, object value) => properties.Add(new KeyValuePair<string, object>(key, value));
-
-        public override string ToString() =>
-            $"{Timestamp:o} {CategoryString()}{OperationString()}[{LogLevelString()}] {Message} {Exception}";
-
-        private string CategoryString() =>
-            string.IsNullOrWhiteSpace(Category) ? "" : $"[{Category}] ";
-
-        private string OperationString() =>
-            string.IsNullOrWhiteSpace(CallingMethod) ? "" : $"[{CallingMethod}] ";
-
+     
         public IEnumerator<KeyValuePair<string, object>> GetEnumerator() =>
             properties.GetEnumerator();
 
@@ -369,5 +443,59 @@ namespace Pocket
         public IEnumerable<T> Properties<T>() =>
             properties.Select(p => p.Value)
                       .OfType<T>();
+        
+        public override string ToString() =>
+            $"{Timestamp:o} {SectionIdString()}{CategoryString()}{OperationString()}[{LogLevelString()}] {Message} {Exception}";
+
+        private string CategoryString() =>
+            string.IsNullOrWhiteSpace(Category) ? "" : $"[{Category}] ";
+
+        private string LogLevelString()
+        {
+            if (IsStartOfSection)
+            {
+                return "▶️";
+            }
+
+            if (IsSectionComplete == true)
+            {
+                if (IsSectionSuccessful == true)
+                {
+                    return "⏹ -> ✔️";
+                }
+
+                if (IsSectionSuccessful == false)
+                {
+                    
+                    return "⏹ -> ✖️";
+                }
+
+                return "⏹";
+            }
+
+            switch (LogLevel)
+            {
+                case LogLevel.Trace:
+                    return "🐾";
+                case LogLevel.Debug:
+                    return "🔍";
+                case LogLevel.Information:
+                    return "ℹ️";
+                case LogLevel.Warning:
+                    return "⚠️";
+                case LogLevel.Error:
+                    return "✖️";
+                case LogLevel.Critical:
+                    return "💩";
+                default:
+                    return "ℹ️";
+            }
+        }
+
+        private string OperationString() =>
+            string.IsNullOrWhiteSpace(CallingMethod) ? "" : $"[{CallingMethod}] ";
+
+        private string SectionIdString() =>
+            SectionId == null ? "" : $"[{SectionId}] ";
     }
 }

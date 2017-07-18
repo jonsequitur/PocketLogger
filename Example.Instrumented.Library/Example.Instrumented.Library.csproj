@@ -5,7 +5,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\Pocket.Logger\Core\Formatter.cs" Link="%28Pocket%29\Formatter.cs" />
+    <Compile Include="..\Pocket.Logger\Core\Logger.cs" Link="%28Pocket%29\Logger.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="%28Pocket%29\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="system.valuetuple" Version="4.3.1" />
   </ItemGroup>
 
 </Project>
