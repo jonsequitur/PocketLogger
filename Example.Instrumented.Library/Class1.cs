@@ -7,9 +7,9 @@ namespace Example.Instrumented.Library
     {
         public static void EmitSomeLogEvents(string parameter1 = null)
         {
-            using (var section = Log.OnEnterAndExit())
+            using (var operation = Log.OnEnterAndExit())
             {
-                section.Info($"{nameof(parameter1)} = {{{nameof(parameter1)}}}", parameter1);
+                operation.Info($"{nameof(parameter1)} = {{{nameof(parameter1)}}}", parameter1);
             }
         }
     }

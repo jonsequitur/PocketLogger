@@ -5,22 +5,22 @@ using Microsoft.ApplicationInsights.DataContracts;
 
 namespace Pocket.For.ApplicationInsights
 {
-    internal static class LoggerExtensions
+    internal static class TelemetryClientExtensions
     {
         public static IDisposable SubscribeToPocket(
             this TelemetryClient telemetryClient)
         {
             return Log.Subscribe(entry =>
             {
-                if (entry?.Section?.IsComplete == true)
+                if (entry?.IsOperationComplete == true)
                 {
                     var telemetry = new DependencyTelemetry
                     {
-                        Id = entry.Section.Id,
-                        Data = entry.Section.Name,
-                        Duration = TimeSpan.FromMilliseconds(entry.Section.ElapsedMilliseconds),
-                        Name = entry.Section.Name,
-                        Success = entry.Section.IsSuccessful,
+                        Id = entry.OperationId,
+                        Data = entry.OperationName,
+                        Duration = TimeSpan.FromMilliseconds(entry.Operation.ElapsedMilliseconds),
+                        Name = entry.OperationName,
+                        Success = entry.IsOperationSuccessful,
                         Timestamp = DateTimeOffset.UtcNow
                     };
 
@@ -31,17 +31,17 @@ namespace Pocket.For.ApplicationInsights
 
                     telemetryClient.TrackDependency(telemetry);
                 }
-                else if (entry.IsTelemetry)
+                else if (entry?.IsTelemetry == true)
                 {
                     telemetryClient.TrackEvent(
-                        eventName: entry.CallingMethod,
+                        eventName: entry.OperationName,
                         metrics: entry.Properties<(string name, double value)>()
                                       .ToDictionary(
                                           _ => _.name,
                                           _ => _.value)
                     );
                 }
-                else if (entry.Exception != null)
+                else if (entry?.Exception != null)
                 {
                     telemetryClient.TrackException(new ExceptionTelemetry
                     {
