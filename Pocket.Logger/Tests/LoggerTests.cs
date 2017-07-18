@@ -10,14 +10,10 @@ namespace Pocket.Tests
 {
     public class LoggerTests : IDisposable
     {
-        private readonly ITestOutputHelper output;
-
         private readonly IDisposable disposables;
 
         public LoggerTests(ITestOutputHelper output)
         {
-            this.output = output;
-
             disposables =
                 Subscribe(e =>
                               output.WriteLine(e.ToString()));
