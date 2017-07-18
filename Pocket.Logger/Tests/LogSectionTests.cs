@@ -66,6 +66,19 @@ namespace Pocket.Tests
         }
 
         [Fact]
+        public void When_no_confirmation_is_required_then_IsSectionSuccessful_is_null()
+        {
+              var log = new List<LogEntry>();
+
+            using (Log.Subscribe(e => log.Add(e)))
+            using (Log.OnExit(requireConfirm: false))
+            {
+            }
+
+            log.Single().IsSectionSuccessful.Should().BeNull();
+        }
+
+        [Fact]
         public void Log_section_entries_contain_operation_name_in_string_output()
         {
             var log = new List<string>();

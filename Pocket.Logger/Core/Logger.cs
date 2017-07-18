@@ -200,13 +200,20 @@ namespace Pocket
 
         public void Dispose()
         {
-            if (RequireConfirm && !IsSuccessful)
+            if (RequireConfirm)
             {
-                Fail();
+                if (IsSuccessful != true)
+                {
+                    Fail();
+                }
+                else
+                {
+                    Success();
+                }
             }
             else
             {
-                Success();
+                Complete(null, this[0].Message);
             }
         }
 
