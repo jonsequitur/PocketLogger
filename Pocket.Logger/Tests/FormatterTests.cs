@@ -1,6 +1,6 @@
 using System;
-using System.Linq;
 using FluentAssertions;
+using System.Linq;
 using Xunit;
 
 namespace Pocket.Tests
@@ -31,7 +31,30 @@ namespace Pocket.Tests
         }
 
         [Fact]
-        public void Formatter_ToString_templates_arguments_into_the_result()
+        public void When_null_is_passed_to_the_args_array_of_Format_its_ok()
+        {
+            var formatter = Formatter.Parse("The values are {this} and {that}");
+
+            var result = formatter.Format(null);
+
+            result.Should().HaveCount(2);
+            result.Single(v => v.Key == "this").Value.Should().BeNull();
+            result.Single(v => v.Key == "that").Value.Should().BeNull();
+            result.ToString().Should().Be("The values are [null] and [null]");
+        }
+
+        [Fact]
+        public void Formatter_generates_key_value_pairs_associating_null_arguments_with_tokens()
+        {
+            var formatter = Formatter.Parse("The value is {value}");
+
+            var result = formatter.Format(new object[] { null });
+
+            result.Single(v => v.Key == "value").Value.Should().BeNull();
+        }
+
+        [Fact]
+        public void Formatter_templates_arguments_into_the_result()
         {
             var template = "This template contains two tokens: {this} and {that}";
 
@@ -42,6 +65,18 @@ namespace Pocket.Tests
             result.ToString()
                   .Should()
                   .Be("This template contains two tokens: True and 42");
+        }
+
+        [Fact]
+        public void Formatter_templates_null_arguments_into_the_result()
+        {
+            var formatter = Formatter.Parse("The value is {value}");
+
+            var result = formatter.Format(new object[] { null });
+
+            result.ToString()
+                  .Should()
+                  .Be("The value is [null]");
         }
 
         [Fact]

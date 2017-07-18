@@ -15,10 +15,10 @@ namespace Pocket
 
         private static readonly Regex tokenRegex = new Regex(
             @"{(?<key>[^{}:]*)(?:\:(?<format>.+))?}",
-            RegexOptions.IgnoreCase
-            | RegexOptions.Multiline
-            | RegexOptions.CultureInvariant
-            | RegexOptions.Compiled
+            RegexOptions.IgnoreCase |
+            RegexOptions.Multiline |
+            RegexOptions.CultureInvariant |
+            RegexOptions.Compiled
         );
 
         private readonly List<Action<StringBuilder, object>> argumentFormatters = new List<Action<StringBuilder, object>>();
@@ -71,6 +71,11 @@ namespace Pocket
 
         public FormatterResult Format(IReadOnlyList<object> args)
         {
+            if (args == null)
+            {
+                args = new object[argumentFormatters.Count];
+            }
+
             var stringBuilder = new StringBuilder(template);
             var result = new FormatterResult(stringBuilder);
 
@@ -111,7 +116,7 @@ namespace Pocket
         {
             if (objectToFormat == null)
             {
-                return "";
+                return "[null]";
             }
 
             var enumerable = objectToFormat as IEnumerable;
