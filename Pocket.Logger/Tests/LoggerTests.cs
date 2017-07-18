@@ -177,7 +177,7 @@ namespace Pocket.Tests
             }
 
             log.Should()
-               .Contain(e => e.CallingMethod == nameof(Log_captures_the_calling_method));
+               .Contain(e => e.OperationName == nameof(Log_captures_the_calling_method));
         }
 
         [Fact]

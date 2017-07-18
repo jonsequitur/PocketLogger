@@ -31,34 +31,34 @@ namespace Pocket
             params object[] args) =>
             Logger.Default.Error(message, exception, args);
    
-        public static LogSection OnEnterAndExit(
+        public static OperationLogger OnEnterAndExit(
             bool requireConfirm = false,
             [CallerMemberName] string name = null,
             string id = null)
         {
-            var section = new LogSection(
+            var operation = new OperationLogger(
                 requireConfirm,
                 name,
                 id: id);
 
-            section.Log(section[0]);
+            operation.Log(operation[0]);
 
-            return section;
+            return operation;
         }
 
-        public static LogSection OnExit(
+        public static OperationLogger OnExit(
             bool requireConfirm = false,
             [CallerMemberName] string name = null,
             string id = null) =>
-            new LogSection(
+            new OperationLogger(
                 requireConfirm,
                 name,
                 id: id);
 
-        public static LogSection Confirm(
+        public static OperationLogger ConfirmOnExit(
             [CallerMemberName] string name = null,
             string id = null) =>
-            new LogSection(
+            new OperationLogger(
                 true,
                 name,
                 id: id);
@@ -91,16 +91,7 @@ namespace Pocket
         }
     }
 
-    internal interface ILogSection : IReadOnlyList<LogEntry>
-    {
-        bool IsComplete { get; }
-        bool? IsSuccessful { get; }
-        long ElapsedMilliseconds { get; }
-        string Id { get; }
-        string Name { get; }
-    }
-
-    internal class LogSection : Logger, IDisposable, ILogSection
+    internal class OperationLogger : Logger, IDisposable
     {
         private readonly List<LogEntry> logEntries = new List<LogEntry>();
 
@@ -108,7 +99,7 @@ namespace Pocket
 
         private bool disposed;
 
-        public LogSection(
+        public OperationLogger(
             bool requireConfirm = false,
             [CallerMemberName] string callingMethod = null,
             string category = null,
@@ -176,7 +167,7 @@ namespace Pocket
                              message,
                              exception: exception,
                              category: initialLogEntry.Category,
-                             section: this,
+                             operation: this,
                              args: args));
 
             disposed = true;
@@ -188,7 +179,7 @@ namespace Pocket
             params object[] args) =>
             Complete(false, message, exception, args);
 
-        public void Success(
+        public void Succeed(
             string message = "",
             params object[] args) =>
             Complete(true, message, null, args);
@@ -203,7 +194,7 @@ namespace Pocket
                 }
                 else
                 {
-                    Success();
+                    Succeed();
                 }
             }
             else
@@ -213,8 +204,6 @@ namespace Pocket
         }
 
         public IEnumerator<LogEntry> GetEnumerator() => logEntries.GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         public int Count => logEntries.Count;
 
@@ -340,7 +329,7 @@ namespace Pocket
                 logLevel: logLevel,
                 exception: exception,
                 category: logger.Category,
-                section: logger as ILogSection,
+                operation: logger as OperationLogger,
                 args: args);
         }
     }
@@ -355,32 +344,32 @@ namespace Pocket
             Exception exception = null,
             string category = null,
             string callingMethod = null,
-            ILogSection section = null,
+            OperationLogger operation = null,
             bool isTelemetry = false,
             object[] args = null)
         {
             LogLevel = logLevel;
             Exception = exception;
             Category = category;
-            Section = section;
+            Operation = operation;
             IsTelemetry = isTelemetry;
 
-            if (section != null)
+            if (operation != null)
             {
-                ElapsedMilliseconds = section.ElapsedMilliseconds;
-                IsStartOfSection = section.Count == 0;
-                IsSectionComplete = section.IsComplete;
-                SectionId = section?.Id;
-                CallingMethod = callingMethod ?? section.Name;
+                ElapsedMilliseconds = operation.ElapsedMilliseconds;
+                IsStartOfOperation = operation.Count == 0;
+                IsOperationComplete = operation.IsComplete;
+                OperationId = operation?.Id;
+                OperationName = callingMethod ?? operation.Name;
 
-                if (section.IsSuccessful != null)
+                if (operation.IsSuccessful != null)
                 {
-                    IsSectionSuccessful = section.IsSuccessful == true;
+                    IsOperationSuccessful = operation.IsSuccessful == true;
                 }
             }
             else
             {
-                CallingMethod = callingMethod;
+                OperationName = callingMethod;
             }
 
             MessageTemplate = message ?? "";
@@ -402,20 +391,19 @@ namespace Pocket
             }
         }
 
-        public bool IsStartOfSection { get; }
+        public bool IsStartOfOperation { get; }
 
-        public bool? IsSectionSuccessful { get; }
+        public bool? IsOperationSuccessful { get; }
 
-        public bool? IsSectionComplete { get; }
+        public bool? IsOperationComplete { get; }
 
         public long? ElapsedMilliseconds { get; }
 
-        public string CallingMethod { get; }
+        public string OperationName { get; }
 
         public string Category { get; }
 
-        // QUESTION: (LogEntry) rename to Operation? Activity?
-        public ILogSection Section { get; }
+        public OperationLogger Operation { get; }
 
         public string Message { get; }
 
@@ -436,7 +424,7 @@ namespace Pocket
 
         public string MessageTemplate { get; }
 
-        public string SectionId { get; }
+        public string OperationId { get; }
 
         public bool IsTelemetry { get; }
 
@@ -445,26 +433,26 @@ namespace Pocket
                       .OfType<T>();
         
         public override string ToString() =>
-            $"{Timestamp:o} {SectionIdString()}{CategoryString()}{OperationString()}[{LogLevelString()}] {Message} {Exception}";
+            $"{Timestamp:o} {OperationIdString()}{CategoryString()}{OperationString()}[{LogLevelString()}] {Message} {Exception}";
 
         private string CategoryString() =>
             string.IsNullOrWhiteSpace(Category) ? "" : $"[{Category}] ";
 
         private string LogLevelString()
         {
-            if (IsStartOfSection)
+            if (IsStartOfOperation)
             {
                 return "▶️";
             }
 
-            if (IsSectionComplete == true)
+            if (IsOperationComplete == true)
             {
-                if (IsSectionSuccessful == true)
+                if (IsOperationSuccessful == true)
                 {
                     return "⏹ -> ✔️";
                 }
 
-                if (IsSectionSuccessful == false)
+                if (IsOperationSuccessful == false)
                 {
                     
                     return "⏹ -> ✖️";
@@ -493,9 +481,9 @@ namespace Pocket
         }
 
         private string OperationString() =>
-            string.IsNullOrWhiteSpace(CallingMethod) ? "" : $"[{CallingMethod}] ";
+            string.IsNullOrWhiteSpace(OperationName) ? "" : $"[{OperationName}] ";
 
-        private string SectionIdString() =>
-            SectionId == null ? "" : $"[{SectionId}] ";
+        private string OperationIdString() =>
+            OperationId == null ? "" : $"[{OperationId}] ";
     }
 }

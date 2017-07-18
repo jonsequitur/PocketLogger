@@ -8,11 +8,11 @@ using Xunit.Abstractions;
 
 namespace Pocket.Tests
 {
-    public class LogSectionTests : IDisposable
+    public class OperationLoggerTests : IDisposable
     {
         private readonly IDisposable disposables;
 
-        public LogSectionTests(ITestOutputHelper output)
+        public OperationLoggerTests(ITestOutputHelper output)
         {
             disposables =
                 Log.Subscribe(e =>
@@ -22,14 +22,14 @@ namespace Pocket.Tests
         public void Dispose() => disposables.Dispose();
 
         [Fact]
-        public void Log_Section_can_log_on_enter()
+        public void Log_OnEnterAndExit_logs_a_Start_event_on_exit()
         {
             var log = new List<LogEntry>();
 
             using (Log.Subscribe(log.Add))
-            using (Log.OnEnterAndExit().Info("starting..."))
+            using (Log.OnEnterAndExit())
             {
-                log.Should().ContainSingle(e => e.Message.Contains("starting..."));
+                log.Should().ContainSingle(e => e.IsStartOfOperation);
             }
         }
 
@@ -44,8 +44,8 @@ namespace Pocket.Tests
             }
 
             log.Should().HaveCount(1);
-            log.Last().IsSectionComplete.Should().BeTrue();
-            log.Last().IsSectionSuccessful.Should().BeNull();
+            log.Last().IsOperationComplete.Should().BeTrue();
+            log.Last().IsOperationSuccessful.Should().BeNull();
         }
 
         [Fact]
@@ -59,12 +59,12 @@ namespace Pocket.Tests
             }
 
             log.Should().HaveCount(2);
-            log[0].IsSectionComplete.Should().BeFalse();
-            log[1].IsSectionSuccessful.Should().BeNull();
+            log[0].IsOperationComplete.Should().BeFalse();
+            log[1].IsOperationSuccessful.Should().BeNull();
         }
 
         [Fact]
-        public void Log_section_start_and_stop_entries_are_identifiable_in_string_output()
+        public void Start_and_stop_entries_are_identifiable_in_string_output()
         {
             var log = new List<string>();
 
@@ -78,26 +78,26 @@ namespace Pocket.Tests
         }
 
         [Fact]
-        public void Log_section_succeeded_entries_are_identifiable_in_string_output()
+        public void Successful_entries_are_identifiable_in_string_output()
         {
             var log = new List<string>();
 
             using (Log.Subscribe(e => log.Add(e.ToString())))
-            using (var section = Log.Confirm())
+            using (var operation = Log.ConfirmOnExit())
             {
-                section.Success();
+                operation.Succeed();
             }
 
             log[0].Should().Contain("⏹ -> ✔️");
         }
 
         [Fact]
-        public void Log_section_failed_entries_are_identifiable_in_string_output()
+        public void Failed_entries_are_identifiable_in_string_output()
         {
             var log = new List<string>();
 
             using (Log.Subscribe(e => log.Add(e.ToString())))
-            using (Log.Confirm())
+            using (Log.ConfirmOnExit())
             {
             }
 
@@ -105,79 +105,79 @@ namespace Pocket.Tests
         }
 
         [Fact]
-        public void When_no_confirmation_is_required_then_IsSectionSuccessful_is_null()
+        public void When_no_confirmation_is_required_then_IsOperationSuccessful_is_null()
         {
-              var log = new List<LogEntry>();
+            var log = new List<LogEntry>();
 
             using (Log.Subscribe(e => log.Add(e)))
             using (Log.OnExit(requireConfirm: false))
             {
             }
 
-            log.Single().IsSectionSuccessful.Should().BeNull();
+            log.Single().IsOperationSuccessful.Should().BeNull();
         }
 
         [Fact]
-        public void Log_section_entries_contain_operation_name_in_string_output()
+        public void Entries_contain_operation_name_in_string_output()
         {
             var log = new List<string>();
 
             using (Log.Subscribe(e => log.Add(e.ToString())))
-            using (var section = Log.OnEnterAndExit())
+            using (var operation = Log.OnEnterAndExit())
             {
-                section.Info("hello");
+                operation.Info("hello");
             }
 
-            log.Should().OnlyContain(e => e.Contains(nameof(Log_section_entries_contain_operation_name_in_string_output)));
+            log.Should().OnlyContain(e => e.Contains(nameof(Entries_contain_operation_name_in_string_output)));
         }
 
         [Fact]
-        public void Log_entries_within_a_section_share_an_id_when_specified()
+        public void Log_entries_within_an_operation_share_an_id_when_specified()
         {
             var log = new List<LogEntry>();
-            var sectionId = "the-section-id";
+            var operationId = "the-operation-id";
 
             using (Log.Subscribe(log.Add))
-            using (var section = Log.OnEnterAndExit(id: sectionId))
+            using (var operation = Log.OnEnterAndExit(id: operationId))
             {
-                section.Info("hello");
+                operation.Info("hello");
             }
 
-            log.Select(e => e.SectionId).Should().OnlyContain(id => id == sectionId);
+            log.Select(e => e.OperationId).Should().OnlyContain(id => id == operationId);
         }
 
         [Fact]
-        public void Log_entries_within_a_section_share_an_id_when_not_specified()
+        public void Log_entries_within_an_operation_share_an_id_when_not_specified()
         {
             var log = new List<LogEntry>();
-            var sectionId = Guid.NewGuid().ToString();
+            var operationId = Guid.NewGuid().ToString();
 
             using (Log.Subscribe(log.Add))
-            using (var section = Log.OnEnterAndExit(id: sectionId))
+            using (var operation = Log.OnEnterAndExit(id: operationId))
             {
-                section.Info("hello");
+                operation.Info("hello");
             }
 
-            log.Select(e => e.SectionId).Distinct().Should().HaveCount(1);
+            log.Select(e => e.OperationId).Distinct().Should().HaveCount(1);
         }
 
         [Fact]
-        public void Log_entries_within_a_section_contain_their_id_in_string_output()
+        public void Log_entries_within_an_operation_contain_their_id_in_string_output()
         {
             var log = new List<LogEntry>();
-            var sectionId = Guid.NewGuid().ToString();
+            var operationId = Guid.NewGuid().ToString();
 
             using (Log.Subscribe(log.Add))
-            using (var section = Log.OnEnterAndExit(id: sectionId))
+            using (var operation = Log.OnEnterAndExit(id: operationId))
             {
-                section.Info("hello");
+                operation.Info("hello");
             }
 
-            log.Should().OnlyContain(e => e.ToString().Contains(sectionId));
+            log.Should().OnlyContain(e => e.ToString().Contains(operationId));
         }
 
         [Fact]
-        public async Task Log_Section_records_timing_when_completed()
+        public async Task It_records_timing_when_completed()
         {
             var log = new List<LogEntry>();
 
@@ -194,7 +194,7 @@ namespace Pocket.Tests
         }
 
         [Fact]
-        public async Task Log_Section_records_timings_for_checkpoints()
+        public async Task It_records_timings_for_checkpoints()
         {
             var log = new List<LogEntry>();
 
@@ -209,75 +209,59 @@ namespace Pocket.Tests
         }
 
         [Fact]
-        public void Log_Section_logs_a_successful_result_when_completed()
+        public void When_confirmation_is_required_then_it_logs_a_successful_result_when_completed()
         {
             var log = new List<LogEntry>();
 
             using (Log.Subscribe(log.Add))
-            using (var section = Log.OnEnterAndExit(requireConfirm: true))
+            using (var operation = Log.OnEnterAndExit(requireConfirm: true))
             {
-                section.Success();
+                operation.Succeed();
             }
 
-            log.Last().IsSectionComplete.Should().BeTrue();
-            log.Last().IsSectionSuccessful.Should().BeTrue();
+            log.Last().IsOperationComplete.Should().BeTrue();
+            log.Last().IsOperationSuccessful.Should().BeTrue();
         }
 
         [Fact]
-        public void Log_Section_logs_an_unsuccessful_result_when_not_completed()
+        public void When_confirmation_is_required_then_it_logs_an_unsuccessful_result_when_not_confirmed()
         {
             var log = new List<LogEntry>();
 
             using (Log.Subscribe(log.Add))
             using (Log.OnEnterAndExit(requireConfirm: true))
             {
+                // don't call Fail or Succeed
             }
 
-            log.Last().IsSectionComplete.Should().BeTrue();
-            log.Last().IsSectionSuccessful.Should().BeFalse();
+            log.Last().IsOperationComplete.Should().BeTrue();
+            log.Last().IsOperationSuccessful.Should().BeFalse();
         }
 
         [Fact]
-        public void Log_Section_logs_an_unsuccessful_result_when_completed_with_Fail()
+        public void When_confirmation_is_required_then_it_logs_an_unsuccessful_result_when_completed_with_Fail()
         {
             var log = new List<LogEntry>();
 
             using (Log.Subscribe(log.Add))
-            using (var section = Log.OnEnterAndExit(requireConfirm: true))
+            using (var operation = Log.OnEnterAndExit(requireConfirm: true))
             {
-                section.Fail();
+                operation.Fail();
             }
 
-            log.Last().IsSectionComplete.Should().BeTrue();
-            log.Last().IsSectionSuccessful.Should().BeFalse();
+            log.Last().IsOperationComplete.Should().BeTrue();
+            log.Last().IsOperationSuccessful.Should().BeFalse();
         }
 
         [Fact]
-        public void Log_Section_Success_can_be_used_to_add_additional_properties_on_complete()
+        public void Succeed_can_be_used_to_add_additional_properties_on_complete()
         {
             var log = new List<LogEntry>();
 
             using (Log.Subscribe(log.Add))
-            using (var section = Log.OnEnterAndExit())
+            using (var operation = Log.OnEnterAndExit())
             {
-                section.Success("All done {0}", args: "bye!");
-            }
-
-            log.Last()
-               .Select(_ => _.Value)
-               .Should()
-               .ContainSingle(arg => arg == "bye!");
-        }
-
-        [Fact]
-        public void Log_Section_Fail_can_be_used_to_add_additional_properties_on_complete()
-        {
-            var log = new List<LogEntry>();
-
-            using (Log.Subscribe(log.Add))
-            using (var section = Log.OnEnterAndExit())
-            {
-                section.Fail(message: "Oops! {0}", args: "bye!");
+                operation.Succeed("All done {0}", args: "bye!");
             }
 
             log.Last()
@@ -287,61 +271,78 @@ namespace Pocket.Tests
         }
 
         [Fact]
-        public void After_Success_is_called_then_a_LogSection_does_not_log_again()
+        public void Fail_can_be_used_to_add_additional_properties_on_complete()
         {
             var log = new List<LogEntry>();
 
             using (Log.Subscribe(log.Add))
-            using (var section = Log.OnExit())
+            using (var operation = Log.OnEnterAndExit())
             {
-                section.Success(message: "Oops! {0}", args: "bye!");
-                section.Info("hello");
+                operation.Fail(message: "Oops! {0}", args: "bye!");
+            }
+
+            log.Last()
+               .Select(_ => _.Value)
+               .Should()
+               .ContainSingle(arg => arg == "bye!");
+        }
+
+        [Fact]
+        public void After_Succeed_is_called_then_an_OperationLogger_does_not_log_again()
+        {
+            var log = new List<LogEntry>();
+
+            using (Log.Subscribe(log.Add))
+            using (var operation = Log.OnExit())
+            {
+                operation.Succeed(message: "Oops! {0}", args: "bye!");
+                operation.Info("hello");
             }
 
             log.Count.Should().Be(1);
         }
 
         [Fact]
-        public void After_Fail_is_called_then_a_LogSection_does_not_log_again()
+        public void After_Fail_is_called_then_an_OperationLogger_does_not_log_again()
         {
             var log = new List<LogEntry>();
 
             using (Log.Subscribe(log.Add))
-            using (var section = Log.OnExit())
+            using (var operation = Log.OnExit())
             {
-                section.Fail(message: "Oops! {0}", args: "bye!");
-                section.Info("hello");
+                operation.Fail(message: "Oops! {0}", args: "bye!");
+                operation.Info("hello");
             }
 
             log.Count.Should().Be(1);
         }
 
         [Fact]
-        public void After_Dispose_is_called_then_a_LogSection_does_not_log_again()
+        public void After_Dispose_is_called_then_an_OperationLogger_does_not_log_again()
         {
             var log = new List<LogEntry>();
 
             using (Log.Subscribe(log.Add))
-            using (var section = Log.OnExit())
+            using (var operation = Log.OnExit())
             {
-                section.Dispose();
-                section.Info("hello");
+                operation.Dispose();
+                operation.Info("hello");
             }
 
             log.Count.Should().Be(1);
         }
 
         [Fact]
-        public void Default_Section_has_no_category()
+        public void By_befault_an_operation_has_no_category()
         {
             var log = new List<LogEntry>();
 
             using (Log.Subscribe(log.Add))
-            using (var section1 = Log.OnExit())
-            using (var section2 = Log.OnEnterAndExit())
+            using (var operation1 = Log.OnExit())
+            using (var operation2 = Log.OnEnterAndExit())
             {
-                section1.Info("hello");
-                section2.Info("hello");
+                operation1.Info("hello");
+                operation2.Info("hello");
             }
 
             log.Should().OnlyContain(e => e.Category == null);

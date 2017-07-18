@@ -40,7 +40,7 @@ namespace Pocket.For.ApplicationInsights.Tests
         public void Dispose() => disposables.Dispose();
 
         [Fact]
-        public async Task Log_events_can_be_used_to_trigger_dependency_tracking_on_section_complete()
+        public async Task Log_events_can_be_used_to_trigger_dependency_tracking_on_operation_complete()
         {
             var id = Guid.NewGuid().ToString();
             client.TrackDependency(new DependencyTelemetry
@@ -54,10 +54,10 @@ namespace Pocket.For.ApplicationInsights.Tests
             });
 
             using (client.SubscribeToPocket())
-            using (var section = Log.Confirm("my-operation", id))
+            using (var operation = Log.ConfirmOnExit("my-operation", id))
             {
                 await Task.Delay(1.Seconds());
-                section.Success();
+                operation.Succeed();
             }
 
             var expected = (DependencyTelemetry) telemetrySent[0];
