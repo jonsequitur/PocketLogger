@@ -29,7 +29,6 @@ namespace Pocket
         {
             this.template = template;
             var matches = tokenRegex.Matches(template);
-            var position = 0;
 
             foreach (Match match in matches)
             {
@@ -60,8 +59,6 @@ namespace Pocket
 
                     sb.Replace(replacementTarget, formattedParam);
                 }
-
-                position++;
 
                 argumentFormatters.Add(format);
             }
@@ -107,10 +104,7 @@ namespace Pocket
             return result;
         }
 
-        public FormatterResult Format(params object[] args)
-        {
-            return Format((IReadOnlyList<object>) args);
-        }
+        public FormatterResult Format(params object[] args) => Format((IReadOnlyList<object>) args);
 
         private static string Format(object objectToFormat)
         {

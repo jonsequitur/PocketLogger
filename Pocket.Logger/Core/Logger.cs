@@ -30,10 +30,7 @@ namespace Pocket
             Exception exception = null,
             params object[] args) =>
             Logger.Default.Error(message, exception, args);
-    }
-
-    internal static partial class Log
-    {
+   
         public static LogSection OnEnterAndExit(
             bool requireConfirm = false,
             [CallerMemberName] string name = null,
@@ -429,7 +426,24 @@ namespace Pocket
         public Exception Exception { get; }
 
         public void Add(string key, object value) => properties.Add(new KeyValuePair<string, object>(key, value));
+     
+        public IEnumerator<KeyValuePair<string, object>> GetEnumerator() =>
+            properties.GetEnumerator();
 
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        public int Count => properties.Count;
+
+        public string MessageTemplate { get; }
+
+        public string SectionId { get; }
+
+        public bool IsTelemetry { get; }
+
+        public IEnumerable<T> Properties<T>() =>
+            properties.Select(p => p.Value)
+                      .OfType<T>();
+        
         public override string ToString() =>
             $"{Timestamp:o} {SectionIdString()}{CategoryString()}{OperationString()}[{LogLevelString()}] {Message} {Exception}";
 
@@ -483,22 +497,5 @@ namespace Pocket
 
         private string SectionIdString() =>
             SectionId == null ? "" : $"[{SectionId}] ";
-     
-        public IEnumerator<KeyValuePair<string, object>> GetEnumerator() =>
-            properties.GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-        public int Count => properties.Count;
-
-        public string MessageTemplate { get; }
-
-        public string SectionId { get; }
-
-        public bool IsTelemetry { get; }
-
-        public IEnumerable<T> Properties<T>() =>
-            properties.Select(p => p.Value)
-                      .OfType<T>();
     }
 }
