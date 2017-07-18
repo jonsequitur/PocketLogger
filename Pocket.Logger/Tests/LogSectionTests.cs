@@ -162,6 +162,21 @@ namespace Pocket.Tests
         }
 
         [Fact]
+        public void Log_entries_within_a_section_contain_their_id_in_string_output()
+        {
+            var log = new List<LogEntry>();
+            var sectionId = Guid.NewGuid().ToString();
+
+            using (Log.Subscribe(log.Add))
+            using (var section = Log.OnEnterAndExit(id: sectionId))
+            {
+                section.Info("hello");
+            }
+
+            log.Should().OnlyContain(e => e.ToString().Contains(sectionId));
+        }
+
+        [Fact]
         public async Task Log_Section_records_timing_when_completed()
         {
             var log = new List<LogEntry>();

@@ -373,7 +373,7 @@ namespace Pocket
                 ElapsedMilliseconds = section.ElapsedMilliseconds;
                 IsStartOfSection = section.Count == 0;
                 IsSectionComplete = section.IsComplete;
-                SectionId = section.Id;
+                SectionId = section?.Id;
                 CallingMethod = callingMethod ?? section.Name;
 
                 if (section.IsSuccessful != null)
@@ -431,7 +431,7 @@ namespace Pocket
         public void Add(string key, object value) => properties.Add(new KeyValuePair<string, object>(key, value));
 
         public override string ToString() =>
-            $"{Timestamp:o} {CategoryString()}{OperationString()}[{LogLevelString()}] {Message} {Exception}";
+            $"{Timestamp:o} {SectionIdString()}{CategoryString()}{OperationString()}[{LogLevelString()}] {Message} {Exception}";
 
         private string CategoryString() =>
             string.IsNullOrWhiteSpace(Category) ? "" : $"[{Category}] ";
@@ -481,6 +481,9 @@ namespace Pocket
         private string OperationString() =>
             string.IsNullOrWhiteSpace(CallingMethod) ? "" : $"[{CallingMethod}] ";
 
+        private string SectionIdString() =>
+            SectionId == null ? "" : $"[{SectionId}] ";
+     
         public IEnumerator<KeyValuePair<string, object>> GetEnumerator() =>
             properties.GetEnumerator();
 
