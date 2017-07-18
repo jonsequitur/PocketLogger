@@ -53,7 +53,6 @@ namespace Pocket
             bool requireConfirm = false,
             [CallerMemberName] string name = null,
             string id = null) =>
-            // ReSharper disable once ExplicitCallerInfoArgument
             new LogSection(
                 requireConfirm,
                 name,
@@ -62,7 +61,6 @@ namespace Pocket
         public static LogSection Confirm(
             [CallerMemberName] string name = null,
             string id = null) =>
-            // ReSharper disable once ExplicitCallerInfoArgument
             new LogSection(
                 true,
                 name,
@@ -99,7 +97,7 @@ namespace Pocket
     internal interface ILogSection : IReadOnlyList<LogEntry>
     {
         bool IsComplete { get; }
-        bool IsSuccessful { get; }
+        bool? IsSuccessful { get; }
         long ElapsedMilliseconds { get; }
         string Id { get; }
         string Name { get; }
@@ -145,7 +143,7 @@ namespace Pocket
 
         public bool IsComplete { get; private set; }
 
-        public bool IsSuccessful { get; private set; }
+        public bool? IsSuccessful { get; private set; }
 
         public override void Log(LogEntry logEntry)
         {
@@ -160,7 +158,7 @@ namespace Pocket
         }
 
         private void Complete(
-            bool isSuccessful,
+            bool? isSuccessful,
             string message = null,
             Exception exception = null,
             params object[] args)
@@ -375,9 +373,13 @@ namespace Pocket
                 ElapsedMilliseconds = section.ElapsedMilliseconds;
                 IsStartOfSection = section.Count == 0;
                 IsSectionComplete = section.IsComplete;
-                IsSectionSuccessful = section.IsSuccessful;
                 SectionId = section.Id;
                 CallingMethod = callingMethod ?? section.Name;
+
+                if (section.IsSuccessful != null)
+                {
+                    IsSectionSuccessful = section.IsSuccessful == true;
+                }
             }
             else
             {
@@ -443,13 +445,24 @@ namespace Pocket
 
             if (IsSectionComplete == true)
             {
+                if (IsSectionSuccessful == true)
+                {
+                    return "⏹ -> ✔️";
+                }
+
+                if (IsSectionSuccessful == false)
+                {
+                    
+                    return "⏹ -> ✖️";
+                }
+
                 return "⏹";
             }
 
             switch (LogLevel)
             {
                 case LogLevel.Trace:
-                    return "👣";
+                    return "🐾";
                 case LogLevel.Debug:
                     return "🔍";
                 case LogLevel.Information:

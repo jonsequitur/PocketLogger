@@ -1,14 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
+using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Pocket.Tests
 {
-    public class LogSectionTests
+    public class LogSectionTests : IDisposable
     {
+        private readonly IDisposable disposables;
+
+        public LogSectionTests(ITestOutputHelper output)
+        {
+            disposables =
+                Log.Subscribe(e =>
+                                  output.WriteLine(e.ToString()));
+        }
+
+        public void Dispose() => disposables.Dispose();
+
         [Fact]
         public void Log_Section_can_log_on_enter()
         {
@@ -33,7 +45,7 @@ namespace Pocket.Tests
 
             log.Should().HaveCount(1);
             log.Last().IsSectionComplete.Should().BeTrue();
-            log.Last().IsSectionSuccessful.Should().BeTrue();
+            log.Last().IsSectionSuccessful.Should().BeNull();
         }
 
         [Fact]
@@ -48,7 +60,7 @@ namespace Pocket.Tests
 
             log.Should().HaveCount(2);
             log[0].IsSectionComplete.Should().BeFalse();
-            log[1].IsSectionSuccessful.Should().BeTrue();
+            log[1].IsSectionSuccessful.Should().BeNull();
         }
 
         [Fact]
@@ -63,6 +75,33 @@ namespace Pocket.Tests
 
             log[0].Should().Contain("▶️");
             log[1].Should().Contain("⏹");
+        }
+
+        [Fact]
+        public void Log_section_succeeded_entries_are_identifiable_in_string_output()
+        {
+            var log = new List<string>();
+
+            using (Log.Subscribe(e => log.Add(e.ToString())))
+            using (var section = Log.Confirm())
+            {
+                section.Success();
+            }
+
+            log[0].Should().Contain("⏹ -> ✔️");
+        }
+
+        [Fact]
+        public void Log_section_failed_entries_are_identifiable_in_string_output()
+        {
+            var log = new List<string>();
+
+            using (Log.Subscribe(e => log.Add(e.ToString())))
+            using (Log.Confirm())
+            {
+            }
+
+            log[0].Should().Contain("⏹ -> ✖");
         }
 
         [Fact]

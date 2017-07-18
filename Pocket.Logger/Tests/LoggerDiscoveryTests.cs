@@ -59,5 +59,14 @@ namespace Pocket.Tests
             log.Should().Contain(e => e.ToString().Contains("before unsubscribe"));
             log.Should().NotContain(e => e.ToString().Contains("after unsubscribe"));
         }
+
+        [Fact]
+        public void Exceptions_thrown_by_subscribers_are_not_thrown_to_the_caller()
+        {
+            using (Log.DiscoverAndSubscribe(_ => throw new Exception("oops!")))
+            {
+                Class1.EmitSomeLogEvents();
+            }
+        }
     }
 }
