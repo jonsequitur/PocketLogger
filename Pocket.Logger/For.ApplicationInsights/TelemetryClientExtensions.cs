@@ -11,13 +11,13 @@ namespace Pocket.For.ApplicationInsights
         {
             return Log.Subscribe(entry =>
             {
-                if (entry.IsOperationComplete == true)
+                if (entry.IsEndOfOperation)
                 {
                     var telemetry = new DependencyTelemetry
                     {
                         Id = entry.OperationId,
                         Data = entry.OperationName,
-                        Duration = TimeSpan.FromMilliseconds(entry.Operation.ElapsedMilliseconds),
+                        Duration = entry.Operation.Duration,
                         Name = entry.OperationName,
                         Success = entry.IsOperationSuccessful,
                         Timestamp = DateTimeOffset.UtcNow
@@ -30,7 +30,7 @@ namespace Pocket.For.ApplicationInsights
 
                     telemetryClient.TrackDependency(telemetry);
                 }
-                else if (entry.IsTelemetry)
+                else if (entry.LogLevel == LogLevel.Telemetry)
                 {
                     telemetryClient.TrackEvent(
                         eventName: entry.OperationName,

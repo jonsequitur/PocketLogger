@@ -44,7 +44,7 @@ namespace Pocket.Tests
             }
 
             log.Should().HaveCount(1);
-            log.Last().IsOperationComplete.Should().BeTrue();
+            log.Last().IsEndOfOperation.Should().BeTrue();
             log.Last().IsOperationSuccessful.Should().BeNull();
         }
 
@@ -59,7 +59,7 @@ namespace Pocket.Tests
             }
 
             log.Should().HaveCount(2);
-            log[0].IsOperationComplete.Should().BeFalse();
+            log[0].IsEndOfOperation.Should().BeFalse();
             log[1].IsOperationSuccessful.Should().BeNull();
         }
 
@@ -188,7 +188,9 @@ namespace Pocket.Tests
             }
 
             log.Last()
-               .ElapsedMilliseconds
+               .OperationDuration
+               .Value
+               .TotalMilliseconds
                .Should()
                .BeGreaterOrEqualTo(500);
         }
@@ -204,8 +206,8 @@ namespace Pocket.Tests
                 await Task.Delay(200);
             }
 
-            log[0].ElapsedMilliseconds.Should().BeInRange(0, 50);
-            log[1].ElapsedMilliseconds.Should().BeGreaterOrEqualTo(200);
+            log[0].OperationDuration.Value.TotalMilliseconds.Should().BeInRange(0, 50);
+            log[1].OperationDuration.Value.TotalMilliseconds.Should().BeGreaterOrEqualTo(200);
         }
 
         [Fact]
@@ -219,7 +221,7 @@ namespace Pocket.Tests
                 operation.Succeed();
             }
 
-            log.Last().IsOperationComplete.Should().BeTrue();
+            log.Last().IsEndOfOperation.Should().BeTrue();
             log.Last().IsOperationSuccessful.Should().BeTrue();
         }
 
@@ -234,7 +236,7 @@ namespace Pocket.Tests
                 // don't call Fail or Succeed
             }
 
-            log.Last().IsOperationComplete.Should().BeTrue();
+            log.Last().IsEndOfOperation.Should().BeTrue();
             log.Last().IsOperationSuccessful.Should().BeFalse();
         }
 
@@ -249,7 +251,7 @@ namespace Pocket.Tests
                 operation.Fail();
             }
 
-            log.Last().IsOperationComplete.Should().BeTrue();
+            log.Last().IsEndOfOperation.Should().BeTrue();
             log.Last().IsOperationSuccessful.Should().BeFalse();
         }
 
