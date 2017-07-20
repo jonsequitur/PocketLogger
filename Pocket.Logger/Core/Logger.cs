@@ -81,11 +81,10 @@ namespace Pocket
             }
 
             Logger.Default.Log(
-                new LogEntry(LogLevel.Trace,
+                new LogEntry(LogLevel.Telemetry,
                              message: "{name}",
                              callingMethod: name,
                              category: nameof(Event),
-                             isTelemetry: true,
                              args: args.ToArray()
                 ));
         }
@@ -125,7 +124,7 @@ namespace Pocket
 
         public string Name { get; }
 
-        public long ElapsedMilliseconds => stopwatch.ElapsedMilliseconds;
+        public TimeSpan Duration => stopwatch.Elapsed;
 
         public bool RequireConfirm { get; }
 
@@ -212,6 +211,7 @@ namespace Pocket
 
     internal enum LogLevel
     {
+        Telemetry,
         Trace,
         Debug,
         Information,
@@ -345,20 +345,18 @@ namespace Pocket
             string category = null,
             string callingMethod = null,
             OperationLogger operation = null,
-            bool isTelemetry = false,
             object[] args = null)
         {
             LogLevel = logLevel;
             Exception = exception;
             Category = category;
             Operation = operation;
-            IsTelemetry = isTelemetry;
 
             if (operation != null)
             {
-                ElapsedMilliseconds = operation.ElapsedMilliseconds;
+                OperationDuration = operation.Duration;
                 IsStartOfOperation = operation.Count == 0;
-                IsOperationComplete = operation.IsComplete;
+                IsEndOfOperation = operation.IsComplete;
                 OperationId = operation?.Id;
                 OperationName = callingMethod ?? operation.Name;
 
@@ -395,9 +393,9 @@ namespace Pocket
 
         public bool? IsOperationSuccessful { get; }
 
-        public bool? IsOperationComplete { get; }
+        public bool IsEndOfOperation { get; }
 
-        public long? ElapsedMilliseconds { get; }
+        public TimeSpan? OperationDuration { get; }
 
         public string OperationName { get; }
 
@@ -426,12 +424,10 @@ namespace Pocket
 
         public string OperationId { get; }
 
-        public bool IsTelemetry { get; }
-
         public IEnumerable<T> Properties<T>() =>
             properties.Select(p => p.Value)
                       .OfType<T>();
-        
+
         public override string ToString() =>
             $"{Timestamp:o} {OperationIdString()}{CategoryString()}{OperationString()}[{LogLevelString()}] {Message} {Exception}";
 
@@ -445,7 +441,7 @@ namespace Pocket
                 return "▶️";
             }
 
-            if (IsOperationComplete == true)
+            if (IsEndOfOperation == true)
             {
                 if (IsOperationSuccessful == true)
                 {
@@ -454,7 +450,6 @@ namespace Pocket
 
                 if (IsOperationSuccessful == false)
                 {
-                    
                     return "⏹ -> ✖️";
                 }
 
