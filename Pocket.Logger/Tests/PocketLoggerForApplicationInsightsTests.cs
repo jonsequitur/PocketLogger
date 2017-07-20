@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Channel;
@@ -41,7 +40,7 @@ namespace Pocket.For.ApplicationInsights.Tests
         public void Dispose() => disposables.Dispose();
 
         [Fact]
-        public void Log_events_can_be_used_to_trigger_dependency_tracking_on_operation_complete()
+        public void Log_events_can_be_used_to_send_dependency_tracking_on_operation_complete()
         {
             var id = Guid.NewGuid().ToString();
             client.TrackDependency(new DependencyTelemetry
@@ -54,7 +53,7 @@ namespace Pocket.For.ApplicationInsights.Tests
                 Name = "my-operation"
             });
 
-            using (client.SubscribeToPocket())
+            using (client.SubscribeToPocketLogger())
             using (var operation = Log.ConfirmOnExit("my-operation", id))
             {
                 Thread.Sleep(500);
@@ -69,17 +68,17 @@ namespace Pocket.For.ApplicationInsights.Tests
             actual.Id.Should().Be(expected.Id);
             actual.Name.Should().Be(expected.Name);
             actual.Success.Should().Be(expected.Success);
-            actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 2000);
+            actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
         }
 
         [Fact(Skip = "Not implemented yet")]
-        public void Log_events_can_be_used_to_trigger_custom_metrics()
+        public void Log_events_can_be_used_to_send_custom_metrics()
         {
             client.TrackMetric(
                 "my-event",
                 value: 1.23);
 
-            using (client.SubscribeToPocket())
+            using (client.SubscribeToPocketLogger())
             {
                 // TODO      Log.Event(("my-metric", 1.23));
             }
@@ -87,13 +86,11 @@ namespace Pocket.For.ApplicationInsights.Tests
             var expected = (MetricTelemetry) telemetrySent[0];
             var actual = (MetricTelemetry) telemetrySent[1];
 
-            actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
-
             telemetrySent[0].ShouldBeEquivalentTo(telemetrySent[1]);
         }
 
         [Fact]
-        public void Log_events_can_be_used_to_trigger_custom_events()
+        public void Log_events_can_be_used_to_send_custom_events()
         {
             client.TrackEvent(
                 "my-event",
@@ -106,7 +103,7 @@ namespace Pocket.For.ApplicationInsights.Tests
                     ["my-metric"] = 1.23
                 });
 
-            using (client.SubscribeToPocket())
+            using (client.SubscribeToPocketLogger())
             {
                 Log.Event("my-event", ("my-metric", 1.23));
             }
@@ -121,7 +118,7 @@ namespace Pocket.For.ApplicationInsights.Tests
         }
 
         [Fact]
-        public void Log_events_can_be_used_to_trigger_exception_tracking()
+        public void Log_events_can_be_used_to_send_exceptions()
         {
             try
             {
@@ -136,7 +133,7 @@ namespace Pocket.For.ApplicationInsights.Tests
                     SeverityLevel = SeverityLevel.Error
                 });
 
-                using (client.SubscribeToPocket())
+                using (client.SubscribeToPocketLogger())
                 {
                     Log.Error("oh no!", exception);
                 }
@@ -147,6 +144,34 @@ namespace Pocket.For.ApplicationInsights.Tests
 
             actual.Exception.Should().Be(expected.Exception);
             actual.Message.Should().Be(expected.Message);
+            actual.SeverityLevel.Should().Be(expected.SeverityLevel);
+            actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
+        }
+
+        [Fact]
+        public void Log_events_can_be_used_to_send_traces()
+        {
+            client.TrackTrace(new TraceTelemetry
+            {
+                Message = $"this is a trace of int 123 and tuple (this, 456)",
+                SeverityLevel = SeverityLevel.Information,
+                Properties =
+                {
+                    ["some-int"] = "123",
+                    ["some-tuple"] = "(this, 456)"
+                }
+            });
+
+            using (client.SubscribeToPocketLogger())
+            {
+                Log.Info("this is a trace of int {some-int} and tuple {some-tuple}", 123, ("this", 456));
+            }
+
+            var expected = (TraceTelemetry) telemetrySent[0];
+            var actual = (TraceTelemetry) telemetrySent[1];
+
+            actual.Message.Should().Be(expected.Message);
+            actual.Properties.ShouldBeEquivalentTo(expected.Properties);
             actual.SeverityLevel.Should().Be(expected.SeverityLevel);
             actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
         }

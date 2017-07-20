@@ -7,12 +7,11 @@ namespace Pocket.For.ApplicationInsights
 {
     internal static class TelemetryClientExtensions
     {
-        public static IDisposable SubscribeToPocket(
-            this TelemetryClient telemetryClient)
+        public static IDisposable SubscribeToPocketLogger(this TelemetryClient telemetryClient)
         {
             return Log.Subscribe(entry =>
             {
-                if (entry?.IsOperationComplete == true)
+                if (entry.IsOperationComplete == true)
                 {
                     var telemetry = new DependencyTelemetry
                     {
@@ -31,7 +30,7 @@ namespace Pocket.For.ApplicationInsights
 
                     telemetryClient.TrackDependency(telemetry);
                 }
-                else if (entry?.IsTelemetry == true)
+                else if (entry.IsTelemetry)
                 {
                     telemetryClient.TrackEvent(
                         eventName: entry.OperationName,
@@ -41,7 +40,7 @@ namespace Pocket.For.ApplicationInsights
                                           _ => _.value)
                     );
                 }
-                else if (entry?.Exception != null)
+                else if (entry.Exception != null)
                 {
                     telemetryClient.TrackException(new ExceptionTelemetry
                     {
@@ -53,6 +52,21 @@ namespace Pocket.For.ApplicationInsights
                         },
                         SeverityLevel = MapSeverityLevel(entry.LogLevel)
                     });
+                }
+                else
+                {
+                    var traceTelemetry = new TraceTelemetry
+                    {
+                        Message = entry.Message,
+                        SeverityLevel = MapSeverityLevel(entry.LogLevel)
+                    };
+
+                    foreach (var property in entry)
+                    {
+                        traceTelemetry.Properties.Add(property.Key, property.Value?.ToString());
+                    }
+
+                    telemetryClient.TrackTrace(traceTelemetry);
                 }
             });
         }
