@@ -16,7 +16,7 @@ namespace Pocket.Tests
         {
             disposables =
                 Log.Subscribe(e =>
-                                  output.WriteLine(e.ToString()));
+                                   output.WriteLine(e.Format()));
         }
 
         public void Dispose() => disposables.Dispose();
@@ -24,19 +24,19 @@ namespace Pocket.Tests
         [Fact]
         public void Log_OnEnterAndExit_logs_a_Start_event_on_exit()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Log.Subscribe(log.Add))
             using (Log.OnEnterAndExit())
             {
-                log.Should().ContainSingle(e => e.IsStartOfOperation);
+                log.Should().ContainSingle(e => e.Operation.IsStart);
             }
         }
 
         [Fact]
         public void Log_OnExit_logs_a_Stop_event_on_exit()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Log.Subscribe(log.Add))
             using (Log.OnExit())
@@ -44,14 +44,14 @@ namespace Pocket.Tests
             }
 
             log.Should().HaveCount(1);
-            log.Last().IsEndOfOperation.Should().BeTrue();
-            log.Last().IsOperationSuccessful.Should().BeNull();
+            log.Last().Operation.IsEnd.Should().BeTrue();
+            log.Last().Operation.IsSuccessful.Should().BeNull();
         }
 
         [Fact]
         public void Log_OnEnterAndExit_logs_a_Start_event_on_enter_and_a_Stop_event_on_exit()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Log.Subscribe(log.Add))
             using (Log.OnEnterAndExit())
@@ -59,8 +59,8 @@ namespace Pocket.Tests
             }
 
             log.Should().HaveCount(2);
-            log[0].IsEndOfOperation.Should().BeFalse();
-            log[1].IsOperationSuccessful.Should().BeNull();
+            log[0].Operation.IsEnd.Should().BeFalse();
+            log[1].Operation.IsSuccessful.Should().BeNull();
         }
 
         [Fact]
@@ -68,7 +68,7 @@ namespace Pocket.Tests
         {
             var log = new List<string>();
 
-            using (Log.Subscribe(e => log.Add(e.ToString())))
+            using (Log.Subscribe(e => log.Add(e.Format())))
             using (Log.OnEnterAndExit())
             {
             }
@@ -82,7 +82,7 @@ namespace Pocket.Tests
         {
             var log = new List<string>();
 
-            using (Log.Subscribe(e => log.Add(e.ToString())))
+            using (Log.Subscribe(e => log.Add(e.Format())))
             using (var operation = Log.ConfirmOnExit())
             {
                 operation.Succeed();
@@ -96,7 +96,7 @@ namespace Pocket.Tests
         {
             var log = new List<string>();
 
-            using (Log.Subscribe(e => log.Add(e.ToString())))
+            using (Log.Subscribe(e => log.Add(e.Format())))
             using (Log.ConfirmOnExit())
             {
             }
@@ -107,14 +107,18 @@ namespace Pocket.Tests
         [Fact]
         public void When_no_confirmation_is_required_then_IsOperationSuccessful_is_null()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Log.Subscribe(e => log.Add(e)))
             using (Log.OnExit(requireConfirm: false))
             {
             }
 
-            log.Single().IsOperationSuccessful.Should().BeNull();
+            log.Single()
+               .Operation
+               .IsSuccessful
+               .Should()
+               .BeNull();
         }
 
         [Fact]
@@ -134,7 +138,7 @@ namespace Pocket.Tests
         [Fact]
         public void Log_entries_within_an_operation_share_an_id_when_specified()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
             var operationId = "the-operation-id";
 
             using (Log.Subscribe(log.Add))
@@ -143,13 +147,13 @@ namespace Pocket.Tests
                 operation.Info("hello");
             }
 
-            log.Select(e => e.OperationId).Should().OnlyContain(id => id == operationId);
+            log.Select(e => e.Operation.Id).Should().OnlyContain(id => id == operationId);
         }
 
         [Fact]
         public void Log_entries_within_an_operation_share_an_id_when_not_specified()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
             var operationId = Guid.NewGuid().ToString();
 
             using (Log.Subscribe(log.Add))
@@ -158,13 +162,13 @@ namespace Pocket.Tests
                 operation.Info("hello");
             }
 
-            log.Select(e => e.OperationId).Distinct().Should().HaveCount(1);
+            log.Select(e => e.Operation.Id).Distinct().Should().HaveCount(1);
         }
 
         [Fact]
         public void Log_entries_within_an_operation_contain_their_id_in_string_output()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
             var operationId = Guid.NewGuid().ToString();
 
             using (Log.Subscribe(log.Add))
@@ -179,7 +183,7 @@ namespace Pocket.Tests
         [Fact]
         public async Task It_records_timing_when_completed()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Log.Subscribe(log.Add))
             using (Log.OnExit())
@@ -188,7 +192,8 @@ namespace Pocket.Tests
             }
 
             log.Last()
-               .OperationDuration
+               .Operation
+               .Duration
                .Value
                .TotalMilliseconds
                .Should()
@@ -198,7 +203,7 @@ namespace Pocket.Tests
         [Fact]
         public async Task It_records_timings_for_checkpoints()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Log.Subscribe(log.Add))
             using (Log.OnEnterAndExit())
@@ -206,14 +211,14 @@ namespace Pocket.Tests
                 await Task.Delay(200);
             }
 
-            log[0].OperationDuration.Value.TotalMilliseconds.Should().BeInRange(0, 50);
-            log[1].OperationDuration.Value.TotalMilliseconds.Should().BeGreaterOrEqualTo(200);
+            log[0].Operation.Duration.Value.TotalMilliseconds.Should().BeInRange(0, 50);
+            log[1].Operation.Duration.Value.TotalMilliseconds.Should().BeGreaterOrEqualTo(200);
         }
 
         [Fact]
         public void When_confirmation_is_required_then_it_logs_a_successful_result_when_completed()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Log.Subscribe(log.Add))
             using (var operation = Log.OnEnterAndExit(requireConfirm: true))
@@ -221,14 +226,14 @@ namespace Pocket.Tests
                 operation.Succeed();
             }
 
-            log.Last().IsEndOfOperation.Should().BeTrue();
-            log.Last().IsOperationSuccessful.Should().BeTrue();
+            log.Last().Operation.IsEnd.Should().BeTrue();
+            log.Last().Operation.IsSuccessful.Should().BeTrue();
         }
 
         [Fact]
         public void When_confirmation_is_required_then_it_logs_an_unsuccessful_result_when_not_confirmed()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Log.Subscribe(log.Add))
             using (Log.OnEnterAndExit(requireConfirm: true))
@@ -236,14 +241,14 @@ namespace Pocket.Tests
                 // don't call Fail or Succeed
             }
 
-            log.Last().IsEndOfOperation.Should().BeTrue();
-            log.Last().IsOperationSuccessful.Should().BeFalse();
+            log.Last().Operation.IsEnd.Should().BeTrue();
+            log.Last().Operation.IsSuccessful.Should().BeFalse();
         }
 
         [Fact]
         public void When_confirmation_is_required_then_it_logs_an_unsuccessful_result_when_completed_with_Fail()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Log.Subscribe(log.Add))
             using (var operation = Log.OnEnterAndExit(requireConfirm: true))
@@ -251,14 +256,14 @@ namespace Pocket.Tests
                 operation.Fail();
             }
 
-            log.Last().IsEndOfOperation.Should().BeTrue();
-            log.Last().IsOperationSuccessful.Should().BeFalse();
+            log.Last().Operation.IsEnd.Should().BeTrue();
+            log.Last().Operation.IsSuccessful.Should().BeFalse();
         }
 
         [Fact]
         public void Succeed_can_be_used_to_add_additional_properties_on_complete()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Log.Subscribe(log.Add))
             using (var operation = Log.OnEnterAndExit())
@@ -267,6 +272,9 @@ namespace Pocket.Tests
             }
 
             log.Last()
+               .LogEntry
+               .Evaluate()
+               .Properties
                .Select(_ => _.Value)
                .Should()
                .ContainSingle(arg => arg == "bye!");
@@ -275,7 +283,7 @@ namespace Pocket.Tests
         [Fact]
         public void Fail_can_be_used_to_add_additional_properties_on_complete()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Log.Subscribe(log.Add))
             using (var operation = Log.OnEnterAndExit())
@@ -284,6 +292,9 @@ namespace Pocket.Tests
             }
 
             log.Last()
+               .LogEntry
+               .Evaluate()
+               .Properties
                .Select(_ => _.Value)
                .Should()
                .ContainSingle(arg => arg == "bye!");
@@ -292,7 +303,7 @@ namespace Pocket.Tests
         [Fact]
         public void After_Succeed_is_called_then_an_OperationLogger_does_not_log_again()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Log.Subscribe(log.Add))
             using (var operation = Log.OnExit())
@@ -307,7 +318,7 @@ namespace Pocket.Tests
         [Fact]
         public void After_Fail_is_called_then_an_OperationLogger_does_not_log_again()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Log.Subscribe(log.Add))
             using (var operation = Log.OnExit())
@@ -322,7 +333,7 @@ namespace Pocket.Tests
         [Fact]
         public void After_Dispose_is_called_then_an_OperationLogger_does_not_log_again()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Log.Subscribe(log.Add))
             using (var operation = Log.OnExit())
@@ -337,7 +348,7 @@ namespace Pocket.Tests
         [Fact]
         public void By_befault_an_operation_has_no_category()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Log.Subscribe(log.Add))
             using (var operation1 = Log.OnExit())
@@ -347,7 +358,7 @@ namespace Pocket.Tests
                 operation2.Info("hello");
             }
 
-            log.Should().OnlyContain(e => e.Category == null);
+            log.Should().OnlyContain(e => e.LogEntry.Category == null);
         }
     }
 }

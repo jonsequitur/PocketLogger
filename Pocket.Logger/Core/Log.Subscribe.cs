@@ -8,53 +8,54 @@ namespace Pocket
     internal static partial class Log
     {
         public static IDisposable Subscribe(
-            Action<LogEntry> onEntryPosted)
+            Action<(
+                    (int LogLevel,
+                    DateTimeOffset Timestamp,
+                    Func<(string Message, IReadOnlyCollection<KeyValuePair<string, object>> Properties)> Evaluate,
+                    Exception Exception,
+                    string OperationName,
+                    string Category) LogEntry,
+                    (string Id,
+                    bool IsStart,
+                    bool IsEnd,
+                    bool? IsSuccessful,
+                    TimeSpan? Duration) Operation)>
+                onEntryPosted,
+            bool discoverOtherPocketLoggers = false)
         {
             if (onEntryPosted == null)
             {
                 throw new ArgumentNullException(nameof(onEntryPosted));
             }
-
-            var handleSafely = HandleSafely(onEntryPosted);
-
-            Logger.EntryPosted += handleSafely;
-
-            return Disposable.Create(() =>
-            {
-                Logger.EntryPosted -= handleSafely;
-            });
-        }
-
-        public static IDisposable DiscoverAndSubscribe(
-            Action<IReadOnlyCollection<KeyValuePair<string, object>>> onEntryPosted)
-        {
-            if (onEntryPosted == null)
-            {
-                throw new ArgumentNullException(nameof(onEntryPosted));
-            }
-
-            var thisAssembly = typeof(Log).GetTypeInfo().Assembly;
-
-            var loggerTypes = Discover.ConcreteTypes()
-                                      .Where(t => !t.GetTypeInfo()
-                                                    .Assembly
-                                                    .Equals(thisAssembly))
-                                      .Where(t => t.FullName == typeof(Logger).FullName);
 
             var disposables = new CompositeDisposable();
 
-            foreach (var loggerType in loggerTypes)
+            var handleSafely = HandleSafely(onEntryPosted);
+
+            Logger.Posted += handleSafely;
+
+            disposables.Add(Disposable.Create(() => { Logger.Posted -= handleSafely; }));
+
+            if (discoverOtherPocketLoggers)
             {
-                var entryPosted = (EventInfo) loggerType.GetMember(nameof(Logger.EntryPosted)).Single();
+                var thisAssembly = typeof(Log).GetTypeInfo().Assembly;
 
-                var handleSafely = HandleSafely(onEntryPosted);
+                var loggerTypes = Discover.ConcreteTypes()
+                                          .Where(t => !t.GetTypeInfo()
+                                                        .Assembly
+                                                        .Equals(thisAssembly))
+                                          .Where(t => t.FullName == typeof(Logger).FullName);
 
-                entryPosted.AddEventHandler(null, handleSafely);
-
-                disposables.Add(Disposable.Create(() =>
+                foreach (var loggerType in loggerTypes)
                 {
-                    entryPosted.RemoveEventHandler(null, handleSafely);
-                }));
+                    var entryPosted = (EventInfo) loggerType.GetMember(nameof(Logger.Posted)).Single();
+
+                    handleSafely = HandleSafely(onEntryPosted);
+
+                    entryPosted.AddEventHandler(null, handleSafely);
+
+                    disposables.Add(Disposable.Create(() => { entryPosted.RemoveEventHandler(null, handleSafely); }));
+                }
             }
 
             return disposables;

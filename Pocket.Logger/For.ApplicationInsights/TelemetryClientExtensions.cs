@@ -7,34 +7,42 @@ namespace Pocket.For.ApplicationInsights
 {
     internal static class TelemetryClientExtensions
     {
-        public static IDisposable SubscribeToPocketLogger(this TelemetryClient telemetryClient)
+        public static IDisposable SubscribeToPocketLogger(
+            this TelemetryClient telemetryClient,
+            bool discoverOtherPocketLoggers = false)
         {
-            return Log.Subscribe(entry =>
+            return Log.Subscribe(e =>
             {
-                if (entry.IsEndOfOperation)
+                var entry = e.LogEntry;
+                var operation = e.Operation;
+
+                if (operation.IsEnd)
                 {
                     var telemetry = new DependencyTelemetry
                     {
-                        Id = entry.OperationId,
+                        Id = operation.Id,
                         Data = entry.OperationName,
-                        Duration = entry.Operation.Duration,
+                        Duration = operation.Duration.Value,
                         Name = entry.OperationName,
-                        Success = entry.IsOperationSuccessful,
+                        Success = operation.IsSuccessful,
                         Timestamp = DateTimeOffset.UtcNow
                     };
 
-                    foreach (var pair in entry)
+                    foreach (var pair in entry.Evaluate().Properties)
                     {
                         telemetry.Properties.Add(pair.Key, pair.Value?.ToString());
                     }
 
                     telemetryClient.TrackDependency(telemetry);
                 }
-                else if (entry.LogLevel == LogLevel.Telemetry)
+                else if (entry.LogLevel == (int) LogLevel.Telemetry)
                 {
                     telemetryClient.TrackEvent(
                         eventName: entry.OperationName,
-                        metrics: entry.Properties<(string name, double value)>()
+                        metrics: entry.Evaluate()
+                                      .Properties
+                                      .Select(p => p.Value)
+                                      .OfType<(string name, double value)>()
                                       .ToDictionary(
                                           _ => _.name,
                                           _ => _.value)
@@ -44,31 +52,31 @@ namespace Pocket.For.ApplicationInsights
                 {
                     telemetryClient.TrackException(new ExceptionTelemetry
                     {
-                        Message = entry.Message,
+                        Message = entry.Evaluate().Message,
                         Exception = entry.Exception,
                         Properties =
                         {
-                            ["log"] = entry.ToString()
+                            ["log"] = e.ToString()
                         },
-                        SeverityLevel = MapSeverityLevel(entry.LogLevel)
+                        SeverityLevel = MapSeverityLevel((LogLevel) entry.LogLevel)
                     });
                 }
                 else
                 {
                     var traceTelemetry = new TraceTelemetry
                     {
-                        Message = entry.Message,
-                        SeverityLevel = MapSeverityLevel(entry.LogLevel)
+                        Message = entry.Evaluate().Message,
+                        SeverityLevel = MapSeverityLevel((LogLevel) entry.LogLevel)
                     };
 
-                    foreach (var property in entry)
+                    foreach (var property in entry.Evaluate().Properties)
                     {
                         traceTelemetry.Properties.Add(property.Key, property.Value?.ToString());
                     }
 
                     telemetryClient.TrackTrace(traceTelemetry);
                 }
-            });
+            }, discoverOtherPocketLoggers: discoverOtherPocketLoggers);
         }
 
         private static SeverityLevel MapSeverityLevel(LogLevel logLevel)

@@ -30,7 +30,7 @@ namespace Pocket
             Exception exception = null,
             params object[] args) =>
             Logger.Default.Error(message, exception, args);
-   
+
         public static OperationLogger OnEnterAndExit(
             bool requireConfirm = false,
             [CallerMemberName] string name = null,
@@ -88,165 +88,7 @@ namespace Pocket
                              args: args.ToArray()
                 ));
         }
-    }
 
-    internal class OperationLogger : Logger, IDisposable
-    {
-        private readonly List<LogEntry> logEntries = new List<LogEntry>();
-
-        private readonly Stopwatch stopwatch = Stopwatch.StartNew();
-
-        private bool disposed;
-
-        public OperationLogger(
-            bool requireConfirm = false,
-            [CallerMemberName] string callingMethod = null,
-            string category = null,
-            string id = null,
-            params object[] args) : base(category)
-        {
-            Id = id ?? Guid.NewGuid().ToString();
-            RequireConfirm = requireConfirm;
-
-            Name = callingMethod;
-
-            logEntries.Add(new LogEntry(
-                               LogLevel.Information,
-                               null,
-                               null,
-                               category,
-                               callingMethod,
-                               this,
-                               args: args));
-        }
-
-        public string Id { get; }
-
-        public string Name { get; }
-
-        public TimeSpan Duration => stopwatch.Elapsed;
-
-        public bool RequireConfirm { get; }
-
-        public bool IsComplete { get; private set; }
-
-        public bool? IsSuccessful { get; private set; }
-
-        public override void Log(LogEntry logEntry)
-        {
-            if (disposed)
-            {
-                return;
-            }
-
-            logEntries.Add(logEntry);
-
-            base.Log(logEntry);
-        }
-
-        private void Complete(
-            bool? isSuccessful,
-            string message = null,
-            Exception exception = null,
-            params object[] args)
-        {
-            if (IsComplete)
-            {
-                return;
-            }
-
-            IsComplete = true;
-            IsSuccessful = isSuccessful;
-
-            stopwatch.Stop();
-
-            var initialLogEntry = this[0];
-
-            Log(new LogEntry(initialLogEntry.LogLevel,
-                             message,
-                             exception: exception,
-                             category: initialLogEntry.Category,
-                             operation: this,
-                             args: args));
-
-            disposed = true;
-        }
-
-        public void Fail(
-            Exception exception = null,
-            string message = null,
-            params object[] args) =>
-            Complete(false, message, exception, args);
-
-        public void Succeed(
-            string message = "",
-            params object[] args) =>
-            Complete(true, message, null, args);
-
-        public void Dispose()
-        {
-            if (RequireConfirm)
-            {
-                if (IsSuccessful != true)
-                {
-                    Fail();
-                }
-                else
-                {
-                    Succeed();
-                }
-            }
-            else
-            {
-                Complete(null, this[0].Message);
-            }
-        }
-
-        public IEnumerator<LogEntry> GetEnumerator() => logEntries.GetEnumerator();
-
-        public int Count => logEntries.Count;
-
-        public LogEntry this[int index] => logEntries[index];
-    }
-
-    internal enum LogLevel
-    {
-        Telemetry,
-        Trace,
-        Debug,
-        Information,
-        Warning,
-        Error,
-        Critical
-    }
-
-    internal class Logger
-    {
-        public Logger(string category = null)
-        {
-            Category = category;
-        }
-
-        public static event Action<LogEntry> EntryPosted;
-
-        public virtual void Log(LogEntry logEntry) => EntryPosted?.Invoke(logEntry);
-
-        public string Category { get; }
-
-        public static Logger Default { get; } = new Logger(category: "");
-    }
-
-    internal class Logger<TCaller> : Logger
-    {
-        public Logger() : base(typeof(TCaller).FullName)
-        {
-        }
-
-        public new static Logger Default { get; } = new Logger<TCaller>();
-    }
-
-    internal static class LoggerExtensions
-    {
         public static TLogger Trace<TLogger>(
             this TLogger logger,
             string message,
@@ -317,6 +159,80 @@ namespace Pocket
             return logger;
         }
 
+        public static string Format(
+            this (
+                (int LogLevel,
+                DateTimeOffset Timestamp,
+                Func<(string Message, IReadOnlyCollection<KeyValuePair<string, object>> properties)> Evaluate,
+                Exception Exception,
+                string OperationName,
+                string category) LogEntry,
+                (string Id,
+                bool IsStart,
+                bool IsEnd,
+                bool? IsSuccessful,
+                TimeSpan? duration) Operation) e)
+        {
+            var evaluated = e.LogEntry.Evaluate();
+
+            var logLevelString =
+                LogLevelString((LogLevel) e.LogEntry.LogLevel,
+                               e.Operation.IsStart,
+                               e.Operation.IsEnd,
+                               e.Operation.IsSuccessful);
+
+            return
+                $"{e.LogEntry.Timestamp:o} {e.Operation.Id.BracketIfNotEmpty()}{e.LogEntry.category.BracketIfNotEmpty()}{e.LogEntry.OperationName.BracketIfNotEmpty()}[{logLevelString}] {evaluated.Message} {e.LogEntry.Exception}";
+        }
+
+        public static string BracketIfNotEmpty(this string value) =>
+            string.IsNullOrEmpty(value) ? "" : $"[{value}]";
+
+        private static string LogLevelString(
+            LogLevel logLevel,
+            bool isStartOfOperation,
+            bool isEndOfOperation,
+            bool? isOperationSuccessful)
+        {
+            if (isStartOfOperation)
+            {
+                return "▶️";
+            }
+
+            if (isEndOfOperation)
+            {
+                if (isOperationSuccessful == true)
+                {
+                    return "⏹ -> ✔️";
+                }
+
+                if (isOperationSuccessful == false)
+                {
+                    return "⏹ -> ✖️";
+                }
+
+                return "⏹";
+            }
+
+            switch (logLevel)
+            {
+                case LogLevel.Trace:
+                    return "🐾";
+                case LogLevel.Debug:
+                    return "🔍";
+                case LogLevel.Information:
+                    return "ℹ️";
+                case LogLevel.Warning:
+                    return "⚠️";
+                case LogLevel.Error:
+                    return "✖️";
+                case LogLevel.Critical:
+                    return "💩";
+                default:
+                    return "ℹ️";
+            }
+        }
+
         private static LogEntry CreateLogEntry<TLogger>(
             TLogger logger,
             string message,
@@ -334,7 +250,190 @@ namespace Pocket
         }
     }
 
-    internal class LogEntry : IReadOnlyCollection<KeyValuePair<string, object>>
+    internal class OperationLogger : Logger, IDisposable
+    {
+        private readonly List<LogEntry> logEntries = new List<LogEntry>();
+
+        private readonly Stopwatch stopwatch = Stopwatch.StartNew();
+
+        private bool disposed;
+
+        public OperationLogger(
+            bool requireConfirm = false,
+            [CallerMemberName] string callingMethod = null,
+            string category = null,
+            string id = null,
+            params object[] args) : base(category)
+        {
+            Id = id ?? Guid.NewGuid().ToString();
+            RequireConfirm = requireConfirm;
+
+            Name = callingMethod;
+
+            logEntries.Add(new LogEntry(
+                               LogLevel.Information,
+                               null,
+                               null,
+                               category,
+                               callingMethod,
+                               this,
+                               args: args));
+        }
+
+        public string Id { get; }
+
+        public string Name { get; }
+
+        public TimeSpan Duration => stopwatch.Elapsed;
+
+        public bool RequireConfirm { get; }
+
+        public bool IsComplete { get; private set; }
+
+        public bool? IsSuccessful { get; private set; }
+
+        public override void Log(LogEntry entry)
+        {
+            if (disposed)
+            {
+                return;
+            }
+
+            logEntries.Add(entry);
+
+            base.Log(entry);
+        }
+
+        private void Complete(
+            bool? isSuccessful,
+            string message = null,
+            Exception exception = null,
+            params object[] args)
+        {
+            if (IsComplete)
+            {
+                return;
+            }
+
+            IsComplete = true;
+            IsSuccessful = isSuccessful;
+
+            stopwatch.Stop();
+
+            var initialLogEntry = this[0];
+
+            Log(new LogEntry(initialLogEntry.LogLevel,
+                             message,
+                             exception: exception,
+                             category: initialLogEntry.Category,
+                             operation: this,
+                             args: args));
+
+            disposed = true;
+        }
+
+        public void Fail(
+            Exception exception = null,
+            string message = null,
+            params object[] args) =>
+            Complete(false, message, exception, args);
+
+        public void Succeed(
+            string message = "",
+            params object[] args) =>
+            Complete(true, message, null, args);
+
+        public void Dispose()
+        {
+            if (RequireConfirm)
+            {
+                if (IsSuccessful != true)
+                {
+                    Fail();
+                }
+                else
+                {
+                    Succeed();
+                }
+            }
+            else
+            {
+                Complete(null, this[0].OperationName);
+            }
+        }
+
+        public IEnumerator<LogEntry> GetEnumerator() => logEntries.GetEnumerator();
+
+        public int Count => logEntries.Count;
+
+        public LogEntry this[int index] => logEntries[index];
+    }
+
+    internal enum LogLevel
+    {
+        Telemetry,
+        Trace,
+        Debug,
+        Information,
+        Warning,
+        Error,
+        Critical
+    }
+
+    internal class Logger
+    {
+        public Logger(string category = null)
+        {
+            Category = category;
+        }
+
+        public static event Action<(
+            (int LogLevel,
+            DateTimeOffset Timestamp,
+            Func<(string Message, IReadOnlyCollection<KeyValuePair<string, object>> properties)> Evaluate,
+            Exception Exception,
+            string OperationName,
+            string Category) logEntry,
+            (string Id,
+            bool IsStart,
+            bool IsEnd,
+            bool? IsSuccessful,
+            TimeSpan? duration) Operation)> Posted;
+
+        public virtual void Log(LogEntry entry) =>
+            Posted?.Invoke(
+                (
+                ((int) entry.LogLevel,
+                entry.Timestamp,
+                entry.Evaluate,
+                entry.Exception,
+                entry.OperationName,
+                entry.Category
+                ),
+                (entry.OperationId,
+                entry.IsStartOfOperation,
+                entry.IsEndOfOperation,
+                entry.IsOperationSuccessful,
+                entry.OperationDuration
+                )
+                )
+            );
+
+        public string Category { get; }
+
+        public static Logger Default { get; } = new Logger(category: "");
+    }
+
+    internal class Logger<TCaller> : Logger
+    {
+        public Logger() : base(typeof(TCaller).FullName)
+        {
+        }
+
+        public new static Logger Default { get; } = new Logger<TCaller>();
+    }
+
+    internal class LogEntry
     {
         private readonly List<KeyValuePair<string, object>> properties = new List<KeyValuePair<string, object>>();
 
@@ -350,7 +449,6 @@ namespace Pocket
             LogLevel = logLevel;
             Exception = exception;
             Category = category;
-            Operation = operation;
 
             if (operation != null)
             {
@@ -370,24 +468,34 @@ namespace Pocket
                 OperationName = callingMethod;
             }
 
-            MessageTemplate = message ?? "";
+            (string message, IReadOnlyCollection<KeyValuePair<string, object>> Properties)? evaluated = null;
 
-            if (args == null || args.Length == 0)
+            Evaluate = () =>
             {
-                Message = MessageTemplate;
-            }
-            else
-            {
-                // TODO: (LogEntry) make this lazy upon initial ToString or iteration
-                var formatter = Formatter.Parse(message);
+                if (evaluated == null)
+                {
+                    if (args == null || args.Length == 0)
+                    {
+                        message =  message ?? "";
+                    }
+                    else
+                    {
+                        var formatter = Formatter.Parse(message);
 
-                var formatterResult = formatter.Format(args);
+                        var formatterResult = formatter.Format(args);
 
-                properties.AddRange(formatterResult);
+                        message = formatterResult.ToString();
 
-                Message = formatterResult.ToString();
-            }
+                        properties.AddRange(formatterResult);
+                    }
+                    evaluated = (message, properties);
+                }
+
+                return evaluated.Value;
+            };
         }
+
+        public Func<(string message, IReadOnlyCollection<KeyValuePair<string, object>> Properties)> Evaluate { get; }
 
         public bool IsStartOfOperation { get; }
 
@@ -401,84 +509,12 @@ namespace Pocket
 
         public string Category { get; }
 
-        public OperationLogger Operation { get; }
-
-        public string Message { get; }
-
         public DateTimeOffset Timestamp { get; } = DateTimeOffset.Now;
 
         public LogLevel LogLevel { get; }
 
         public Exception Exception { get; }
-
-        public void Add(string key, object value) => properties.Add(new KeyValuePair<string, object>(key, value));
-     
-        public IEnumerator<KeyValuePair<string, object>> GetEnumerator() =>
-            properties.GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-        public int Count => properties.Count;
-
-        public string MessageTemplate { get; }
-
+        
         public string OperationId { get; }
-
-        public IEnumerable<T> Properties<T>() =>
-            properties.Select(p => p.Value)
-                      .OfType<T>();
-
-        public override string ToString() =>
-            $"{Timestamp:o} {OperationIdString()}{CategoryString()}{OperationString()}[{LogLevelString()}] {Message} {Exception}";
-
-        private string CategoryString() =>
-            string.IsNullOrWhiteSpace(Category) ? "" : $"[{Category}] ";
-
-        private string LogLevelString()
-        {
-            if (IsStartOfOperation)
-            {
-                return "▶️";
-            }
-
-            if (IsEndOfOperation == true)
-            {
-                if (IsOperationSuccessful == true)
-                {
-                    return "⏹ -> ✔️";
-                }
-
-                if (IsOperationSuccessful == false)
-                {
-                    return "⏹ -> ✖️";
-                }
-
-                return "⏹";
-            }
-
-            switch (LogLevel)
-            {
-                case LogLevel.Trace:
-                    return "🐾";
-                case LogLevel.Debug:
-                    return "🔍";
-                case LogLevel.Information:
-                    return "ℹ️";
-                case LogLevel.Warning:
-                    return "⚠️";
-                case LogLevel.Error:
-                    return "✖️";
-                case LogLevel.Critical:
-                    return "💩";
-                default:
-                    return "ℹ️";
-            }
-        }
-
-        private string OperationString() =>
-            string.IsNullOrWhiteSpace(OperationName) ? "" : $"[{OperationName}] ";
-
-        private string OperationIdString() =>
-            OperationId == null ? "" : $"[{OperationId}] ";
     }
 }

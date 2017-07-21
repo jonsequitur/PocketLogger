@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Internal;
 
 namespace Pocket.For.MicrosoftExtensionsLogging
 {
@@ -10,29 +9,22 @@ namespace Pocket.For.MicrosoftExtensionsLogging
         public static IDisposable SubscribeToPocket(
             this ILogger logger)
         {
-            return Log.Subscribe(entry =>
+            return Log.Subscribe(e =>
             {
                 logger.Log(
-                    entry.LogLevel.MapLogLevel(),
+                    ((LogLevel) e.LogEntry.LogLevel).MapLogLevel(),
                     new EventId(),
-                    entry.ToFormattedLogValues(),
-                    entry.Exception,
-                    (state, exception) => entry.ToString());
+                    e.LogEntry
+                     .Evaluate()
+                     .Properties,
+                    e.LogEntry.Exception,
+                    (state, exception) => e.Format());
             });
         }
     }
 
     internal static class LogEntryExtensions
     {
-        public static FormattedLogValues ToFormattedLogValues(this LogEntry logEntry)
-        {
-            var logValues = new FormattedLogValues(
-                logEntry.MessageTemplate,
-                logEntry.Select(_ => _.Value).ToArray());
-
-            return logValues;
-        }
-
         internal static Microsoft.Extensions.Logging.LogLevel MapLogLevel(this LogLevel logLevel)
         {
             switch (logLevel)
