@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Pocket
 {
-    internal static partial class Log
+    internal static partial class LogEvents
     {
         public static IDisposable Subscribe(
             Action<(
@@ -34,11 +34,14 @@ namespace Pocket
 
             Logger.Posted += handleSafely;
 
-            disposables.Add(Disposable.Create(() => { Logger.Posted -= handleSafely; }));
+            disposables.Add(Disposable.Create(() =>
+            {
+                Logger.Posted -= handleSafely;
+            }));
 
             if (discoverOtherPocketLoggers)
             {
-                var thisAssembly = typeof(Log).GetTypeInfo().Assembly;
+                var thisAssembly = typeof(Logger).GetTypeInfo().Assembly;
 
                 var loggerTypes = Discover.ConcreteTypes()
                                           .Where(t => !t.GetTypeInfo()
@@ -54,7 +57,10 @@ namespace Pocket
 
                     entryPosted.AddEventHandler(null, handleSafely);
 
-                    disposables.Add(Disposable.Create(() => { entryPosted.RemoveEventHandler(null, handleSafely); }));
+                    disposables.Add(Disposable.Create(() =>
+                    {
+                        entryPosted.RemoveEventHandler(null, handleSafely);
+                    }));
                 }
             }
 

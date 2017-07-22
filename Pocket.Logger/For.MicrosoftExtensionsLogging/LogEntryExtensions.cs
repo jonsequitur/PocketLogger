@@ -9,7 +9,7 @@ namespace Pocket.For.MicrosoftExtensionsLogging
         public static IDisposable SubscribeToPocket(
             this ILogger logger)
         {
-            return Log.Subscribe(e =>
+            return LogEvents.Subscribe(e =>
             {
                 logger.Log(
                     ((LogLevel) e.LogEntry.LogLevel).MapLogLevel(),
@@ -23,7 +23,7 @@ namespace Pocket.For.MicrosoftExtensionsLogging
         }
     }
 
-    internal static class LogEntryExtensions
+    internal static class LogEntryExtensions  
     {
         internal static Microsoft.Extensions.Logging.LogLevel MapLogLevel(this LogLevel logLevel)
         {

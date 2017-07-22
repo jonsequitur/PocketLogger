@@ -4,6 +4,7 @@ using Example.Instrumented.Library;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
+using static Pocket.LogEvents;
 
 namespace Pocket.Tests
 {
@@ -23,7 +24,7 @@ namespace Pocket.Tests
 
             var message = $"hello from {nameof(Loggers_in_referenced_assemblies_can_be_discovered_and_subscribed)}";
 
-            using (Log.Subscribe(log.Add, discoverOtherPocketLoggers: true))
+            using (Subscribe(log.Add, discoverOtherPocketLoggers: true))
             {
                 Class1.EmitSomeLogEvents(message);
                 await Task.Delay(100);
@@ -42,7 +43,7 @@ namespace Pocket.Tests
         {
             var log = new LogEntryList();
 
-            using (Log.Subscribe(log.Add, discoverOtherPocketLoggers: true))
+            using (Subscribe(log.Add, discoverOtherPocketLoggers: true))
             {
                 Class1.EmitSomeLogEvents($"before unsubscribe");
                 await Task.Delay(100);
@@ -62,7 +63,7 @@ namespace Pocket.Tests
         [Fact]
         public void Exceptions_thrown_by_subscribers_are_not_thrown_to_the_caller()
         {
-            using (Log.Subscribe(_ => throw new Exception("oops!"), discoverOtherPocketLoggers: true))
+            using (Subscribe(_ => throw new Exception("oops!"), discoverOtherPocketLoggers: true))
             {
                 Class1.EmitSomeLogEvents();
             }

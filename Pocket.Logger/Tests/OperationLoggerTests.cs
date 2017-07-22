@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
+using static Pocket.LogEvents;
+using static Pocket.Logger;
 
 namespace Pocket.Tests
 {
@@ -15,8 +17,8 @@ namespace Pocket.Tests
         public OperationLoggerTests(ITestOutputHelper output)
         {
             disposables =
-                Log.Subscribe(e =>
-                                   output.WriteLine(e.Format()));
+                Subscribe(e =>
+                              output.WriteLine(e.Format()));
         }
 
         public void Dispose() => disposables.Dispose();
@@ -26,7 +28,7 @@ namespace Pocket.Tests
         {
             var log = new LogEntryList();
 
-            using (Log.Subscribe(log.Add))
+            using (Subscribe(log.Add))
             using (Log.OnEnterAndExit())
             {
                 log.Should().ContainSingle(e => e.Operation.IsStart);
@@ -38,7 +40,7 @@ namespace Pocket.Tests
         {
             var log = new LogEntryList();
 
-            using (Log.Subscribe(log.Add))
+            using (Subscribe(log.Add))
             using (Log.OnExit())
             {
             }
@@ -53,7 +55,7 @@ namespace Pocket.Tests
         {
             var log = new LogEntryList();
 
-            using (Log.Subscribe(log.Add))
+            using (Subscribe(log.Add))
             using (Log.OnEnterAndExit())
             {
             }
@@ -68,7 +70,7 @@ namespace Pocket.Tests
         {
             var log = new List<string>();
 
-            using (Log.Subscribe(e => log.Add(e.Format())))
+            using (Subscribe(e => log.Add(e.Format())))
             using (Log.OnEnterAndExit())
             {
             }
@@ -82,7 +84,7 @@ namespace Pocket.Tests
         {
             var log = new List<string>();
 
-            using (Log.Subscribe(e => log.Add(e.Format())))
+            using (Subscribe(e => log.Add(e.Format())))
             using (var operation = Log.ConfirmOnExit())
             {
                 operation.Succeed();
@@ -96,7 +98,7 @@ namespace Pocket.Tests
         {
             var log = new List<string>();
 
-            using (Log.Subscribe(e => log.Add(e.Format())))
+            using (Subscribe(e => log.Add(e.Format())))
             using (Log.ConfirmOnExit())
             {
             }
@@ -109,7 +111,7 @@ namespace Pocket.Tests
         {
             var log = new LogEntryList();
 
-            using (Log.Subscribe(e => log.Add(e)))
+            using (Subscribe(e => log.Add(e)))
             using (Log.OnExit(requireConfirm: false))
             {
             }
@@ -126,7 +128,7 @@ namespace Pocket.Tests
         {
             var log = new List<string>();
 
-            using (Log.Subscribe(e => log.Add(e.ToString())))
+            using (Subscribe(e => log.Add(e.ToString())))
             using (var operation = Log.OnEnterAndExit())
             {
                 operation.Info("hello");
@@ -141,7 +143,7 @@ namespace Pocket.Tests
             var log = new LogEntryList();
             var operationId = "the-operation-id";
 
-            using (Log.Subscribe(log.Add))
+            using (Subscribe(log.Add))
             using (var operation = Log.OnEnterAndExit(id: operationId))
             {
                 operation.Info("hello");
@@ -156,7 +158,7 @@ namespace Pocket.Tests
             var log = new LogEntryList();
             var operationId = Guid.NewGuid().ToString();
 
-            using (Log.Subscribe(log.Add))
+            using (Subscribe(log.Add))
             using (var operation = Log.OnEnterAndExit(id: operationId))
             {
                 operation.Info("hello");
@@ -171,7 +173,7 @@ namespace Pocket.Tests
             var log = new LogEntryList();
             var operationId = Guid.NewGuid().ToString();
 
-            using (Log.Subscribe(log.Add))
+            using (Subscribe(log.Add))
             using (var operation = Log.OnEnterAndExit(id: operationId))
             {
                 operation.Info("hello");
@@ -185,7 +187,7 @@ namespace Pocket.Tests
         {
             var log = new LogEntryList();
 
-            using (Log.Subscribe(log.Add))
+            using (Subscribe(log.Add))
             using (Log.OnExit())
             {
                 await Task.Delay(500);
@@ -205,7 +207,7 @@ namespace Pocket.Tests
         {
             var log = new LogEntryList();
 
-            using (Log.Subscribe(log.Add))
+            using (Subscribe(log.Add))
             using (Log.OnEnterAndExit())
             {
                 await Task.Delay(200);
@@ -220,7 +222,7 @@ namespace Pocket.Tests
         {
             var log = new LogEntryList();
 
-            using (Log.Subscribe(log.Add))
+            using (Subscribe(log.Add))
             using (var operation = Log.OnEnterAndExit(requireConfirm: true))
             {
                 operation.Succeed();
@@ -235,7 +237,7 @@ namespace Pocket.Tests
         {
             var log = new LogEntryList();
 
-            using (Log.Subscribe(log.Add))
+            using (Subscribe(log.Add))
             using (Log.OnEnterAndExit(requireConfirm: true))
             {
                 // don't call Fail or Succeed
@@ -250,7 +252,7 @@ namespace Pocket.Tests
         {
             var log = new LogEntryList();
 
-            using (Log.Subscribe(log.Add))
+            using (Subscribe(log.Add))
             using (var operation = Log.OnEnterAndExit(requireConfirm: true))
             {
                 operation.Fail();
@@ -265,7 +267,7 @@ namespace Pocket.Tests
         {
             var log = new LogEntryList();
 
-            using (Log.Subscribe(log.Add))
+            using (Subscribe(log.Add))
             using (var operation = Log.OnEnterAndExit())
             {
                 operation.Succeed("All done {0}", args: "bye!");
@@ -285,7 +287,7 @@ namespace Pocket.Tests
         {
             var log = new LogEntryList();
 
-            using (Log.Subscribe(log.Add))
+            using (Subscribe(log.Add))
             using (var operation = Log.OnEnterAndExit())
             {
                 operation.Fail(message: "Oops! {0}", args: "bye!");
@@ -305,7 +307,7 @@ namespace Pocket.Tests
         {
             var log = new LogEntryList();
 
-            using (Log.Subscribe(log.Add))
+            using (Subscribe(log.Add))
             using (var operation = Log.OnExit())
             {
                 operation.Succeed(message: "Oops! {0}", args: "bye!");
@@ -320,7 +322,7 @@ namespace Pocket.Tests
         {
             var log = new LogEntryList();
 
-            using (Log.Subscribe(log.Add))
+            using (Subscribe(log.Add))
             using (var operation = Log.OnExit())
             {
                 operation.Fail(message: "Oops! {0}", args: "bye!");
@@ -335,7 +337,7 @@ namespace Pocket.Tests
         {
             var log = new LogEntryList();
 
-            using (Log.Subscribe(log.Add))
+            using (Subscribe(log.Add))
             using (var operation = Log.OnExit())
             {
                 operation.Dispose();
@@ -350,7 +352,7 @@ namespace Pocket.Tests
         {
             var log = new LogEntryList();
 
-            using (Log.Subscribe(log.Add))
+            using (Subscribe(log.Add))
             using (var operation1 = Log.OnExit())
             using (var operation2 = Log.OnEnterAndExit())
             {
@@ -358,7 +360,7 @@ namespace Pocket.Tests
                 operation2.Info("hello");
             }
 
-            log.Should().OnlyContain(e => e.LogEntry.Category == null);
+            log.Should().OnlyContain(e => e.LogEntry.Category == "");
         }
     }
 }

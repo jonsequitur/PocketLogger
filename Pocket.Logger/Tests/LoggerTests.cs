@@ -1,9 +1,10 @@
 using System;
-using System.Linq;
 using FluentAssertions;
+using System.Linq;
 using Xunit;
 using Xunit.Abstractions;
-using static Pocket.Log;
+using static Pocket.Logger;
+using static Pocket.LogEvents;
 
 namespace Pocket.Tests
 {
@@ -13,9 +14,8 @@ namespace Pocket.Tests
 
         public LoggerTests(ITestOutputHelper output)
         {
-            disposables =
-                Subscribe(e =>
-                               output.WriteLine(e.Format()));
+            disposables = Subscribe(e =>
+                                        output.WriteLine(e.Format()));
         }
 
         public void Dispose() => disposables.Dispose();
@@ -27,7 +27,7 @@ namespace Pocket.Tests
 
             using (Subscribe(log.Add))
             {
-                Info("hello");
+                Log.Info("hello");
             }
 
             log.Should()
@@ -43,7 +43,7 @@ namespace Pocket.Tests
         {
             using (Subscribe(_ => throw new Exception("drat!")))
             {
-                Info("hello");
+                Log.Info("hello");
             }
         }
 
@@ -56,7 +56,7 @@ namespace Pocket.Tests
             {
             }
 
-            Info("hello");
+            Log.Info("hello");
 
             log.Should()
                .BeEmpty();
@@ -69,9 +69,9 @@ namespace Pocket.Tests
 
             using (Subscribe(log.Add))
             {
-                Info("It's {time} and all is {how}",
-                     DateTimeOffset.Parse("12/12/2012 12:00am"),
-                     "well");
+                Log.Info("It's {time} and all is {how}",
+                         DateTimeOffset.Parse("12/12/2012 12:00am"),
+                         "well");
             }
 
             log.Single()
@@ -89,7 +89,7 @@ namespace Pocket.Tests
 
             using (Subscribe(log.Add))
             {
-                Info("It's 12 o'clock and all is {how}", "well");
+                Log.Info("It's 12 o'clock and all is {how}", "well");
             }
 
             log.Single()
@@ -110,7 +110,7 @@ namespace Pocket.Tests
 
             using (Subscribe(log.Add))
             {
-                Error("oh no!", exception);
+                Log.Error("oh no!", exception);
             }
 
             log.Single()
@@ -127,11 +127,11 @@ namespace Pocket.Tests
 
             using (Subscribe(log.Add))
             {
-                Error("oh no!", exception);
+                Log.Error("oh no!", exception);
             }
 
             log.Single()
-                .LogEntry
+               .LogEntry
                .Exception
                .Should()
                .Be(exception);
@@ -144,10 +144,10 @@ namespace Pocket.Tests
 
             using (Subscribe(log.Add))
             {
-                Info("hello");
+                Log.Info("hello");
             }
 
-            log.Single().LogEntry.LogLevel.Should().Be((int)LogLevel.Information);
+            log.Single().LogEntry.LogLevel.Should().Be((int) LogLevel.Information);
         }
 
         [Fact]
@@ -157,10 +157,10 @@ namespace Pocket.Tests
 
             using (Subscribe(log.Add))
             {
-                Warning("hello");
+                Log.Warning("hello");
             }
 
-            log.Single().LogEntry.LogLevel.Should().Be((int)LogLevel.Warning);
+            log.Single().LogEntry.LogLevel.Should().Be((int) LogLevel.Warning);
         }
 
         [Fact]
@@ -170,20 +170,20 @@ namespace Pocket.Tests
 
             using (Subscribe(log.Add))
             {
-                Error("oops!", new Exception("something went wrong..."));
+                Log.Error("oops!", new Exception("something went wrong..."));
             }
 
-            log.Single().LogEntry.LogLevel.Should().Be((int)LogLevel.Error);
+            log.Single().LogEntry.LogLevel.Should().Be((int) LogLevel.Error);
         }
 
-        [Fact(Skip = "not implemented")] 
+        [Fact(Skip = "not implemented")]
         public void Log_captures_the_calling_method()
         {
             var log = new LogEntryList();
 
             using (Subscribe(log.Add))
             {
-                Info("hello");
+                Log.Info("hello");
             }
 
             log.Should()
@@ -212,7 +212,7 @@ namespace Pocket.Tests
 
             using (Subscribe(log.Add))
             {
-                Logger.Default.Info("hello");
+                Log.Info("hello");
             }
 
             log.Should().OnlyContain(e => e.LogEntry.Category == "");

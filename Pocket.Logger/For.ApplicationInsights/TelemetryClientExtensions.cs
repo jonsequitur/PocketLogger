@@ -11,7 +11,7 @@ namespace Pocket.For.ApplicationInsights
             this TelemetryClient telemetryClient,
             bool discoverOtherPocketLoggers = false)
         {
-            return Log.Subscribe(e =>
+            return LogEvents.Subscribe(e =>
             {
                 var entry = e.LogEntry;
                 var operation = e.Operation;

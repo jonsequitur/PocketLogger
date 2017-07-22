@@ -1,5 +1,6 @@
 ﻿using System;
 using Pocket;
+using static Pocket.Logger;
 
 namespace Example.Instrumented.Library
 {

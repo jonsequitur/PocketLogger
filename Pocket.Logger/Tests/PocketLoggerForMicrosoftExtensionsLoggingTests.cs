@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using static Pocket.Logger;
 
 namespace Pocket.For.MicrosoftExtensionsLogging.Tests
 {

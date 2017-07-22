@@ -8,6 +8,8 @@ using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Xunit;
 using Xunit.Abstractions;
+using static Pocket.LogEvents;
+using static Pocket.Logger;
 
 namespace Pocket.For.ApplicationInsights.Tests
 {
@@ -25,7 +27,7 @@ namespace Pocket.For.ApplicationInsights.Tests
             telemetrySent = new List<ITelemetry>();
 
             disposables =
-                Log.Subscribe(e =>
+                Subscribe(e =>
                                   this.output.WriteLine(e.ToString()));
 
             client = new TelemetryClient(
