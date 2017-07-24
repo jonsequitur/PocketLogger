@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -7,31 +6,246 @@ using System.Runtime.CompilerServices;
 
 namespace Pocket
 {
-    internal static partial class Log
+    internal class Logger
     {
-        public static void Trace(
-            string message,
-            params object[] args) =>
-            Logger.Default.Trace(message, args);
+        public Logger(string category = null)
+        {
+            Category = category;
+        }
 
-        public static void Info(
-            string message,
-            params object[] args) =>
-            Logger.Default.Info(message, args);
+        public static event Action<(
+            (int LogLevel,
+            DateTimeOffset Timestamp,
+            Func<(string Message, IReadOnlyCollection<KeyValuePair<string, object>> properties)> Evaluate,
+            Exception Exception,
+            string OperationName,
+            string Category) logEntry,
+            (string Id,
+            bool IsStart,
+            bool IsEnd,
+            bool? IsSuccessful,
+            TimeSpan? duration) Operation)> Posted;
 
-        public static void Warning(
+        public virtual void Post(LogEntry entry) =>
+            Posted?.Invoke(
+                (
+                ((int) entry.LogLevel,
+                entry.Timestamp,
+                entry.Evaluate,
+                entry.Exception,
+                entry.OperationName,
+                entry.Category ?? Category
+                ),
+                (entry.OperationId,
+                entry.IsStartOfOperation,
+                entry.IsEndOfOperation,
+                entry.IsOperationSuccessful,
+                entry.OperationDuration
+                )
+                )
+            );
+
+        public string Category { get; }
+
+        public static Logger Log { get; } = new Logger(category: "");
+    }
+
+    internal class Logger<TCategory> : Logger
+    {
+        public Logger() : base(typeof(TCategory).FullName)
+        {
+        }
+
+        public new static Logger Log { get; } = new Logger<TCategory>();
+    }
+
+    internal static partial class LogFormattingExtensions
+    {
+        public static string Format(
+            this (
+                (int LogLevel,
+                DateTimeOffset Timestamp,
+                Func<(string Message, IReadOnlyCollection<KeyValuePair<string, object>> Properties)> Evaluate,
+                Exception Exception,
+                string OperationName,
+                string Category) LogEntry,
+                (string Id,
+                bool IsStart,
+                bool IsEnd,
+                bool? IsSuccessful,
+                TimeSpan? duration) Operation) e)
+        {
+            var evaluated = e.LogEntry.Evaluate();
+
+            var logLevelString =
+                LogLevelString((LogLevel) e.LogEntry.LogLevel,
+                               e.Operation.IsStart,
+                               e.Operation.IsEnd,
+                               e.Operation.IsSuccessful);
+
+            return
+                $"{e.LogEntry.Timestamp:o} {e.Operation.Id.BracketIfNotEmpty()}{e.LogEntry.Category.BracketIfNotEmpty()}{e.LogEntry.OperationName.BracketIfNotEmpty()}[{logLevelString}] {evaluated.Message} {e.LogEntry.Exception}";
+        }
+
+        private static (
+            (int LogLevel,
+            DateTimeOffset Timestamp,
+            Func<(string Message, IReadOnlyCollection<KeyValuePair<string, object>> properties)> Evaluate,
+            Exception Exception,
+            string OperationName,
+            string category) LogEntry,
+            (string Id,
+            bool IsStart,
+            bool IsEnd,
+            bool? IsSuccessful,
+            TimeSpan? Duration) Operation) Tuplify(
+                LogLevel logLevel,
+                string message,
+                Exception exception = null,
+                string category = null,
+                string callingMethod = null,
+                OperationLogger operation = null,
+                object[] args = null)
+        {
+            var logEntry = new LogEntry(logLevel, message, exception, category, callingMethod, operation, args);
+
+            return (dynamic) logEntry;
+        }
+
+        public static string BracketIfNotEmpty(this string value) =>
+            string.IsNullOrEmpty(value) ? "" : $"[{value}]";
+
+        private static string LogLevelString(
+            LogLevel logLevel,
+            bool isStartOfOperation,
+            bool isEndOfOperation,
+            bool? isOperationSuccessful)
+        {
+            if (isStartOfOperation)
+            {
+                return "▶️";
+            }
+
+            if (isEndOfOperation)
+            {
+                if (isOperationSuccessful == true)
+                {
+                    return "⏹ -> ✔️";
+                }
+
+                if (isOperationSuccessful == false)
+                {
+                    return "⏹ -> ✖️";
+                }
+
+                return "⏹";
+            }
+
+            switch (logLevel)
+            {
+                case LogLevel.Trace:
+                    return "🐾";
+                case LogLevel.Debug:
+                    return "🔍";
+                case LogLevel.Information:
+                    return "ℹ️";
+                case LogLevel.Warning:
+                    return "⚠️";
+                case LogLevel.Error:
+                    return "✖️";
+                case LogLevel.Critical:
+                    return "💩";
+                default:
+                    return "ℹ️";
+            }
+        }
+    }
+
+    internal enum LogLevel
+    {
+        Telemetry,
+        Trace,
+        Debug,
+        Information,
+        Warning,
+        Error,
+        Critical
+    }
+
+    internal static class LoggerExtensions
+    {
+        public static TLogger Trace<TLogger>(
+            this TLogger logger,
+            string message,
+            params object[] args)
+            where TLogger : Logger
+        {
+            logger.Post(
+                CreateLogEntry(
+                    logger,
+                    message,
+                    LogLevel.Trace,
+                    exception: null,
+                    args: args));
+
+            return logger;
+        }
+
+        public static TLogger Info<TLogger>(
+            this TLogger logger,
+            string message,
+            params object[] args)
+            where TLogger : Logger
+        {
+            logger.Post(
+                CreateLogEntry(
+                    logger,
+                    message,
+                    LogLevel.Information,
+                    exception: null,
+                    args: args));
+
+            return logger;
+        }
+
+        public static TLogger Warning<TLogger>(
+            this TLogger logger,
             string message,
             Exception exception = null,
-            params object[] args) =>
-            Logger.Default.Warning(message, exception, args);
+            params object[] args)
+            where TLogger : Logger
+        {
+            logger.Post(
+                CreateLogEntry(
+                    logger,
+                    message,
+                    LogLevel.Warning,
+                    exception,
+                    args));
 
-        public static void Error(
+            return logger;
+        }
+
+        public static TLogger Error<TLogger>(
+            this TLogger logger,
             string message,
             Exception exception = null,
-            params object[] args) =>
-            Logger.Default.Error(message, exception, args);
-   
+            params object[] args)
+            where TLogger : Logger
+        {
+            logger.Post(
+                CreateLogEntry(
+                    logger,
+                    message,
+                    LogLevel.Error,
+                    exception,
+                    args));
+
+            return logger;
+        }
+
         public static OperationLogger OnEnterAndExit(
+            this Logger logger,
             bool requireConfirm = false,
             [CallerMemberName] string name = null,
             string id = null)
@@ -39,31 +253,37 @@ namespace Pocket
             var operation = new OperationLogger(
                 requireConfirm,
                 name,
+                category: logger.Category,
                 id: id);
 
-            operation.Log(operation[0]);
+            operation.Post(operation[0]);
 
             return operation;
         }
 
         public static OperationLogger OnExit(
+            this Logger logger,
             bool requireConfirm = false,
             [CallerMemberName] string name = null,
             string id = null) =>
             new OperationLogger(
                 requireConfirm,
                 name,
+                category: logger.Category,
                 id: id);
 
         public static OperationLogger ConfirmOnExit(
+            this Logger logger,
             [CallerMemberName] string name = null,
             string id = null) =>
             new OperationLogger(
                 true,
                 name,
+                category: logger.Category,
                 id: id);
 
         public static void Event(
+            this Logger logger,
             [CallerMemberName] string name = null,
             params (string name, double value)[] metrics)
         {
@@ -80,14 +300,115 @@ namespace Pocket
                 }
             }
 
-            Logger.Default.Log(
+            logger.Post(
                 new LogEntry(LogLevel.Telemetry,
                              message: "{name}",
                              callingMethod: name,
-                             category: nameof(Event),
+                             category: logger.Category,
                              args: args.ToArray()
                 ));
         }
+
+        private static LogEntry CreateLogEntry<TLogger>(
+            TLogger logger,
+            string message,
+            LogLevel logLevel,
+            Exception exception = null,
+            object[] args = null) where TLogger : Logger
+        {
+            return new LogEntry(
+                message: message,
+                logLevel: logLevel,
+                exception: exception,
+                category: logger.Category,
+                operation: logger as OperationLogger,
+                args: args);
+        }
+    }
+
+    internal class LogEntry
+    {
+        private readonly List<KeyValuePair<string, object>> properties = new List<KeyValuePair<string, object>>();
+
+        public LogEntry(
+            LogLevel logLevel,
+            string message,
+            Exception exception = null,
+            string category = null,
+            string callingMethod = null,
+            OperationLogger operation = null,
+            object[] args = null)
+        {
+            LogLevel = logLevel;
+            Exception = exception;
+            Category = category;
+
+            if (operation != null)
+            {
+                OperationDuration = operation.Duration;
+                IsStartOfOperation = operation.Count == 0;
+                IsEndOfOperation = operation.IsComplete;
+                OperationId = operation?.Id;
+                OperationName = callingMethod ?? operation.Name;
+
+                if (operation.IsSuccessful != null)
+                {
+                    IsOperationSuccessful = operation.IsSuccessful == true;
+                }
+            }
+            else
+            {
+                OperationName = callingMethod;
+            }
+
+            (string message, IReadOnlyCollection<KeyValuePair<string, object>> Properties)? evaluated = null;
+
+            Evaluate = () =>
+            {
+                if (evaluated == null)
+                {
+                    if (args == null || args.Length == 0)
+                    {
+                        message = message ?? "";
+                    }
+                    else
+                    {
+                        var formatter = Formatter.Parse(message);
+
+                        var formatterResult = formatter.Format(args);
+
+                        message = formatterResult.ToString();
+
+                        properties.AddRange(formatterResult);
+                    }
+                    evaluated = (message, properties);
+                }
+
+                return evaluated.Value;
+            };
+        }
+
+        public Func<(string message, IReadOnlyCollection<KeyValuePair<string, object>> Properties)> Evaluate { get; }
+
+        public bool IsStartOfOperation { get; }
+
+        public bool? IsOperationSuccessful { get; }
+
+        public bool IsEndOfOperation { get; }
+
+        public TimeSpan? OperationDuration { get; }
+
+        public string OperationName { get; }
+
+        public string Category { get; }
+
+        public DateTimeOffset Timestamp { get; } = DateTimeOffset.Now;
+
+        public LogLevel LogLevel { get; }
+
+        public Exception Exception { get; }
+
+        public string OperationId { get; }
     }
 
     internal class OperationLogger : Logger, IDisposable
@@ -132,16 +453,16 @@ namespace Pocket
 
         public bool? IsSuccessful { get; private set; }
 
-        public override void Log(LogEntry logEntry)
+        public override void Post(LogEntry entry)
         {
             if (disposed)
             {
                 return;
             }
 
-            logEntries.Add(logEntry);
+            logEntries.Add(entry);
 
-            base.Log(logEntry);
+            base.Post(entry);
         }
 
         private void Complete(
@@ -162,12 +483,12 @@ namespace Pocket
 
             var initialLogEntry = this[0];
 
-            Log(new LogEntry(initialLogEntry.LogLevel,
-                             message,
-                             exception: exception,
-                             category: initialLogEntry.Category,
-                             operation: this,
-                             args: args));
+            Post(new LogEntry(initialLogEntry.LogLevel,
+                              message,
+                              exception: exception,
+                              category: initialLogEntry.Category,
+                              operation: this,
+                              args: args));
 
             disposed = true;
         }
@@ -198,7 +519,7 @@ namespace Pocket
             }
             else
             {
-                Complete(null, this[0].Message);
+                Complete(null, this[0].OperationName);
             }
         }
 
@@ -207,278 +528,5 @@ namespace Pocket
         public int Count => logEntries.Count;
 
         public LogEntry this[int index] => logEntries[index];
-    }
-
-    internal enum LogLevel
-    {
-        Telemetry,
-        Trace,
-        Debug,
-        Information,
-        Warning,
-        Error,
-        Critical
-    }
-
-    internal class Logger
-    {
-        public Logger(string category = null)
-        {
-            Category = category;
-        }
-
-        public static event Action<LogEntry> EntryPosted;
-
-        public virtual void Log(LogEntry logEntry) => EntryPosted?.Invoke(logEntry);
-
-        public string Category { get; }
-
-        public static Logger Default { get; } = new Logger(category: "");
-    }
-
-    internal class Logger<TCaller> : Logger
-    {
-        public Logger() : base(typeof(TCaller).FullName)
-        {
-        }
-
-        public new static Logger Default { get; } = new Logger<TCaller>();
-    }
-
-    internal static class LoggerExtensions
-    {
-        public static TLogger Trace<TLogger>(
-            this TLogger logger,
-            string message,
-            params object[] args)
-            where TLogger : Logger
-        {
-            logger.Log(
-                CreateLogEntry(
-                    logger,
-                    message,
-                    LogLevel.Trace,
-                    exception: null,
-                    args: args));
-
-            return logger;
-        }
-
-        public static TLogger Info<TLogger>(
-            this TLogger logger,
-            string message,
-            params object[] args)
-            where TLogger : Logger
-        {
-            logger.Log(
-                CreateLogEntry(
-                    logger,
-                    message,
-                    LogLevel.Information,
-                    exception: null,
-                    args: args));
-
-            return logger;
-        }
-
-        public static TLogger Warning<TLogger>(
-            this TLogger logger,
-            string message,
-            Exception exception = null,
-            params object[] args)
-            where TLogger : Logger
-        {
-            logger.Log(
-                CreateLogEntry(
-                    logger,
-                    message,
-                    LogLevel.Warning,
-                    exception,
-                    args));
-
-            return logger;
-        }
-
-        public static TLogger Error<TLogger>(
-            this TLogger logger,
-            string message,
-            Exception exception = null,
-            params object[] args)
-            where TLogger : Logger
-        {
-            logger.Log(
-                CreateLogEntry(
-                    logger,
-                    message,
-                    LogLevel.Error,
-                    exception,
-                    args));
-
-            return logger;
-        }
-
-        private static LogEntry CreateLogEntry<TLogger>(
-            TLogger logger,
-            string message,
-            LogLevel logLevel,
-            Exception exception = null,
-            object[] args = null) where TLogger : Logger
-        {
-            return new LogEntry(
-                message: message,
-                logLevel: logLevel,
-                exception: exception,
-                category: logger.Category,
-                operation: logger as OperationLogger,
-                args: args);
-        }
-    }
-
-    internal class LogEntry : IReadOnlyCollection<KeyValuePair<string, object>>
-    {
-        private readonly List<KeyValuePair<string, object>> properties = new List<KeyValuePair<string, object>>();
-
-        public LogEntry(
-            LogLevel logLevel,
-            string message,
-            Exception exception = null,
-            string category = null,
-            string callingMethod = null,
-            OperationLogger operation = null,
-            object[] args = null)
-        {
-            LogLevel = logLevel;
-            Exception = exception;
-            Category = category;
-            Operation = operation;
-
-            if (operation != null)
-            {
-                OperationDuration = operation.Duration;
-                IsStartOfOperation = operation.Count == 0;
-                IsEndOfOperation = operation.IsComplete;
-                OperationId = operation?.Id;
-                OperationName = callingMethod ?? operation.Name;
-
-                if (operation.IsSuccessful != null)
-                {
-                    IsOperationSuccessful = operation.IsSuccessful == true;
-                }
-            }
-            else
-            {
-                OperationName = callingMethod;
-            }
-
-            MessageTemplate = message ?? "";
-
-            if (args == null || args.Length == 0)
-            {
-                Message = MessageTemplate;
-            }
-            else
-            {
-                // TODO: (LogEntry) make this lazy upon initial ToString or iteration
-                var formatter = Formatter.Parse(message);
-
-                var formatterResult = formatter.Format(args);
-
-                properties.AddRange(formatterResult);
-
-                Message = formatterResult.ToString();
-            }
-        }
-
-        public bool IsStartOfOperation { get; }
-
-        public bool? IsOperationSuccessful { get; }
-
-        public bool IsEndOfOperation { get; }
-
-        public TimeSpan? OperationDuration { get; }
-
-        public string OperationName { get; }
-
-        public string Category { get; }
-
-        public OperationLogger Operation { get; }
-
-        public string Message { get; }
-
-        public DateTimeOffset Timestamp { get; } = DateTimeOffset.Now;
-
-        public LogLevel LogLevel { get; }
-
-        public Exception Exception { get; }
-
-        public void Add(string key, object value) => properties.Add(new KeyValuePair<string, object>(key, value));
-     
-        public IEnumerator<KeyValuePair<string, object>> GetEnumerator() =>
-            properties.GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-        public int Count => properties.Count;
-
-        public string MessageTemplate { get; }
-
-        public string OperationId { get; }
-
-        public IEnumerable<T> Properties<T>() =>
-            properties.Select(p => p.Value)
-                      .OfType<T>();
-
-        public override string ToString() =>
-            $"{Timestamp:o} {OperationIdString()}{CategoryString()}{OperationString()}[{LogLevelString()}] {Message} {Exception}";
-
-        private string CategoryString() =>
-            string.IsNullOrWhiteSpace(Category) ? "" : $"[{Category}] ";
-
-        private string LogLevelString()
-        {
-            if (IsStartOfOperation)
-            {
-                return "▶️";
-            }
-
-            if (IsEndOfOperation == true)
-            {
-                if (IsOperationSuccessful == true)
-                {
-                    return "⏹ -> ✔️";
-                }
-
-                if (IsOperationSuccessful == false)
-                {
-                    return "⏹ -> ✖️";
-                }
-
-                return "⏹";
-            }
-
-            switch (LogLevel)
-            {
-                case LogLevel.Trace:
-                    return "🐾";
-                case LogLevel.Debug:
-                    return "🔍";
-                case LogLevel.Information:
-                    return "ℹ️";
-                case LogLevel.Warning:
-                    return "⚠️";
-                case LogLevel.Error:
-                    return "✖️";
-                case LogLevel.Critical:
-                    return "💩";
-                default:
-                    return "ℹ️";
-            }
-        }
-
-        private string OperationString() =>
-            string.IsNullOrWhiteSpace(OperationName) ? "" : $"[{OperationName}] ";
-
-        private string OperationIdString() =>
-            OperationId == null ? "" : $"[{OperationId}] ";
     }
 }

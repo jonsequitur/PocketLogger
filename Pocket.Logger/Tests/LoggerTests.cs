@@ -1,10 +1,10 @@
 using System;
-using System.Collections.Generic;
 using FluentAssertions;
 using System.Linq;
 using Xunit;
 using Xunit.Abstractions;
-using static Pocket.Log;
+using static Pocket.Logger;
+using static Pocket.LogEvents;
 
 namespace Pocket.Tests
 {
@@ -14,9 +14,8 @@ namespace Pocket.Tests
 
         public LoggerTests(ITestOutputHelper output)
         {
-            disposables =
-                Subscribe(e =>
-                              output.WriteLine(e.ToString()));
+            disposables = Subscribe(e =>
+                                        output.WriteLine(e.Format()));
         }
 
         public void Dispose() => disposables.Dispose();
@@ -24,14 +23,19 @@ namespace Pocket.Tests
         [Fact]
         public void Subscribe_allows_all_log_events_to_be_monitored()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Subscribe(log.Add))
             {
-                Info("hello");
+                Log.Info("hello");
             }
 
-            log.Should().ContainSingle(e => e.Message.Contains("hello"));
+            log.Should()
+               .ContainSingle(e =>
+                                  e.LogEntry
+                                   .Evaluate()
+                                   .Message
+                                   .Contains("hello"));
         }
 
         [Fact]
@@ -39,20 +43,20 @@ namespace Pocket.Tests
         {
             using (Subscribe(_ => throw new Exception("drat!")))
             {
-                Info("hello");
+                Log.Info("hello");
             }
         }
 
         [Fact]
         public void Further_log_entries_are_not_received_after_disposing_the_subscription()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Subscribe(log.Add))
             {
             }
 
-            Info("hello");
+            Log.Info("hello");
 
             log.Should()
                .BeEmpty();
@@ -61,16 +65,18 @@ namespace Pocket.Tests
         [Fact]
         public void When_args_are_logged_then_they_are_templated_into_the_message()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Subscribe(log.Add))
             {
-                Info("It's {time} and all is {how}",
-                     DateTimeOffset.Parse("12/12/2012 12:00am"),
-                     "well");
+                Log.Info("It's {time} and all is {how}",
+                         DateTimeOffset.Parse("12/12/2012 12:00am"),
+                         "well");
             }
 
             log.Single()
+               .LogEntry
+               .Evaluate()
                .Message
                .Should()
                .Match("*It's 12/12/2012 12:00:00 AM * and all is well*");
@@ -79,14 +85,17 @@ namespace Pocket.Tests
         [Fact]
         public void When_args_are_logged_they_are_accessble_on_the_LogEntry()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Subscribe(log.Add))
             {
-                Info("It's 12 o'clock and all is {how}", "well");
+                Log.Info("It's 12 o'clock and all is {how}", "well");
             }
 
             log.Single()
+               .LogEntry
+               .Evaluate()
+               .Properties
                .Should()
                .ContainSingle(p =>
                                   p.Key == "how" &&
@@ -96,12 +105,12 @@ namespace Pocket.Tests
         [Fact]
         public void When_exceptions_are_logged_then_the_message_contains_the_exception_details()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
             var exception = new Exception("oops!");
 
             using (Subscribe(log.Add))
             {
-                Error("oh no!", exception);
+                Log.Error("oh no!", exception);
             }
 
             log.Single()
@@ -113,15 +122,16 @@ namespace Pocket.Tests
         [Fact]
         public void When_exceptions_are_logged_then_they_are_accessible_on_the_LogEntry()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
             var exception = new Exception("oops!");
 
             using (Subscribe(log.Add))
             {
-                Error("oh no!", exception);
+                Log.Error("oh no!", exception);
             }
 
             log.Single()
+               .LogEntry
                .Exception
                .Should()
                .Be(exception);
@@ -130,54 +140,54 @@ namespace Pocket.Tests
         [Fact]
         public void Logs_can_be_written_at_Info_level()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Subscribe(log.Add))
             {
-                Info("hello");
+                Log.Info("hello");
             }
 
-            log.Single().LogLevel.Should().Be(LogLevel.Information);
+            log.Single().LogEntry.LogLevel.Should().Be((int) LogLevel.Information);
         }
 
         [Fact]
         public void Logs_can_be_written_at_Warning_level()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Subscribe(log.Add))
             {
-                Warning("hello");
+                Log.Warning("hello");
             }
 
-            log.Single().LogLevel.Should().Be(LogLevel.Warning);
+            log.Single().LogEntry.LogLevel.Should().Be((int) LogLevel.Warning);
         }
 
         [Fact]
         public void Logs_can_be_written_at_Error_level()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Subscribe(log.Add))
             {
-                Error("oops!", new Exception("something went wrong..."));
+                Log.Error("oops!", new Exception("something went wrong..."));
             }
 
-            log.Single().LogLevel.Should().Be(LogLevel.Error);
+            log.Single().LogEntry.LogLevel.Should().Be((int) LogLevel.Error);
         }
 
         [Fact(Skip = "not implemented")]
         public void Log_captures_the_calling_method()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Subscribe(log.Add))
             {
-                Info("hello");
+                Log.Info("hello");
             }
 
             log.Should()
-               .Contain(e => e.OperationName == nameof(Log_captures_the_calling_method));
+               .Contain(e => e.LogEntry.OperationName == nameof(Log_captures_the_calling_method));
         }
 
         [Fact]
@@ -185,27 +195,27 @@ namespace Pocket.Tests
         {
             var logger = new Logger<LoggerTests>();
 
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Subscribe(log.Add))
             {
                 logger.Info("hello");
             }
 
-            log.Should().Contain(e => e.Category == typeof(LoggerTests).FullName);
+            log.Should().Contain(e => e.LogEntry.Category == typeof(LoggerTests).FullName);
         }
 
         [Fact]
         public void Default_logger_has_no_category()
         {
-            var log = new List<LogEntry>();
+            var log = new LogEntryList();
 
             using (Subscribe(log.Add))
             {
-                Logger.Default.Info("hello");
+                Log.Info("hello");
             }
 
-            log.Should().OnlyContain(e => e.Category == "");
+            log.Should().OnlyContain(e => e.LogEntry.Category == "");
         }
     }
 }
