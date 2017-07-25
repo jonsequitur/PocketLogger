@@ -26,7 +26,8 @@ namespace Pocket
             bool? IsSuccessful,
             TimeSpan? duration) Operation)> Posted;
 
-        public virtual void Post(LogEntry entry) =>
+        public virtual void Post(
+            LogEntry entry) =>
             Posted?.Invoke(
                 (
                 ((int) entry.LogLevel,
@@ -44,6 +45,21 @@ namespace Pocket
                 )
                 )
             );
+
+        protected internal void Post(
+            string message,
+            LogLevel logLevel,
+            string operationName = null,
+            Exception exception = null,
+            object[] args = null) =>
+            Post(new LogEntry(
+                     message: message,
+                     logLevel: logLevel,
+                     operationName: operationName,
+                     exception: exception,
+                     category: Category,
+                     operation: this as OperationLogger,
+                     args: args));
 
         public string Category { get; }
 
@@ -73,7 +89,7 @@ namespace Pocket
                 bool IsStart,
                 bool IsEnd,
                 bool? IsSuccessful,
-                TimeSpan? duration) Operation) e)
+                TimeSpan? Duration) Operation) e)
         {
             var evaluated = e.LogEntry.Evaluate();
 
@@ -81,10 +97,11 @@ namespace Pocket
                 LogLevelString((LogLevel) e.LogEntry.LogLevel,
                                e.Operation.IsStart,
                                e.Operation.IsEnd,
-                               e.Operation.IsSuccessful);
+                               e.Operation.IsSuccessful,
+                               e.Operation.Duration);
 
             return
-                $"{e.LogEntry.Timestamp:o} {e.Operation.Id.BracketIfNotEmpty()}{e.LogEntry.Category.BracketIfNotEmpty()}{e.LogEntry.OperationName.BracketIfNotEmpty()}[{logLevelString}] {evaluated.Message} {e.LogEntry.Exception}";
+                $"{e.LogEntry.Timestamp:o} {e.Operation.Id.IfNotEmpty()}{e.LogEntry.Category.IfNotEmpty()}{e.LogEntry.OperationName.IfNotEmpty()} {logLevelString}  {evaluated.Message} {e.LogEntry.Exception}";
         }
 
         private static (
@@ -112,52 +129,65 @@ namespace Pocket
             return (dynamic) logEntry;
         }
 
-        public static string BracketIfNotEmpty(this string value) =>
-            string.IsNullOrEmpty(value) ? "" : $"[{value}]";
+        public static string IfNotEmpty(
+            this string value,
+            string prefix = "[",
+            string suffix = "] ") =>
+            string.IsNullOrEmpty(value) ? "" : $"{prefix}{value}{suffix}";
 
         private static string LogLevelString(
             LogLevel logLevel,
             bool isStartOfOperation,
             bool isEndOfOperation,
-            bool? isOperationSuccessful)
+            bool? isOperationSuccessful,
+            TimeSpan? duration)
         {
-            if (isStartOfOperation)
+            string emoji()
             {
-                return "▶️";
-            }
-
-            if (isEndOfOperation)
-            {
-                if (isOperationSuccessful == true)
+                if (isStartOfOperation)
                 {
-                    return "⏹ -> ✔️";
+                    return "▶";
                 }
 
-                if (isOperationSuccessful == false)
+                if (isEndOfOperation)
                 {
-                    return "⏹ -> ✖️";
+                    if (isOperationSuccessful == true)
+                    {
+                        return "⏹ -> ✔";
+                    }
+
+                    if (isOperationSuccessful == false)
+                    {
+                        return "⏹ -> ✖";
+                    }
+
+                    return "⏹";
                 }
 
-                return "⏹";
+                switch (logLevel)
+                {
+                    case LogLevel.Trace:
+                    case LogLevel.Debug:
+                        return "🔍";
+                    case LogLevel.Information:
+                        return "ℹ";
+                    case LogLevel.Warning:
+                        return "⚠";
+                    case LogLevel.Error:
+                        return "✖";
+                    case LogLevel.Critical:
+                        return "💩";
+                    default:
+                        return "ℹ";
+                }
             }
 
-            switch (logLevel)
+            if (duration == null)
             {
-                case LogLevel.Trace:
-                    return "🐾";
-                case LogLevel.Debug:
-                    return "🔍";
-                case LogLevel.Information:
-                    return "ℹ️";
-                case LogLevel.Warning:
-                    return "⚠️";
-                case LogLevel.Error:
-                    return "✖️";
-                case LogLevel.Critical:
-                    return "💩";
-                default:
-                    return "ℹ️";
+                return emoji();
             }
+
+            return $"{emoji()} ({duration?.TotalMilliseconds}ms)";
         }
     }
 
@@ -181,12 +211,10 @@ namespace Pocket
             where TLogger : Logger
         {
             logger.Post(
-                CreateLogEntry(
-                    logger,
-                    message,
-                    LogLevel.Trace,
-                    exception: null,
-                    args: args));
+                message,
+                LogLevel.Trace,
+                exception: null,
+                args: args);
 
             return logger;
         }
@@ -198,12 +226,10 @@ namespace Pocket
             where TLogger : Logger
         {
             logger.Post(
-                CreateLogEntry(
-                    logger,
-                    message,
-                    LogLevel.Information,
-                    exception: null,
-                    args: args));
+                message,
+                LogLevel.Information,
+                exception: null,
+                args: args);
 
             return logger;
         }
@@ -216,12 +242,10 @@ namespace Pocket
             where TLogger : Logger
         {
             logger.Post(
-                CreateLogEntry(
-                    logger,
-                    message,
-                    LogLevel.Warning,
-                    exception,
-                    args));
+                message,
+                LogLevel.Warning,
+                exception: exception,
+                args: args);
 
             return logger;
         }
@@ -234,12 +258,10 @@ namespace Pocket
             where TLogger : Logger
         {
             logger.Post(
-                CreateLogEntry(
-                    logger,
-                    message,
-                    LogLevel.Error,
-                    exception,
-                    args));
+                message,
+                LogLevel.Error,
+                exception: exception,
+                args: args);
 
             return logger;
         }
@@ -253,8 +275,8 @@ namespace Pocket
             var operation = new OperationLogger(
                 requireConfirm,
                 name,
-                category: logger.Category,
-                id: id);
+                logger.Category,
+                id);
 
             operation.Post(operation[0]);
 
@@ -269,8 +291,8 @@ namespace Pocket
             new OperationLogger(
                 requireConfirm,
                 name,
-                category: logger.Category,
-                id: id);
+                logger.Category,
+                id);
 
         public static OperationLogger ConfirmOnExit(
             this Logger logger,
@@ -279,69 +301,35 @@ namespace Pocket
             new OperationLogger(
                 true,
                 name,
-                category: logger.Category,
-                id: id);
+                logger.Category,
+                id);
 
         public static void Event(
             this Logger logger,
             [CallerMemberName] string name = null,
-            params (string name, double value)[] metrics)
-        {
-            var args = new List<object>
-            {
-                name
-            };
-
-            if (metrics != null)
-            {
-                foreach (var metric in metrics)
-                {
-                    args.Add(metric);
-                }
-            }
-
-            logger.Post(
-                new LogEntry(LogLevel.Telemetry,
-                             message: "{name}",
-                             callingMethod: name,
-                             category: logger.Category,
-                             args: args.ToArray()
-                ));
-        }
-
-        private static LogEntry CreateLogEntry<TLogger>(
-            TLogger logger,
-            string message,
-            LogLevel logLevel,
-            Exception exception = null,
-            object[] args = null) where TLogger : Logger
-        {
-            return new LogEntry(
-                message: message,
-                logLevel: logLevel,
-                exception: exception,
-                category: logger.Category,
-                operation: logger as OperationLogger,
-                args: args);
-        }
+            params object[] args) =>
+            logger.Post(null,
+                        LogLevel.Telemetry,
+                        operationName: name,
+                        args: args);
     }
 
     internal class LogEntry
     {
-        private readonly List<KeyValuePair<string, object>> properties = new List<KeyValuePair<string, object>>();
-
         public LogEntry(
             LogLevel logLevel,
             string message,
             Exception exception = null,
             string category = null,
-            string callingMethod = null,
+            string operationName = null,
             OperationLogger operation = null,
             object[] args = null)
         {
             LogLevel = logLevel;
             Exception = exception;
             Category = category;
+            Operation = operation;
+            message = message ?? "";
 
             if (operation != null)
             {
@@ -349,7 +337,7 @@ namespace Pocket
                 IsStartOfOperation = operation.Count == 0;
                 IsEndOfOperation = operation.IsComplete;
                 OperationId = operation?.Id;
-                OperationName = callingMethod ?? operation.Name;
+                OperationName = operationName ?? operation.Name;
 
                 if (operation.IsSuccessful != null)
                 {
@@ -358,20 +346,18 @@ namespace Pocket
             }
             else
             {
-                OperationName = callingMethod;
+                OperationName = operationName;
             }
 
             (string message, IReadOnlyCollection<KeyValuePair<string, object>> Properties)? evaluated = null;
 
             Evaluate = () =>
             {
+                var properties = new List<KeyValuePair<string, object>>();
+
                 if (evaluated == null)
                 {
-                    if (args == null || args.Length == 0)
-                    {
-                        message = message ?? "";
-                    }
-                    else
+                    if (args?.Length != 0)
                     {
                         var formatter = Formatter.Parse(message);
 
@@ -381,6 +367,7 @@ namespace Pocket
 
                         properties.AddRange(formatterResult);
                     }
+
                     evaluated = (message, properties);
                 }
 
@@ -401,6 +388,7 @@ namespace Pocket
         public string OperationName { get; }
 
         public string Category { get; }
+        public OperationLogger Operation { get; }
 
         public DateTimeOffset Timestamp { get; } = DateTimeOffset.Now;
 
