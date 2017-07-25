@@ -176,20 +176,6 @@ namespace Pocket.Tests
             log.Single().LogEntry.LogLevel.Should().Be((int) LogLevel.Error);
         }
 
-        [Fact(Skip = "not implemented")]
-        public void Log_captures_the_calling_method()
-        {
-            var log = new LogEntryList();
-
-            using (Subscribe(log.Add))
-            {
-                Log.Info("hello");
-            }
-
-            log.Should()
-               .Contain(e => e.LogEntry.OperationName == nameof(Log_captures_the_calling_method));
-        }
-
         [Fact]
         public void Logger_T_captures_a_category_based_on_type_T()
         {

@@ -75,7 +75,7 @@ namespace Pocket.Tests
             {
             }
 
-            log[0].Should().Contain("▶️");
+            log[0].Should().Contain("▶");
             log[1].Should().Contain("⏹");
         }
 
@@ -90,7 +90,7 @@ namespace Pocket.Tests
                 operation.Succeed();
             }
 
-            log[0].Should().Contain("⏹ -> ✔️");
+            log[0].Should().Contain("⏹ -> ✔");
         }
 
         [Fact]
@@ -104,6 +104,49 @@ namespace Pocket.Tests
             }
 
             log[0].Should().Contain("⏹ -> ✖");
+        }
+
+        [Fact]
+        public async Task Stop_entries_write_duration_in_string_output()
+        {
+            var log = new List<string>();
+
+            using (Subscribe(e => log.Add(e.Format())))
+            using (Log.OnExit())
+            {
+                await Task.Delay(10);
+            }
+
+            log[0].Should().Match("*⏹ (*ms)*");
+        }
+
+        [Fact]
+        public async Task Successful_entries_write_duration_in_string_output()
+        {
+            var log = new List<string>();
+
+            using (Subscribe(e => log.Add(e.Format())))
+            using (var operation = Log.ConfirmOnExit())
+            {
+                await Task.Delay(10);
+                operation.Succeed();
+            }
+
+            log[0].Should().Match("*⏹ -> ✔ (*ms)*");
+        }
+
+        [Fact]
+        public async Task Failed_entries_write_duration_in_string_output()
+        {
+            var log = new List<string>();
+
+            using (Subscribe(e => log.Add(e.Format())))
+            using (Log.ConfirmOnExit())
+            {
+                await Task.Delay(10);
+            }
+
+            log[0].Should().Match("*⏹ -> ✖ (*ms)*");
         }
 
         [Fact]
@@ -213,8 +256,32 @@ namespace Pocket.Tests
                 await Task.Delay(200);
             }
 
-            log[0].Operation.Duration.Value.TotalMilliseconds.Should().BeInRange(0, 50);
-            log[1].Operation.Duration.Value.TotalMilliseconds.Should().BeGreaterOrEqualTo(200);
+            log[0].Operation.Duration?.TotalMilliseconds.Should().BeInRange(0, 50);
+            log[1].Operation.Duration?.TotalMilliseconds.Should().BeGreaterOrEqualTo(200);
+        }
+
+        [Fact]
+        public async Task Timings_for_checkpoints_are_written_to_string_output()
+        {
+            var log = new List<string>();
+
+            using (Subscribe(e => log.Add(e.Format())))
+            using (var operation = Log.OnExit())
+            {
+                await Task.Delay(20);
+                operation.Event();
+                await Task.Delay(20);
+                operation.Info("");
+                await Task.Delay(20);
+                operation.Warning("");
+                await Task.Delay(20);
+                operation.Error("");
+            }
+
+            log[0].Should().Match("*(*ms)*");
+            log[1].Should().Match("*(*ms)*");
+            log[2].Should().Match("*(*ms)*");
+            log[3].Should().Match("*(*ms)*");
         }
 
         [Fact]
