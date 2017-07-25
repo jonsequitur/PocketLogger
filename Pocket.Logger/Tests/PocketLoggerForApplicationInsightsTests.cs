@@ -28,7 +28,7 @@ namespace Pocket.For.ApplicationInsights.Tests
 
             disposables =
                 Subscribe(e =>
-                                  this.output.WriteLine(e.ToString()));
+                              this.output.WriteLine(e.ToString()));
 
             client = new TelemetryClient(
                 new TelemetryConfiguration(
@@ -92,14 +92,10 @@ namespace Pocket.For.ApplicationInsights.Tests
         }
 
         [Fact]
-        public void Log_events_can_be_used_to_send_custom_events()
+        public void Log_events_can_be_used_to_send_custom_events_with_metrics()
         {
             client.TrackEvent(
                 "my-event",
-                //                properties: new Dictionary<string, string>
-                //                {
-                //                    ["my-property"] = "my-property-value"
-                //                },
                 metrics: new Dictionary<string, double>
                 {
                     ["my-metric"] = 1.23
@@ -108,6 +104,37 @@ namespace Pocket.For.ApplicationInsights.Tests
             using (client.SubscribeToPocketLogger())
             {
                 Log.Event("my-event", ("my-metric", 1.23));
+            }
+
+            var expected = (EventTelemetry) telemetrySent[0];
+            var actual = (EventTelemetry) telemetrySent[1];
+
+            actual.Name.Should().Be(expected.Name);
+            actual.Metrics.ShouldBeEquivalentTo(expected.Metrics);
+            actual.Properties.ShouldBeEquivalentTo(expected.Properties);
+            actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
+        }
+
+        [Fact]
+        public void Log_events_can_be_used_to_send_custom_events_with_metrics_and_properties()
+        {
+            client.TrackEvent(
+                "my-event",
+                properties: new Dictionary<string, string>
+                {
+                    ["my-property"] = "my-property-value"
+                },
+                metrics: new Dictionary<string, double>
+                {
+                    ["my-metric"] = 1.23
+                });
+
+            using (client.SubscribeToPocketLogger())
+            {
+                Log.Event("my-event",
+                          "{my-property}",
+                          ("my-metric", 1.23),
+                          ("my-property", "my-property-value"));
             }
 
             var expected = (EventTelemetry) telemetrySent[0];

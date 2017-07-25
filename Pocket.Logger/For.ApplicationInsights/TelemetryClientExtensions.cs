@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
+using Metric = System.ValueTuple<string, double>;
 
 namespace Pocket.For.ApplicationInsights
 {
@@ -37,16 +39,24 @@ namespace Pocket.For.ApplicationInsights
                 }
                 else if (entry.LogLevel == (int) LogLevel.Telemetry)
                 {
+                    var evaluated = entry.Evaluate();
+
                     telemetryClient.TrackEvent(
                         eventName: entry.OperationName,
-                        metrics: entry.Evaluate()
-                                      .Properties
-                                      .Select(p => p.Value)
-                                      .OfType<(string name, double value)>()
-                                      .ToDictionary(
-                                          _ => _.name,
-                                          _ => _.value)
-                    );
+                        metrics: evaluated
+                            .Properties
+                            .Select(p => p.Value)
+                            .OfType<Metric>()
+                            .ToDictionary(
+                                _ => _.Item1,
+                                _ => _.Item2),
+                        properties: evaluated
+                            .Properties
+                            .Select(p => p.Value)
+                            .OfType<(string, string)>()
+                            .Select(_ => new KeyValuePair<string, object>(_.Item1, _.Item2))
+                            .ToDictionary(_ => _.Key,
+                                          _ => _.Value?.ToString()));
                 }
                 else if (entry.Exception != null)
                 {
