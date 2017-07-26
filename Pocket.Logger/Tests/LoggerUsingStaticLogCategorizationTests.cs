@@ -29,7 +29,7 @@ namespace Pocket.Tests
             }
 
             log.Should()
-               .Contain(e => e.LogEntry.Category == typeof(LoggerUsingStaticLogCategorizationTests).FullName);
+               .Contain(e => e.Category == typeof(LoggerUsingStaticLogCategorizationTests).FullName);
         }
     }
 }

@@ -341,7 +341,6 @@ namespace Pocket.Tests
             }
 
             log.Last()
-               .LogEntry
                .Evaluate()
                .Properties
                .Select(_ => _.Value)
@@ -361,7 +360,6 @@ namespace Pocket.Tests
             }
 
             log.Last()
-               .LogEntry
                .Evaluate()
                .Properties
                .Select(_ => _.Value)
@@ -427,7 +425,75 @@ namespace Pocket.Tests
                 operation2.Info("hello");
             }
 
-            log.Should().OnlyContain(e => e.LogEntry.Category == "");
+            log.Should().OnlyContain(e => e.Category == "");
+        }
+
+        [Fact]
+        public void OnEnterAndExit_can_capture_args_on_exit()
+        {
+            var log = new LogEntryList();
+
+            using (Subscribe(log.Add))
+            using (Log.OnEnterAndExit(exitArgs: () => new (string, object)[]
+            {
+                ("hello", 123)
+            }))
+            {
+            }
+
+            log.Last()
+               .Evaluate()
+               .Properties
+               .Should()
+               .Contain(p => p.Key == "hello" && p.Value.Equals(123));
+        }
+
+        [Fact]
+        public void OnExit_can_capture_args_on_exit()
+        {
+            var log = new LogEntryList();
+
+            using (Subscribe(log.Add))
+            using (Log.OnExit(exitArgs: () => new (string, object)[]
+            {
+                ("hello", 123)
+            }))
+            {
+            }
+
+            log.Last()
+               .Evaluate()
+               .Properties
+               .Should()
+               .Contain(p => p.Key == "hello" && p.Value.Equals(123));
+        }
+
+        [Fact]
+        public void ConfirmOnExit_can_capture_args_on_exit()
+        {
+            var log = new LogEntryList();
+
+            using (Subscribe(log.Add))
+            using (Log.ConfirmOnExit(exitArgs: () => new (string, object)[]
+            {
+                ("hello", 123)
+            }))
+            {
+            }
+
+            log.Last()
+               .Evaluate()
+               .Properties
+               .Should()
+               .Contain(p => p.Key == "hello" && p.Value.Equals(123));
+        }
+
+        [Fact]
+        public void When_exit_args_delegate_throws_then_exception_is_not_thrown_to_the_caller()
+        {
+            using (Log.ConfirmOnExit(exitArgs: () => throw new Exception("oops!")))
+            {
+            }
         }
     }
 }

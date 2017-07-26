@@ -32,8 +32,7 @@ namespace Pocket.Tests
 
             log.Should()
                .ContainSingle(e =>
-                                  e.LogEntry
-                                   .Evaluate()
+                                  e.Evaluate()
                                    .Message
                                    .Contains("hello"));
         }
@@ -75,7 +74,6 @@ namespace Pocket.Tests
             }
 
             log.Single()
-               .LogEntry
                .Evaluate()
                .Message
                .Should()
@@ -93,7 +91,6 @@ namespace Pocket.Tests
             }
 
             log.Single()
-               .LogEntry
                .Evaluate()
                .Properties
                .Should()
@@ -131,7 +128,6 @@ namespace Pocket.Tests
             }
 
             log.Single()
-               .LogEntry
                .Exception
                .Should()
                .Be(exception);
@@ -147,7 +143,7 @@ namespace Pocket.Tests
                 Log.Info("hello");
             }
 
-            log.Single().LogEntry.LogLevel.Should().Be((int) LogLevel.Information);
+            log.Single().LogLevel.Should().Be((int) LogLevel.Information);
         }
 
         [Fact]
@@ -157,10 +153,25 @@ namespace Pocket.Tests
 
             using (Subscribe(log.Add))
             {
-                Log.Warning("hello");
+                Log.Warning("hello", new Exception("oops"));
             }
 
-            log.Single().LogEntry.LogLevel.Should().Be((int) LogLevel.Warning);
+            log.Single().LogLevel.Should().Be((int) LogLevel.Warning);
+            log.Single().Exception.Should().NotBeNull();
+        }
+
+        [Fact]
+        public void Exceptions_can_be_written_at_Warning_level()
+        {
+            var log = new LogEntryList();
+
+            using (Subscribe(log.Add))
+            {
+                Log.Warning(new Exception("oops"));
+            }
+
+            log.Single().LogLevel.Should().Be((int) LogLevel.Warning);
+            log.Single().Exception.Should().NotBeNull();
         }
 
         [Fact]
@@ -173,7 +184,22 @@ namespace Pocket.Tests
                 Log.Error("oops!", new Exception("something went wrong..."));
             }
 
-            log.Single().LogEntry.LogLevel.Should().Be((int) LogLevel.Error);
+            log.Single().LogLevel.Should().Be((int) LogLevel.Error);
+            log.Single().Exception.Should().NotBeNull();
+        }
+
+        [Fact]
+        public void Exceptions_can_be_written_at_Error_level()
+        {
+            var log = new LogEntryList();
+
+            using (Subscribe(log.Add))
+            {
+                Log.Error(new Exception("oops"));
+            }
+
+            log.Single().LogLevel.Should().Be((int) LogLevel.Error);
+            log.Single().Exception.Should().NotBeNull();
         }
 
         [Fact]
@@ -188,7 +214,7 @@ namespace Pocket.Tests
                 logger.Info("hello");
             }
 
-            log.Should().Contain(e => e.LogEntry.Category == typeof(LoggerTests).FullName);
+            log.Should().Contain(e => e.Category == typeof(LoggerTests).FullName);
         }
 
         [Fact]
@@ -201,7 +227,7 @@ namespace Pocket.Tests
                 Log.Info("hello");
             }
 
-            log.Should().OnlyContain(e => e.LogEntry.Category == "");
+            log.Should().OnlyContain(e => e.Category == "");
         }
     }
 }
