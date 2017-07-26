@@ -47,19 +47,28 @@ namespace Pocket.For.ApplicationInsights.Tests
             var id = Guid.NewGuid().ToString();
             client.TrackDependency(new DependencyTelemetry
             {
-                Data = "my-operation",
+                Data = "http://example.com/",
                 Duration = 500.Milliseconds(),
                 Id = id,
                 Success = true,
                 Timestamp = DateTimeOffset.UtcNow,
-                Name = "my-operation"
+                Name = "my-operation",
+                ResultCode = "200",
+                Properties =
+                {
+                    ["RequestUri"] = "http://example.com/",
+                    ["ResultCode"] = "200"
+                }
             });
 
             using (client.SubscribeToPocketLogger())
-            using (var operation = Log.ConfirmOnExit("my-operation", id))
+            using (var operation = Log.ConfirmOnExit(
+                "my-operation",
+                id,
+                exitArgs: () => new (string, object)[] { ("RequestUri", new Uri("http://example.com") ) }))
             {
                 Thread.Sleep(500);
-                operation.Succeed();
+                operation.Succeed("{ResultCode}", 200);
             }
 
             var expected = (DependencyTelemetry) telemetrySent[0];
@@ -69,26 +78,10 @@ namespace Pocket.For.ApplicationInsights.Tests
             actual.Duration.Should().BeCloseTo(expected.Duration);
             actual.Id.Should().Be(expected.Id);
             actual.Name.Should().Be(expected.Name);
+            actual.Properties.ShouldBeEquivalentTo(expected.Properties);
+            actual.ResultCode.Should().Be(expected.ResultCode);
             actual.Success.Should().Be(expected.Success);
             actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
-        }
-
-        [Fact(Skip = "Not implemented yet")]
-        public void Log_events_can_be_used_to_send_custom_metrics()
-        {
-            client.TrackMetric(
-                "my-event",
-                value: 1.23);
-
-            using (client.SubscribeToPocketLogger())
-            {
-                // TODO      Log.Event(("my-metric", 1.23));
-            }
-
-            var expected = (MetricTelemetry) telemetrySent[0];
-            var actual = (MetricTelemetry) telemetrySent[1];
-
-            telemetrySent[0].ShouldBeEquivalentTo(telemetrySent[1]);
         }
 
         [Fact]
@@ -98,43 +91,15 @@ namespace Pocket.For.ApplicationInsights.Tests
                 "my-event",
                 metrics: new Dictionary<string, double>
                 {
-                    ["my-metric"] = 1.23
-                });
-
-            using (client.SubscribeToPocketLogger())
-            {
-                Log.Event("my-event", ("my-metric", 1.23));
-            }
-
-            var expected = (EventTelemetry) telemetrySent[0];
-            var actual = (EventTelemetry) telemetrySent[1];
-
-            actual.Name.Should().Be(expected.Name);
-            actual.Metrics.ShouldBeEquivalentTo(expected.Metrics);
-            actual.Properties.ShouldBeEquivalentTo(expected.Properties);
-            actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
-        }
-
-        [Fact]
-        public void Log_events_can_be_used_to_send_custom_events_with_metrics_and_properties()
-        {
-            client.TrackEvent(
-                "my-event",
-                properties: new Dictionary<string, string>
-                {
-                    ["my-property"] = "my-property-value"
-                },
-                metrics: new Dictionary<string, double>
-                {
-                    ["my-metric"] = 1.23
+                    ["my-metric"] = 1.23,
+                    ["my-other-metric"] = 123
                 });
 
             using (client.SubscribeToPocketLogger())
             {
                 Log.Event("my-event",
-                          "{my-property}",
                           ("my-metric", 1.23),
-                          ("my-property", "my-property-value"));
+                          ("my-other-metric", (double) 123));
             }
 
             var expected = (EventTelemetry) telemetrySent[0];

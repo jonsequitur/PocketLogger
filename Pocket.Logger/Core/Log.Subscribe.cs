@@ -9,12 +9,12 @@ namespace Pocket
     {
         public static IDisposable Subscribe(
             Action<(
-                    (int LogLevel,
+                    int LogLevel,
                     DateTimeOffset Timestamp,
                     Func<(string Message, IReadOnlyCollection<KeyValuePair<string, object>> Properties)> Evaluate,
                     Exception Exception,
                     string OperationName,
-                    string Category) LogEntry,
+                    string Category,
                     (string Id,
                     bool IsStart,
                     bool IsEnd,

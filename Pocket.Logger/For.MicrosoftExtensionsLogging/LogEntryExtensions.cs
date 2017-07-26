@@ -12,12 +12,11 @@ namespace Pocket.For.MicrosoftExtensionsLogging
             return LogEvents.Subscribe(e =>
             {
                 logger.Log(
-                    ((LogLevel) e.LogEntry.LogLevel).MapLogLevel(),
+                    ((LogLevel) e.LogLevel).MapLogLevel(),
                     new EventId(),
-                    e.LogEntry
-                     .Evaluate()
+                    e.Evaluate()
                      .Properties,
-                    e.LogEntry.Exception,
+                    e.Exception,
                     (state, exception) => e.Format());
             });
         }
