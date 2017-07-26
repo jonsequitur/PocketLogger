@@ -13,6 +13,8 @@ namespace Pocket
             Category = category;
         }
 
+        public static event Action<Action<(string Name, object Value)>> Enrich;
+
         public static event Action<(
             int LogLevel,
             DateTimeOffset Timestamp,
@@ -26,8 +28,10 @@ namespace Pocket
             bool? IsSuccessful,
             TimeSpan? duration) Operation)> Posted;
 
-        public virtual void Post(
-            LogEntry entry) =>
+        public virtual void Post(LogEntry entry)
+        {
+            Enrich?.Invoke(entry.AddProperty);
+
             Posted?.Invoke(
                 ((int) entry.LogLevel,
                 entry.Timestamp,

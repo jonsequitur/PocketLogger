@@ -19,6 +19,17 @@ namespace Pocket
                                .ToArray();
             });
 
+        public static IDisposable Enrich(Action<Action<(string Name, object Value)>> enrich)
+        {
+            var enrichSafely = Safely(enrich);
+            Logger.Enrich += enrichSafely;
+
+            return Disposable.Create(() =>
+            {
+                Logger.Enrich -= enrichSafely;
+            });
+        }
+
         public static IDisposable Subscribe(
             Action<(
                     int LogLevel,
