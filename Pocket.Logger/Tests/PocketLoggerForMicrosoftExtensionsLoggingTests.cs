@@ -35,7 +35,9 @@ namespace Pocket.For.MicrosoftExtensionsLogging.Tests
 
             logger.LogInformation("before the scope block with {someInt} and {someDate}", someInt, someDate);
 
-            using (logger.BeginScope(Disposable.Create(() => { })))
+            using (logger.BeginScope(Disposable.Create(() =>
+            {
+            })))
             {
                 logger.LogInformation("inside the scope block");
 
@@ -95,12 +97,12 @@ namespace Pocket.For.MicrosoftExtensionsLogging.Tests
         [Fact]
         public void Arguments_are_included()
         {
-            var log = new List<IReadOnlyCollection<KeyValuePair<string, object>>>();
+            var log = new List<(string Name, object Value)[]>();
 
             var logger = new LoggerFactory()
                 .AddConsole()
                 .Add((level, id, state, exception, formatter) =>
-                         log.Add((IReadOnlyCollection<KeyValuePair<string, object>>) state))
+                         log.Add(((string Name, object Value)[]) state))
                 .CreateLogger("the-category");
 
             using (logger.SubscribeToPocket())
@@ -112,7 +114,7 @@ namespace Pocket.For.MicrosoftExtensionsLogging.Tests
 
             log.Should()
                .ContainSingle(e => e.Any(
-                                  _ => _.Key == "WHAT" &&
+                                  _ => _.Name == "WHAT" &&
                                        _.Value == "BIG PROBLEM"));
         }
     }

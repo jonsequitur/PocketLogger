@@ -13,10 +13,12 @@ namespace Pocket
             Category = category;
         }
 
+        public static event Action<Action<(string Name, object Value)>> Enrich;
+
         public static event Action<(
             int LogLevel,
             DateTimeOffset Timestamp,
-            Func<(string Message, IReadOnlyCollection<KeyValuePair<string, object>> properties)> Evaluate,
+            Func<(string Message, (string Name, object Value)[] properties)> Evaluate,
             Exception Exception,
             string OperationName,
             string Category,
@@ -26,8 +28,10 @@ namespace Pocket
             bool? IsSuccessful,
             TimeSpan? duration) Operation)> Posted;
 
-        public virtual void Post(
-            LogEntry entry) =>
+        public virtual void Post(LogEntry entry)
+        {
+            Enrich?.Invoke(entry.AddProperty);
+
             Posted?.Invoke(
                 ((int) entry.LogLevel,
                 entry.Timestamp,
@@ -43,6 +47,7 @@ namespace Pocket
                 )
                 )
             );
+        }
 
         protected internal void Post(
             string message,
@@ -79,7 +84,7 @@ namespace Pocket
             this (
                 int LogLevel,
                 DateTimeOffset Timestamp,
-                Func<(string Message, IReadOnlyCollection<KeyValuePair<string, object>> Properties)> Evaluate,
+                Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
                 string OperationName,
                 string Category,
@@ -100,31 +105,6 @@ namespace Pocket
 
             return
                 $"{e.Timestamp:o} {e.Operation.Id.IfNotEmpty()}{e.Category.IfNotEmpty()}{e.OperationName.IfNotEmpty()} {logLevelString}  {evaluated.Message} {e.Exception}";
-        }
-
-        private static (
-            (int LogLevel,
-            DateTimeOffset Timestamp,
-            Func<(string Message, IReadOnlyCollection<KeyValuePair<string, object>> properties)> Evaluate,
-            Exception Exception,
-            string OperationName,
-            string category) LogEntry,
-            (string Id,
-            bool IsStart,
-            bool IsEnd,
-            bool? IsSuccessful,
-            TimeSpan? Duration) Operation) Tuplify(
-                LogLevel logLevel,
-                string message,
-                Exception exception = null,
-                string category = null,
-                string callingMethod = null,
-                OperationLogger operation = null,
-                object[] args = null)
-        {
-            var logEntry = new LogEntry(logLevel, message, exception, category, callingMethod, operation, args);
-
-            return (dynamic) logEntry;
         }
 
         public static string IfNotEmpty(
@@ -332,7 +312,7 @@ namespace Pocket
 
     internal class LogEntry
     {
-        private readonly List<KeyValuePair<string, object>> properties = new List<KeyValuePair<string, object>>();
+        private readonly List<(string Name, object Value)> properties = new List<(string, object)>();
 
         public LogEntry(
             LogLevel logLevel,
@@ -367,7 +347,7 @@ namespace Pocket
                 OperationName = operationName;
             }
 
-            (string message, IReadOnlyCollection<KeyValuePair<string, object>> Properties)? evaluated = null;
+            (string message, (string Name, object Value)[] Properties)? evaluated = null;
 
             Evaluate = () =>
             {
@@ -384,14 +364,14 @@ namespace Pocket
                         properties.AddRange(formatterResult);
                     }
 
-                    evaluated = (message, properties);
+                    evaluated = (message, properties.ToArray());
                 }
 
                 return evaluated.Value;
             };
         }
 
-        public Func<(string message, IReadOnlyCollection<KeyValuePair<string, object>> Properties)> Evaluate { get; }
+        public Func<(string message, (string Name, object Value)[] Properties)> Evaluate { get; }
 
         public bool IsStartOfOperation { get; }
 
@@ -415,8 +395,8 @@ namespace Pocket
 
         public string OperationId { get; }
 
-        public void AddProperty(string name, object value) =>
-            properties.Add(new KeyValuePair<string, object>(name, value));
+        public void AddProperty((string name, object value) property) =>
+            properties.Add(property);
     }
 
     internal class OperationLogger : Logger, IDisposable
@@ -507,7 +487,7 @@ namespace Pocket
                     var evaluatedExitArgs = exitArgs();
                     foreach (var arg in evaluatedExitArgs)
                     {
-                        logEntry.AddProperty(arg.name, arg.value);
+                        logEntry.AddProperty(arg);
                     }
                 }
                 catch (Exception)

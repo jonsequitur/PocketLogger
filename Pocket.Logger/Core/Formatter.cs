@@ -37,7 +37,9 @@ namespace Pocket
 
                 var replacementTarget = match.Value;
 
-                var formatStr = match.Groups["format"].Success ? match.Groups["format"].Captures[0].Value : null;
+                var formatStr = match.Groups["format"].Success
+                                    ? match.Groups["format"].Captures[0].Value
+                                    : null;
 
                 void format(StringBuilder sb, object value)
                 {
@@ -124,7 +126,7 @@ namespace Pocket
             return objectToFormat.ToString();
         }
 
-        internal class FormatterResult : IReadOnlyList<KeyValuePair<string, object>>
+        internal class FormatterResult : IReadOnlyList<(string Name, object Value)>
         {
             private readonly StringBuilder formattedMessage;
 
@@ -133,18 +135,18 @@ namespace Pocket
                 this.formattedMessage = formattedMessage;
             }
 
-            private readonly List<KeyValuePair<string, object>> properties = new List<KeyValuePair<string, object>>();
+            private readonly List<(string Name, object Value)> properties = new List<(string, object )>();
 
             public void Add(string key, object value) =>
-                properties.Add(new KeyValuePair<string, object>(key, value));
+                properties.Add((key, value));
 
-            public IEnumerator<KeyValuePair<string, object>> GetEnumerator() => properties.GetEnumerator();
+            public IEnumerator<(string Name, object Value)> GetEnumerator() => properties.GetEnumerator();
 
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
             public int Count => properties.Count;
 
-            public KeyValuePair<string, object> this[int index] => properties[index];
+            public (string Name, object Value) this[int index] => properties[index];
 
             public override string ToString() => formattedMessage.ToString();
         }

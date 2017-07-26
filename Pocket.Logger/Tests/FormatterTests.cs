@@ -26,8 +26,8 @@ namespace Pocket.Tests
 
             var result = formatter.Format(true, 42);
 
-            result.Single(v => v.Key == "this").Value.Should().Be(true);
-            result.Single(v => v.Key == "that").Value.Should().Be(42);
+            result.Single(v => v.Name == "this").Value.Should().Be(true);
+            result.Single(v => v.Name == "that").Value.Should().Be(42);
         }
 
         [Fact]
@@ -38,8 +38,8 @@ namespace Pocket.Tests
             var result = formatter.Format(null);
 
             result.Should().HaveCount(2);
-            result.Single(v => v.Key == "this").Value.Should().BeNull();
-            result.Single(v => v.Key == "that").Value.Should().BeNull();
+            result.Single(v => v.Name == "this").Value.Should().BeNull();
+            result.Single(v => v.Name == "that").Value.Should().BeNull();
             result.ToString().Should().Be("The values are [null] and [null]");
         }
 
@@ -50,7 +50,7 @@ namespace Pocket.Tests
 
             var result = formatter.Format(new object[] { null });
 
-            result.Single(v => v.Key == "value").Value.Should().BeNull();
+            result.Single(v => v.Name == "value").Value.Should().BeNull();
         }
 
         [Fact]
@@ -145,18 +145,8 @@ namespace Pocket.Tests
 
             var result = formatter.Format(1, 2, 3, ("some-metric", 4));
 
-            result.ElementAt(2)
-                  .ShouldBeEquivalentTo(new
-                  {
-                      Key = "arg2",
-                      Value = 3
-                  });
-            result.ElementAt(3)
-                  .ShouldBeEquivalentTo(new
-                  {
-                      Key = "arg3",
-                      Value = ("some-metric", 4)
-                  });
+            result[2].Should().Be(("arg2", 3));
+            result[3].Should().Be(("arg3", ("some-metric", 4)));
         }
 
         [Fact]
