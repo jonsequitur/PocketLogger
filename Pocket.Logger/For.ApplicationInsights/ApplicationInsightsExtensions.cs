@@ -37,7 +37,7 @@ namespace Pocket.For.ApplicationInsights
         internal static DependencyTelemetry ToDependencyTelemetry(
             this (int LogLevel,
                 DateTimeOffset Timestamp,
-                Func<(string Message, IReadOnlyCollection<KeyValuePair<string, object>> Properties)> Evaluate,
+                Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
                 string OperationName,
                 string Category,
@@ -52,17 +52,19 @@ namespace Pocket.For.ApplicationInsights
             var telemetry = new DependencyTelemetry
             {
                 Id = e.Operation.Id,
-                Data = properties.FirstOrDefault(p => p.Key == "RequestUri").Value?.ToString(),
+                Data = properties.FirstOrDefault(p => p.Name == "RequestUri").Value?.ToString(),
                 Duration = e.Operation.Duration.Value,
                 Name = e.OperationName,
-                ResultCode = properties.FirstOrDefault(p => p.Key == "ResultCode").Value?.ToString(),
+                ResultCode = properties.FirstOrDefault(p => p.Name == "ResultCode").Value?.ToString(),
                 Success = e.Operation.IsSuccessful,
                 Timestamp = DateTimeOffset.UtcNow
             };
 
             foreach (var pair in properties)
             {
-                telemetry.Properties.Add(pair.Key, pair.Value?.ToString());
+                telemetry.Properties.Add(
+                    pair.Name,
+                    pair.Value?.ToString());
             }
 
             return telemetry;
@@ -71,7 +73,7 @@ namespace Pocket.For.ApplicationInsights
         internal static EventTelemetry ToEventTelemetry(
             this ( int LogLevel,
                 DateTimeOffset Timestamp,
-                Func<(string Message, IReadOnlyCollection<KeyValuePair<string, object>> Properties)> Evaluate,
+                Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
                 string OperationName,
                 string Category,
@@ -93,7 +95,9 @@ namespace Pocket.For.ApplicationInsights
                 .Select(p => p.Value)
                 .OfType<Metric>())
             {
-                telemetry.Metrics.Add(metric.Item1, metric.Item2);
+                telemetry.Metrics.Add(
+                    metric.Item1,
+                    metric.Item2);
             }
 
             return telemetry;
@@ -102,7 +106,7 @@ namespace Pocket.For.ApplicationInsights
         internal static ExceptionTelemetry ToExceptionTelemetry(
             this ( int LogLevel,
                 DateTimeOffset Timestamp,
-                Func<(string Message, IReadOnlyCollection<KeyValuePair<string, object>> Properties)> Evaluate,
+                Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
                 string OperationName,
                 string Category,
@@ -125,7 +129,7 @@ namespace Pocket.For.ApplicationInsights
         internal static TraceTelemetry ToTraceTelemetry(
             this ( int LogLevel,
                 DateTimeOffset Timestamp,
-                Func<(string Message, IReadOnlyCollection<KeyValuePair<string, object>> Properties)> Evaluate,
+                Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
                 string OperationName,
                 string Category,
@@ -143,7 +147,7 @@ namespace Pocket.For.ApplicationInsights
 
             foreach (var property in e.Evaluate().Properties)
             {
-                telemetry.Properties.Add(property.Key, property.Value?.ToString());
+                telemetry.Properties.Add(property.Name, property.Value?.ToString());
             }
 
             return telemetry;

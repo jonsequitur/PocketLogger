@@ -95,7 +95,7 @@ namespace Pocket.Tests
                .Properties
                .Should()
                .ContainSingle(p =>
-                                  p.Key == "how" &&
+                                  p.Name == "how" &&
                                   p.Value == "well");
         }
 

@@ -445,7 +445,7 @@ namespace Pocket.Tests
                .Evaluate()
                .Properties
                .Should()
-               .Contain(p => p.Key == "hello" && p.Value.Equals(123));
+               .Contain(p => p.Name == "hello" && p.Value.Equals(123));
         }
 
         [Fact]
@@ -465,7 +465,7 @@ namespace Pocket.Tests
                .Evaluate()
                .Properties
                .Should()
-               .Contain(p => p.Key == "hello" && p.Value.Equals(123));
+               .Contain(p => p.Name == "hello" && p.Value.Equals(123));
         }
 
         [Fact]
@@ -485,7 +485,7 @@ namespace Pocket.Tests
                .Evaluate()
                .Properties
                .Should()
-               .Contain(p => p.Key == "hello" && p.Value.Equals(123));
+               .Contain(p => p.Name == "hello" && p.Value.Equals(123));
         }
 
         [Fact]

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
 
@@ -7,11 +6,24 @@ namespace Pocket
 {
     internal static partial class LogEvents
     {
+        private static readonly Lazy<Type[]> loggerTypes = new Lazy<Type[]>(
+            () =>
+            {
+                var thisAssembly = typeof(Logger).GetTypeInfo().Assembly;
+
+                return Discover.ConcreteTypes()
+                               .Where(t => !t.GetTypeInfo()
+                                             .Assembly
+                                             .Equals(thisAssembly))
+                               .Where(t => t.FullName == typeof(Logger).FullName)
+                               .ToArray();
+            });
+
         public static IDisposable Subscribe(
             Action<(
                     int LogLevel,
                     DateTimeOffset Timestamp,
-                    Func<(string Message, IReadOnlyCollection<KeyValuePair<string, object>> Properties)> Evaluate,
+                    Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                     Exception Exception,
                     string OperationName,
                     string Category,
@@ -30,36 +42,27 @@ namespace Pocket
 
             var disposables = new CompositeDisposable();
 
-            var handleSafely = HandleSafely(onEntryPosted);
-
-            Logger.Posted += handleSafely;
+            var postSafely = Safely(onEntryPosted);
+            Logger.Posted += postSafely;
 
             disposables.Add(Disposable.Create(() =>
             {
-                Logger.Posted -= handleSafely;
+                Logger.Posted -= postSafely;
             }));
 
             if (discoverOtherPocketLoggers)
             {
-                var thisAssembly = typeof(Logger).GetTypeInfo().Assembly;
-
-                var loggerTypes = Discover.ConcreteTypes()
-                                          .Where(t => !t.GetTypeInfo()
-                                                        .Assembly
-                                                        .Equals(thisAssembly))
-                                          .Where(t => t.FullName == typeof(Logger).FullName);
-
-                foreach (var loggerType in loggerTypes)
+                foreach (var loggerType in loggerTypes.Value)
                 {
                     var entryPosted = (EventInfo) loggerType.GetMember(nameof(Logger.Posted)).Single();
 
-                    handleSafely = HandleSafely(onEntryPosted);
+                    postSafely = Safely(onEntryPosted);
 
-                    entryPosted.AddEventHandler(null, handleSafely);
+                    entryPosted.AddEventHandler(null, postSafely);
 
                     disposables.Add(Disposable.Create(() =>
                     {
-                        entryPosted.RemoveEventHandler(null, handleSafely);
+                        entryPosted.RemoveEventHandler(null, postSafely);
                     }));
                 }
             }
@@ -67,21 +70,17 @@ namespace Pocket
             return disposables;
         }
 
-        private static Action<T> HandleSafely<T>(Action<T> onEntryPosted)
-        {
-            void LoggerOnEntryPosted(T entry)
+        private static Action<T> Safely<T>(Action<T> action) =>
+            e =>
             {
                 try
                 {
-                    onEntryPosted(entry);
+                    action(e);
                 }
                 catch (Exception exception)
                 {
                     // TODO: (Subscribe) publish on error channel
                 }
-            }
-
-            return LoggerOnEntryPosted;
-        }
+            };
     }
 }
