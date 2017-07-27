@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>PocketLogger.Subscribe</id>
+    <title>PocketLogger.Subscribe</title>
+    <version>0.1.0</version>
+    <authors>jonsequitur</authors>
+    <owners>jonsequitur</owners>
+    <projectUrl>https://github.com/jonsequitur/pocketlogger</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>   
+An embeddable logging and telemetry library for concise, multi-purpose instrumentation of library or application code. PocketLogger embeds C# files directly into your project to help keep your dependency graph small.
+
+The PocketLogger.Subscribe package enables subscribing to the log events emitted by PocketLogger, including from other assemblies where PocketLogger has been embedded as an internal class.
+</description>
+    <tags>logging telemetry</tags>
+    <licenseUrl>https://github.com/jonsequitur/PocketLogger/blob/master/LICENSE</licenseUrl>
+    <developmentDependency>true</developmentDependency>
+    <dependencies>
+      <dependency id="PocketLogger" version="[0.1.0,0.2)" />
+      <dependency id="Pocket.Disposable" version="[1.0.0,2)" />
+      <dependency id="Pocket.TypeDiscovery" version="[0.3.11,0.4)" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="Core/LogEvents.cs" 
+          target="contentFiles/cs/any/(Pocket)/Logger/LogEvents.cs" />
+  </files>
+</package>
