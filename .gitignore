@@ -5,6 +5,7 @@ nCrunchTemp*
 *.suo
 *.user
 .vscode/
+.vs/
 bin/
 csx/
 Bin/
