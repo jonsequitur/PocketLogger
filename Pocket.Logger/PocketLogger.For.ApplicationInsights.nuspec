@@ -8,8 +8,8 @@
     <owners>jonsequitur</owners>
     <projectUrl>https://github.com/jonsequitur/pocketlogger</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>An embeddable logging and telemetry library.</description>
-    <tags>logging telemetry</tags>
+    <description>Provides Application Insights integration for PocketLogger, emitting dependency telemetry, metrics, custom events, and traces based on conventions assigned to your existing PocketLogger instrumentation.</description>
+    <tags>logging telemetry ApplicationInsights AppInsights</tags>
     <licenseUrl>https://github.com/jonsequitur/PocketLogger/blob/master/LICENSE</licenseUrl>
     <developmentDependency>true</developmentDependency>
     <dependencies>

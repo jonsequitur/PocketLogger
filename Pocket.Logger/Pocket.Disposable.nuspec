@@ -8,7 +8,7 @@
     <owners>jonsequitur</owners>
     <projectUrl>https://github.com/jonsequitur/pocketlogger</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Embeddable implementations of IDisposable.</description>
+    <description>Embeddable implementations of IDisposable, for all your disposing needs.</description>
     <tags>IDisposable</tags>
     <licenseUrl>https://github.com/jonsequitur/PocketLogger/blob/master/LICENSE</licenseUrl>
     <developmentDependency>true</developmentDependency>

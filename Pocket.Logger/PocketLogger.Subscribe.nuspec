@@ -8,7 +8,11 @@
     <owners>jonsequitur</owners>
     <projectUrl>https://github.com/jonsequitur/pocketlogger</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>An embeddable logging and telemetry library.</description>
+    <description>   
+An embeddable logging and telemetry library for concise, multi-purpose instrumentation of library or application code. PocketLogger embeds C# files directly into your project to help keep your dependency graph small.
+
+The PocketLogger.Subscribe package enables subscribing to the log events emitted by PocketLogger, including from other assemblies where PocketLogger has been embedded as an internal class.
+</description>
     <tags>logging telemetry</tags>
     <licenseUrl>https://github.com/jonsequitur/PocketLogger/blob/master/LICENSE</licenseUrl>
     <developmentDependency>true</developmentDependency>
