@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace Pocket
 {
@@ -268,6 +269,7 @@ namespace Pocket
                 name,
                 logger.Category,
                 id, 
+                logger as OperationLogger,
                 exitArgs);
 
             operation.Post(operation[0]);
@@ -286,6 +288,7 @@ namespace Pocket
                 name,
                 logger.Category,
                 id, 
+                logger as OperationLogger,
                 exitArgs);
 
         public static OperationLogger ConfirmOnExit(
@@ -298,6 +301,7 @@ namespace Pocket
                 name,
                 logger.Category,
                 id, 
+                logger as OperationLogger,
                 exitArgs);
 
         public static void Event(
@@ -402,22 +406,21 @@ namespace Pocket
     internal class OperationLogger : Logger, IDisposable
     {
         private readonly Func<(string name, object value)[]> exitArgs;
-
         private readonly List<LogEntry> logEntries = new List<LogEntry>();
-
         private readonly Stopwatch stopwatch = Stopwatch.StartNew();
-
         private bool disposed;
+        private int sequenceNumber;
 
         public OperationLogger(
             bool requireConfirm = false,
             [CallerMemberName] string callingMethod = null,
             string category = null,
             string id = null,
+            OperationLogger parentOperation = null,
             Func<(string name, object value)[]> exitArgs = null) : base(category)
         {
             this.exitArgs = exitArgs;
-            Id = id ?? Guid.NewGuid().ToString();
+            Id = id ?? CreateId(parentOperation);
             RequireConfirm = requireConfirm;
 
             Name = callingMethod;
@@ -430,6 +433,11 @@ namespace Pocket
                                callingMethod,
                                this));
         }
+
+        private string CreateId(OperationLogger parentOperation = null) =>
+            parentOperation != null
+                ? $"{parentOperation.Id}.{Interlocked.Increment(ref parentOperation.sequenceNumber)}"
+                : Guid.NewGuid().ToString();
 
         public string Id { get; }
 

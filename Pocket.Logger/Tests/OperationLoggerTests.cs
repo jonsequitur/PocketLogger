@@ -495,5 +495,42 @@ namespace Pocket.Tests
             {
             }
         }
+
+        [Fact]
+        public void Child_operations_have_ids_derived_from_their_parent_by_default()
+        {
+            using (var parent = Log.ConfirmOnExit(id: "the-parent"))
+            using (var child = parent.ConfirmOnExit())
+            using (var grandchild1 = child.ConfirmOnExit())
+            using (var grandchild2 = child.ConfirmOnExit())
+            {
+                child.Id.Should().Be("the-parent.1");
+                grandchild1.Id.Should().Be("the-parent.1.1");
+                grandchild2.Id.Should().Be("the-parent.1.2");
+            }
+        }
+
+        [Fact]
+        public void Child_operations_can_succeed_or_fail_independently_of_parent_operations()
+        {
+            var log = new LogEntryList();
+
+            using (Subscribe(log.Add))
+            using (var parent = Log.ConfirmOnExit(id: "the-parent"))
+            {
+                for (var index = 0; index < 3; index++)
+                {
+                    using (var child = parent.ConfirmOnExit())
+                    {
+                        child.Fail();
+                    }
+                }
+
+                parent.Succeed();
+            }
+
+            log.Select(l => l.Operation.IsSuccessful)
+               .ShouldBeEquivalentTo(new[] { false, false, false, true });
+        }
     }
 }
