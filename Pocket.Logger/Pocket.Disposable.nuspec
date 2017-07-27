@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>Pocket.Disposable</id>
+    <title>Pocket.Disposable</title>
+    <version>1.0.0</version>
+    <authors>jonsequitur</authors>
+    <owners>jonsequitur</owners>
+    <projectUrl>https://github.com/jonsequitur/pocketlogger</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Embeddable implementations of IDisposable.</description>
+    <tags>IDisposable</tags>
+    <licenseUrl>https://github.com/jonsequitur/PocketLogger/blob/master/LICENSE</licenseUrl>
+    <developmentDependency>true</developmentDependency>
+  </metadata>
+  <files>
+    <file src="Disposable.cs" 
+          target="contentFiles/cs/any/(Pocket)/Disposable.cs" />
+  </files>
+</package>

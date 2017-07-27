@@ -5,15 +5,17 @@ configuration:
   - Release
 
 before_build:
-  - cmd: dotnet restore Pocket.Logger.sln /p:Version=%APPVEYOR_BUILD_VERSION%
+  - cmd: dotnet restore Pocket.Logger.sln 
 
 build_script:
   - cmd: >-
-      dotnet build Pocket.Logger.sln /p:Version=%APPVEYOR_BUILD_VERSION%
+      dotnet build Pocket.Logger.sln 
 
 after_build:
-  - cmd: >-
-      dotnet pack .\Pocket.Logger\Pocket.Logger.csproj --no-build /p:Version=%APPVEYOR_BUILD_VERSION%
+  - nuget pack Pocket.Logger\PocketLogger.nuspec  
+  - nuget pack Pocket.Logger\PocketLogger.Subscribe.nuspec  
+  - nuget pack Pocket.Logger\PocketLogger.For.ApplicationInsights.nuspec  
+  - nuget pack Pocket.Logger\Disposable.nuspec  
 
 test_script:
   - cmd: dotnet test .\Pocket.Logger\Pocket.Logger.csproj
