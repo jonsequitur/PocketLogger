@@ -6,6 +6,7 @@ using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
+using Pocket.Tests;
 using Xunit;
 using Xunit.Abstractions;
 using static Pocket.LogEvents;
