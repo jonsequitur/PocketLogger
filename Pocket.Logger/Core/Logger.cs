@@ -121,7 +121,7 @@ namespace Pocket
             bool? isOperationSuccessful,
             TimeSpan? duration)
         {
-            string emoji()
+            string symbol()
             {
                 if (isStartOfOperation)
                 {
@@ -161,12 +161,9 @@ namespace Pocket
                 }
             }
 
-            if (duration == null)
-            {
-                return emoji();
-            }
-
-            return $"{emoji()} ({duration?.TotalMilliseconds}ms)";
+            return duration == null
+                       ? symbol()
+                       : $"{symbol()} ({duration?.TotalMilliseconds}ms)";
         }
     }
 
