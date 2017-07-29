@@ -55,15 +55,28 @@ namespace Pocket
             LogLevel logLevel,
             string operationName = null,
             Exception exception = null,
-            object[] args = null) =>
-            Post(new LogEntry(
-                     message: message,
-                     logLevel: logLevel,
-                     operationName: operationName,
-                     exception: exception,
-                     category: Category,
-                     operation: this as OperationLogger,
-                     args: args));
+            object[] args = null,
+            (string Name, object Value)[] properties = null)
+        {
+            var logEntry = new LogEntry(
+                message: message,
+                logLevel: logLevel,
+                operationName: operationName,
+                exception: exception,
+                category: Category,
+                operation: this as OperationLogger,
+                args: args);
+
+            if (properties?.Length > 0)
+            {
+                for (var i = 0; i < properties.Length; i++)
+                {
+                    logEntry.AddProperty(properties[i]);
+                }
+            }
+
+            Post(logEntry);
+        }
 
         public string Category { get; }
 
@@ -323,11 +336,20 @@ namespace Pocket
         public static void Event(
             this Logger logger,
             [CallerMemberName] string name = null,
-            params (string name, double value)[] metrics) =>
+            params (string, double)[] metrics) =>
             logger.Post(null,
                         LogLevel.Telemetry,
                         operationName: name,
                         args: metrics.Cast<object>().ToArray());
+
+        public static void Event(
+            this Logger logger,
+            [CallerMemberName] string name = null,
+            params (string name, object value)[] properties) =>
+            logger.Post(null,
+                        LogLevel.Telemetry,
+                        operationName: name,
+                        properties: properties);
     }
 
     internal class LogEntry

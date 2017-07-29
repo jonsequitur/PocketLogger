@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
@@ -11,7 +10,7 @@ namespace Pocket.For.ApplicationInsights
     {
         public static IDisposable SubscribeToPocketLogger(
             this TelemetryClient telemetryClient,
-            bool discoverOtherPocketLoggers = false)
+            bool discoverOtherPocketLoggers = true)
         {
             return LogEvents.Subscribe(e =>
             {
@@ -60,14 +59,22 @@ namespace Pocket.For.ApplicationInsights
                 Timestamp = DateTimeOffset.UtcNow
             };
 
-            foreach (var pair in properties)
-            {
-                telemetry.Properties.Add(
-                    pair.Name,
-                    pair.Value?.ToString());
-            }
+            telemetry.AddProperties(properties);
 
             return telemetry;
+        }
+
+        private static void AddProperties(this ISupportProperties telemetry, (string Name, object Value)[] properties)
+        {
+            foreach (var pair in properties)
+            {
+                if (!(pair.Value is Metric))
+                {
+                    telemetry.Properties.Add(
+                        pair.Item1,
+                        pair.Item2?.ToString());
+                }
+            }
         }
 
         internal static EventTelemetry ToEventTelemetry(
@@ -83,21 +90,27 @@ namespace Pocket.For.ApplicationInsights
                 bool? IsSuccessful,
                 TimeSpan? Duration) Operation) e)
         {
-            var evaluated = e.Evaluate();
+            var properties = e.Evaluate().Properties;
 
             var telemetry = new EventTelemetry
             {
                 Name = e.OperationName
             };
 
-            foreach (var metric in evaluated
-                .Properties
-                .Select(p => p.Value)
-                .OfType<Metric>())
+            foreach (var property in properties)
             {
-                telemetry.Metrics.Add(
-                    metric.Item1,
-                    metric.Item2);
+                if (property.Value is Metric m)
+                {
+                    telemetry.Metrics.Add(
+                        m.Item1,
+                        m.Item2);
+                }
+                else
+                {
+                    telemetry.Properties.Add(
+                        property.Name,
+                        property.Value.ToLogString());
+                }
             }
 
             return telemetry;
@@ -114,17 +127,15 @@ namespace Pocket.For.ApplicationInsights
                 bool IsStart,
                 bool IsEnd,
                 bool? IsSuccessful,
-                TimeSpan? Duration) Operation) e) =>
-            new ExceptionTelemetry
+                TimeSpan? Duration) Operation) e)
+        {
+            return new ExceptionTelemetry
             {
                 Message = e.Evaluate().Message,
                 Exception = e.Exception,
-                Properties =
-                {
-                    ["log"] = e.ToString()
-                },
                 SeverityLevel = MapSeverityLevel((LogLevel) e.LogLevel)
             };
+        }
 
         internal static TraceTelemetry ToTraceTelemetry(
             this ( int LogLevel,
@@ -145,10 +156,7 @@ namespace Pocket.For.ApplicationInsights
                 SeverityLevel = MapSeverityLevel((LogLevel) e.LogLevel)
             };
 
-            foreach (var property in e.Evaluate().Properties)
-            {
-                telemetry.Properties.Add(property.Name, property.Value?.ToString());
-            }
+            telemetry.AddProperties(e.Evaluate().Properties);
 
             return telemetry;
         }

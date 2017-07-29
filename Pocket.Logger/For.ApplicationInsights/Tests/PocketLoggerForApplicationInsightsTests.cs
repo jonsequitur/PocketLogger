@@ -6,7 +6,6 @@ using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
-using Pocket.Tests;
 using Xunit;
 using Xunit.Abstractions;
 using static Pocket.LogEvents;
@@ -34,10 +33,7 @@ namespace Pocket.For.ApplicationInsights.Tests
             client = new TelemetryClient(
                 new TelemetryConfiguration(
                     "<instrumentation key>",
-                    new FakeTelemetryChannel(telemetrySent.Add)
-                    {
-                        DeveloperMode = true
-                    }));
+                    new FakeTelemetryChannel(telemetrySent.Add)));
         }
 
         public void Dispose() => disposables.Dispose();
@@ -100,7 +96,38 @@ namespace Pocket.For.ApplicationInsights.Tests
             {
                 Log.Event("my-event",
                           ("my-metric", 1.23),
-                          ("my-other-metric", (double) 123));
+                          ("my-other-metric",  123));
+            }
+
+            var expected = (EventTelemetry) telemetrySent[0];
+            var actual = (EventTelemetry) telemetrySent[1];
+
+            actual.Name.Should().Be(expected.Name);
+            actual.Metrics.ShouldBeEquivalentTo(expected.Metrics);
+            actual.Properties.ShouldBeEquivalentTo(expected.Properties);
+            actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
+        }
+
+        [Fact]
+        public void Log_events_can_be_used_to_send_custom_events_with_properties()
+        {
+            client.TrackEvent(new EventTelemetry
+            {
+                Name = "my-event",
+                Properties =
+                {
+                    ["my-property"] = "my-property-value"
+                }
+            });
+
+            using (client.SubscribeToPocketLogger())
+            {
+                Log.Event("my-event",
+                          properties: new (string, object)[]
+                          {
+                              ("my-property", "my-property-value")
+                          }
+                );
             }
 
             var expected = (EventTelemetry) telemetrySent[0];
@@ -123,14 +150,14 @@ namespace Pocket.For.ApplicationInsights.Tests
             {
                 client.TrackException(new ExceptionTelemetry
                 {
-                    Message = "oh no!",
+                    Message = "oh no! 1 and 2 happened.",
                     Exception = exception,
                     SeverityLevel = SeverityLevel.Error
                 });
 
                 using (client.SubscribeToPocketLogger())
                 {
-                    Log.Error("oh no!", exception);
+                    Log.Error("oh no! {this} and {that} happened.", exception, 1, 2);
                 }
             }
 
@@ -139,6 +166,7 @@ namespace Pocket.For.ApplicationInsights.Tests
 
             actual.Exception.Should().Be(expected.Exception);
             actual.Message.Should().Be(expected.Message);
+            actual.Properties.ShouldBeEquivalentTo(expected.Properties);
             actual.SeverityLevel.Should().Be(expected.SeverityLevel);
             actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
         }
