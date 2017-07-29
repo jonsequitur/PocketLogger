@@ -309,7 +309,6 @@ namespace Pocket
 
         public static OperationLogger OnExit(
             this Logger logger,
-            bool requireConfirm = false,
             [CallerMemberName] string name = null,
             string id = null,
             Func<(string name, object value)[]> exitArgs = null) =>
@@ -594,7 +593,6 @@ namespace Pocket
 
         public virtual void Dispose()
         {
-            stopwatch.Stop();
             Complete();
             disposed = true;
         }
