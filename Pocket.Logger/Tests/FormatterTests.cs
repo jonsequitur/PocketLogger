@@ -154,11 +154,11 @@ namespace Pocket.Tests
         {
             var formatter = Formatter.Parse("The values in the array are: {values}");
 
-            var result = formatter.Format(new[] { 1, 2, 3, 4 });
+            var result = formatter.Format(new[] { 1, 2, 3, 4 }, new[] { 4, 5, 6 });
 
             result.ToString()
                   .Should()
-                  .Be("The values in the array are: [ 1, 2, 3, 4 ]");
+                  .Be("The values in the array are: [ 1, 2, 3, 4 ] +[ [ 4, 5, 6 ] ]");
         }
     }
 }

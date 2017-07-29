@@ -14,7 +14,7 @@ namespace Pocket.Tests
 
         public LogEnrichmentTests(ITestOutputHelper output)
         {
-            disposables.Add(Subscribe(e => output.WriteLine(e.Format())));
+            disposables.Add(Subscribe(e => output.WriteLine(e.ToLogString())));
         }
 
         public void Dispose() => disposables.Dispose();

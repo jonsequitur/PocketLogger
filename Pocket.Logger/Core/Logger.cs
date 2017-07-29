@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -55,15 +56,28 @@ namespace Pocket
             LogLevel logLevel,
             string operationName = null,
             Exception exception = null,
-            object[] args = null) =>
-            Post(new LogEntry(
-                     message: message,
-                     logLevel: logLevel,
-                     operationName: operationName,
-                     exception: exception,
-                     category: Category,
-                     operation: this as OperationLogger,
-                     args: args));
+            object[] args = null,
+            (string Name, object Value)[] properties = null)
+        {
+            var logEntry = new LogEntry(
+                message: message,
+                logLevel: logLevel,
+                operationName: operationName,
+                exception: exception,
+                category: Category,
+                operation: this as OperationLogger,
+                args: args);
+
+            if (properties?.Length > 0)
+            {
+                for (var i = 0; i < properties.Length; i++)
+                {
+                    logEntry.AddProperty(properties[i]);
+                }
+            }
+
+            Post(logEntry);
+        }
 
         public string Category { get; }
 
@@ -81,7 +95,7 @@ namespace Pocket
 
     internal static partial class LogFormattingExtensions
     {
-        public static string Format(
+        public static string ToLogString(
             this (
                 int LogLevel,
                 DateTimeOffset Timestamp,
@@ -108,11 +122,30 @@ namespace Pocket
                 $"{e.Timestamp:o} {e.Operation.Id.IfNotEmpty()}{e.Category.IfNotEmpty()}{e.OperationName.IfNotEmpty()} {logLevelString}  {evaluated.Message} {e.Exception}";
         }
 
-        public static string IfNotEmpty(
+        
+        internal static string ToLogString(this object objectToFormat)
+        {
+            if (objectToFormat == null)
+            {
+                return "[null]";
+            }
+
+            if (objectToFormat is IEnumerable enumerable &&
+                !(objectToFormat is string))
+            {
+                return $"[ {string.Join(", ", enumerable.Cast<object>())} ]";
+            }
+
+            return objectToFormat.ToString();
+        }
+
+        private static string IfNotEmpty(
             this string value,
             string prefix = "[",
             string suffix = "] ") =>
-            string.IsNullOrEmpty(value) ? "" : $"{prefix}{value}{suffix}";
+            string.IsNullOrEmpty(value)
+                ? ""
+                : $"{prefix}{value}{suffix}";
 
         private static string LogLevelString(
             LogLevel logLevel,
@@ -137,7 +170,7 @@ namespace Pocket
 
                     if (isOperationSuccessful == false)
                     {
-                        return "⏹ -> ✖";
+                        return "⏹ -> ❌";
                     }
 
                     return "⏹";
@@ -145,6 +178,8 @@ namespace Pocket
 
                 switch (logLevel)
                 {
+                    case LogLevel.Telemetry:
+                        return "📊";
                     case LogLevel.Trace:
                     case LogLevel.Debug:
                         return "🔍";
@@ -229,7 +264,7 @@ namespace Pocket
         public static TLogger Warning<TLogger>(
             this TLogger logger,
             Exception exception)
-            where TLogger : Logger => 
+            where TLogger : Logger =>
             logger.Warning(null, exception);
 
         public static TLogger Error<TLogger>(
@@ -256,16 +291,14 @@ namespace Pocket
 
         public static OperationLogger OnEnterAndExit(
             this Logger logger,
-            bool requireConfirm = false,
             [CallerMemberName] string name = null,
             string id = null,
             Func<(string name, object value)[]> exitArgs = null)
         {
             var operation = new OperationLogger(
-                requireConfirm,
                 name,
                 logger.Category,
-                id, 
+                id,
                 logger as OperationLogger,
                 exitArgs);
 
@@ -281,34 +314,66 @@ namespace Pocket
             string id = null,
             Func<(string name, object value)[]> exitArgs = null) =>
             new OperationLogger(
-                requireConfirm,
                 name,
                 logger.Category,
-                id, 
+                id,
                 logger as OperationLogger,
                 exitArgs);
 
-        public static OperationLogger ConfirmOnExit(
+        public static ConfirmationLogger ConfirmOnExit(
             this Logger logger,
             [CallerMemberName] string name = null,
             string id = null,
             Func<(string name, object value)[]> exitArgs = null) =>
-            new OperationLogger(
-                true,
+            new ConfirmationLogger(
                 name,
                 logger.Category,
-                id, 
+                id,
                 logger as OperationLogger,
                 exitArgs);
+
+        public static ConfirmationLogger OnEnterAndConfirmOnExit(
+            this Logger logger,
+            [CallerMemberName] string name = null,
+            string id = null,
+            Func<(string name, object value)[]> exitArgs = null)
+        {
+            var operation = new ConfirmationLogger(
+                name,
+                logger.Category,
+                id,
+                logger as OperationLogger,
+                exitArgs);
+
+            operation.Post(operation[0]);
+
+            return operation;
+        }
+
+        public static void Event(
+            this Logger logger,
+            [CallerMemberName] string name = null) =>
+            logger.Post(null,
+                        LogLevel.Telemetry,
+                        operationName: name);
 
         public static void Event(
             this Logger logger,
             [CallerMemberName] string name = null,
-            params (string name, double value)[] metrics) =>
+            params (string, double)[] metrics) =>
             logger.Post(null,
                         LogLevel.Telemetry,
                         operationName: name,
                         args: metrics.Cast<object>().ToArray());
+
+        public static void Event(
+            this Logger logger,
+            [CallerMemberName] string name = null,
+            params (string name, object value)[] properties) =>
+            logger.Post(null,
+                        LogLevel.Telemetry,
+                        operationName: name,
+                        properties: properties);
     }
 
     internal class LogEntry
@@ -337,11 +402,7 @@ namespace Pocket
                 IsEndOfOperation = operation.IsComplete;
                 OperationId = operation?.Id;
                 OperationName = operationName ?? operation.Name;
-
-                if (operation.IsSuccessful != null)
-                {
-                    IsOperationSuccessful = operation.IsSuccessful == true;
-                }
+                IsOperationSuccessful = operation.IsSuccessful;
             }
             else
             {
@@ -400,6 +461,48 @@ namespace Pocket
             properties.Add(property);
     }
 
+    internal class ConfirmationLogger : OperationLogger
+    {
+        public ConfirmationLogger(
+            string operationName = null,
+            string category = null,
+            string id = null,
+            OperationLogger parentOperation = null,
+            Func<(string name, object value)[]> exitArgs = null) :
+            base(operationName, category, id, parentOperation, exitArgs)
+        {
+        }
+
+        public void Fail(
+            Exception exception = null,
+            string message = null,
+            params object[] args)
+        {
+            IsSuccessful = false;
+            Complete(message, exception, args);
+        }
+
+        public void Succeed(
+            string message = "",
+            params object[] args)
+        {
+            IsSuccessful = true;
+            Complete(message, null, args);
+        }
+
+        public override void Dispose()
+        {
+            if (IsSuccessful != true)
+            {
+                Fail();
+            }
+            else
+            {
+                Succeed();
+            }
+        }
+    }
+
     internal class OperationLogger : Logger, IDisposable
     {
         private readonly Func<(string name, object value)[]> exitArgs;
@@ -409,8 +512,7 @@ namespace Pocket
         private int sequenceNumber;
 
         public OperationLogger(
-            bool requireConfirm = false,
-            [CallerMemberName] string callingMethod = null,
+            string operationName = null,
             string category = null,
             string id = null,
             OperationLogger parentOperation = null,
@@ -418,16 +520,15 @@ namespace Pocket
         {
             this.exitArgs = exitArgs;
             Id = id ?? CreateId(parentOperation);
-            RequireConfirm = requireConfirm;
 
-            Name = callingMethod;
+            Name = operationName;
 
             logEntries.Add(new LogEntry(
                                LogLevel.Information,
                                null,
                                null,
                                category,
-                               callingMethod,
+                               operationName,
                                this));
         }
 
@@ -442,11 +543,9 @@ namespace Pocket
 
         public TimeSpan Duration => stopwatch.Elapsed;
 
-        public bool RequireConfirm { get; }
-
         public bool IsComplete { get; private set; }
 
-        public bool? IsSuccessful { get; private set; }
+        public bool? IsSuccessful { get; protected set; }
 
         public override void Post(LogEntry entry)
         {
@@ -460,8 +559,7 @@ namespace Pocket
             base.Post(entry);
         }
 
-        private void Complete(
-            bool? isSuccessful,
+        protected void Complete(
             string message = null,
             Exception exception = null,
             params object[] args)
@@ -472,68 +570,33 @@ namespace Pocket
             }
 
             IsComplete = true;
-            IsSuccessful = isSuccessful;
 
-            stopwatch.Stop();
-
-            var initialLogEntry = this[0];
-
-            var logEntry = new LogEntry(initialLogEntry.LogLevel,
-                                        message,
-                                        exception: exception,
-                                        category: initialLogEntry.Category,
-                                        operation: this,
-                                        args: args);
+            (string name, object value)[] evaluatedExitArgs = null;
 
             if (exitArgs != null)
             {
                 try
                 {
-                    var evaluatedExitArgs = exitArgs();
-                    foreach (var arg in evaluatedExitArgs)
-                    {
-                        logEntry.AddProperty(arg);
-                    }
+                    evaluatedExitArgs = exitArgs();
                 }
                 catch (Exception)
                 {
-                    // TODO-JOSEQU: (Complete) publish on error channel
+                    // TODO: (Complete) publish on error channel
                 }
             }
 
-            Post(logEntry);
-
-            disposed = true;
+            Post(message,
+                 this[0].LogLevel,
+                 exception: exception,
+                 args: args,
+                 properties: evaluatedExitArgs);
         }
 
-        public void Fail(
-            Exception exception = null,
-            string message = null,
-            params object[] args) =>
-            Complete(false, message, exception, args);
-
-        public void Succeed(
-            string message = "",
-            params object[] args) =>
-            Complete(true, message, null, args);
-
-        public void Dispose()
+        public virtual void Dispose()
         {
-            if (RequireConfirm)
-            {
-                if (IsSuccessful != true)
-                {
-                    Fail();
-                }
-                else
-                {
-                    Succeed();
-                }
-            }
-            else
-            {
-                Complete(null, this[0].OperationName);
-            }
+            stopwatch.Stop();
+            Complete();
+            disposed = true;
         }
 
         public IEnumerator<LogEntry> GetEnumerator() => logEntries.GetEnumerator();

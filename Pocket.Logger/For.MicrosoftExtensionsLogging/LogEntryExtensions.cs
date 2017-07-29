@@ -17,7 +17,7 @@ namespace Pocket.For.MicrosoftExtensionsLogging
                     e.Evaluate()
                      .Properties,
                     e.Exception,
-                    (state, exception) => e.Format());
+                    (state, exception) => e.ToLogString());
             });
         }
     }

@@ -9,24 +9,20 @@ namespace Pocket
         private static readonly Lazy<Type[]> loggerTypes = new Lazy<Type[]>(
             () =>
             {
-                var thisAssembly = typeof(Logger).GetTypeInfo().Assembly;
-
                 return Discover.ConcreteTypes()
-                               .Where(t => !t.GetTypeInfo()
-                                             .Assembly
-                                             .Equals(thisAssembly))
+                               .Where(t => t.AssemblyQualifiedName != typeof(Logger).AssemblyQualifiedName)
                                .Where(t => t.FullName == typeof(Logger).FullName)
                                .ToArray();
             });
 
         public static IDisposable Enrich(Action<Action<(string Name, object Value)>> enrich)
         {
-            var enrichSafely = Safely(enrich);
-            Logger.Enrich += enrichSafely;
+            enrich = enrich.Catch();
+            Logger.Enrich += enrich;
 
             return Disposable.Create(() =>
             {
-                Logger.Enrich -= enrichSafely;
+                Logger.Enrich -= enrich;
             });
         }
 
@@ -44,7 +40,7 @@ namespace Pocket
                     bool? IsSuccessful,
                     TimeSpan? Duration) Operation)>
                 onEntryPosted,
-            bool discoverOtherPocketLoggers = false)
+            bool discoverOtherPocketLoggers = true)
         {
             if (onEntryPosted == null)
             {
@@ -53,27 +49,31 @@ namespace Pocket
 
             var disposables = new CompositeDisposable();
 
-            var postSafely = Safely(onEntryPosted);
-            Logger.Posted += postSafely;
+            var postSafeltFromLocalLogger = onEntryPosted.Catch();
+            Logger.Posted += postSafeltFromLocalLogger;
 
             disposables.Add(Disposable.Create(() =>
             {
-                Logger.Posted -= postSafely;
+                Logger.Posted -= postSafeltFromLocalLogger;
             }));
 
             if (discoverOtherPocketLoggers)
             {
                 foreach (var loggerType in loggerTypes.Value)
                 {
-                    var entryPosted = (EventInfo) loggerType.GetMember(nameof(Logger.Posted)).Single();
+                    var entryPostedEventHandler = (EventInfo) loggerType.GetMember(nameof(Logger.Posted)).Single();
 
-                    postSafely = Safely(onEntryPosted);
+                    var postSafelyFromDiscoveredLogger = onEntryPosted.Catch();
 
-                    entryPosted.AddEventHandler(null, postSafely);
+                    entryPostedEventHandler.AddEventHandler(
+                        null,
+                        postSafelyFromDiscoveredLogger);
 
                     disposables.Add(Disposable.Create(() =>
                     {
-                        entryPosted.RemoveEventHandler(null, postSafely);
+                        entryPostedEventHandler.RemoveEventHandler(
+                            null,
+                            postSafelyFromDiscoveredLogger);
                     }));
                 }
             }
@@ -81,8 +81,9 @@ namespace Pocket
             return disposables;
         }
 
-        private static Action<T> Safely<T>(Action<T> action) =>
-            e =>
+        internal static Action<T> Catch<T>(this Action<T> action)
+        {
+            void invoke(T e)
             {
                 try
                 {
@@ -92,6 +93,9 @@ namespace Pocket
                 {
                     // TODO: (Subscribe) publish on error channel
                 }
-            };
+            }
+
+            return invoke;
+        }
     }
 }

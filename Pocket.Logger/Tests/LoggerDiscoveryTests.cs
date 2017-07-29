@@ -32,10 +32,10 @@ namespace Pocket.Tests
 
             foreach (var e in log)
             {
-                output.WriteLine(e.Format());
+                output.WriteLine(e.ToLogString());
             }
 
-            log.Should().Contain(e => e.Format().Contains(message));
+            log.Should().Contain(e => e.ToLogString().Contains(message));
         }
 
         [Fact]
@@ -53,11 +53,11 @@ namespace Pocket.Tests
 
             foreach (var e in log)
             {
-                output.WriteLine(e.Format());
+                output.WriteLine(e.ToLogString());
             }
 
-            log.Should().Contain(e => e.Format().Contains("before unsubscribe"));
-            log.Should().NotContain(e => e.Format().Contains("after unsubscribe"));
+            log.Should().Contain(e => e.ToLogString().Contains("before unsubscribe"));
+            log.Should().NotContain(e => e.ToLogString().Contains("after unsubscribe"));
         }
 
         [Fact]

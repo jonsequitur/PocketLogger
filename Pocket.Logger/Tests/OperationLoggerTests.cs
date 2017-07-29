@@ -18,7 +18,7 @@ namespace Pocket.Tests
         {
             disposables =
                 Subscribe(e =>
-                              output.WriteLine(e.Format()));
+                              output.WriteLine(e.ToLogString()));
         }
 
         public void Dispose() => disposables.Dispose();
@@ -70,7 +70,7 @@ namespace Pocket.Tests
         {
             var log = new List<string>();
 
-            using (Subscribe(e => log.Add(e.Format())))
+            using (Subscribe(e => log.Add(e.ToLogString())))
             using (Log.OnEnterAndExit())
             {
             }
@@ -84,7 +84,7 @@ namespace Pocket.Tests
         {
             var log = new List<string>();
 
-            using (Subscribe(e => log.Add(e.Format())))
+            using (Subscribe(e => log.Add(e.ToLogString())))
             using (var operation = Log.ConfirmOnExit())
             {
                 operation.Succeed();
@@ -98,12 +98,12 @@ namespace Pocket.Tests
         {
             var log = new List<string>();
 
-            using (Subscribe(e => log.Add(e.Format())))
+            using (Subscribe(e => log.Add(e.ToLogString())))
             using (Log.ConfirmOnExit())
             {
             }
 
-            log[0].Should().Contain("⏹ -> ✖");
+            log[0].Should().Contain("⏹ -> ❌");
         }
 
         [Fact]
@@ -111,7 +111,7 @@ namespace Pocket.Tests
         {
             var log = new List<string>();
 
-            using (Subscribe(e => log.Add(e.Format())))
+            using (Subscribe(e => log.Add(e.ToLogString())))
             using (Log.OnExit())
             {
                 await Task.Delay(10);
@@ -125,7 +125,7 @@ namespace Pocket.Tests
         {
             var log = new List<string>();
 
-            using (Subscribe(e => log.Add(e.Format())))
+            using (Subscribe(e => log.Add(e.ToLogString())))
             using (var operation = Log.ConfirmOnExit())
             {
                 await Task.Delay(10);
@@ -140,13 +140,13 @@ namespace Pocket.Tests
         {
             var log = new List<string>();
 
-            using (Subscribe(e => log.Add(e.Format())))
+            using (Subscribe(e => log.Add(e.ToLogString())))
             using (Log.ConfirmOnExit())
             {
                 await Task.Delay(10);
             }
 
-            log[0].Should().Match("*⏹ -> ✖ (*ms)*");
+            log[0].Should().Match("*⏹ -> ❌ (*ms)*");
         }
 
         [Fact]
@@ -265,7 +265,7 @@ namespace Pocket.Tests
         {
             var log = new List<string>();
 
-            using (Subscribe(e => log.Add(e.Format())))
+            using (Subscribe(e => log.Add(e.ToLogString())))
             using (var operation = Log.OnExit())
             {
                 await Task.Delay(20);
@@ -290,7 +290,7 @@ namespace Pocket.Tests
             var log = new LogEntryList();
 
             using (Subscribe(log.Add))
-            using (var operation = Log.OnEnterAndExit(requireConfirm: true))
+            using (var operation = Log.OnEnterAndConfirmOnExit())
             {
                 operation.Succeed();
             }
@@ -305,7 +305,7 @@ namespace Pocket.Tests
             var log = new LogEntryList();
 
             using (Subscribe(log.Add))
-            using (Log.OnEnterAndExit(requireConfirm: true))
+            using (Log.OnEnterAndConfirmOnExit())
             {
                 // don't call Fail or Succeed
             }
@@ -320,7 +320,7 @@ namespace Pocket.Tests
             var log = new LogEntryList();
 
             using (Subscribe(log.Add))
-            using (var operation = Log.OnEnterAndExit(requireConfirm: true))
+            using (var operation = Log.OnEnterAndConfirmOnExit())
             {
                 operation.Fail();
             }
@@ -335,7 +335,7 @@ namespace Pocket.Tests
             var log = new LogEntryList();
 
             using (Subscribe(log.Add))
-            using (var operation = Log.OnEnterAndExit())
+            using (var operation = Log.OnEnterAndConfirmOnExit())
             {
                 operation.Succeed("All done {0}", args: "bye!");
             }
@@ -354,7 +354,7 @@ namespace Pocket.Tests
             var log = new LogEntryList();
 
             using (Subscribe(log.Add))
-            using (var operation = Log.OnEnterAndExit())
+            using (var operation = Log.OnEnterAndConfirmOnExit())
             {
                 operation.Fail(message: "Oops! {0}", args: "bye!");
             }
@@ -368,33 +368,33 @@ namespace Pocket.Tests
         }
 
         [Fact]
-        public void After_Succeed_is_called_then_an_OperationLogger_does_not_log_again()
+        public void After_Succeed_is_called_then_an_ConfirmationLogger_does_not_log_on_dispose()
         {
             var log = new LogEntryList();
 
             using (Subscribe(log.Add))
-            using (var operation = Log.OnExit())
+            using (var operation = Log.ConfirmOnExit())
             {
                 operation.Succeed(message: "Oops! {0}", args: "bye!");
                 operation.Info("hello");
             }
 
-            log.Count.Should().Be(1);
+            log.Last().Evaluate().Message.Should().Be("hello");
         }
 
         [Fact]
-        public void After_Fail_is_called_then_an_OperationLogger_does_not_log_again()
+        public void After_Fail_is_called_then_an_ConfirmationLogger_does_not_log_on_dispose()
         {
             var log = new LogEntryList();
 
             using (Subscribe(log.Add))
-            using (var operation = Log.OnExit())
+            using (var operation = Log.ConfirmOnExit())
             {
                 operation.Fail(message: "Oops! {0}", args: "bye!");
                 operation.Info("hello");
             }
 
-            log.Count.Should().Be(1);
+            log.Last().Evaluate().Message.Should().Be("hello");
         }
 
         [Fact]
@@ -516,7 +516,7 @@ namespace Pocket.Tests
             var log = new LogEntryList();
 
             using (Subscribe(log.Add))
-            using (var parent = Log.ConfirmOnExit(id: "the-parent"))
+            using (var parent = Log.OnEnterAndConfirmOnExit(id: "the-parent"))
             {
                 for (var index = 0; index < 3; index++)
                 {
@@ -529,8 +529,10 @@ namespace Pocket.Tests
                 parent.Succeed();
             }
 
-            log.Select(l => l.Operation.IsSuccessful)
-               .ShouldBeEquivalentTo(new[] { false, false, false, true });
+            var results = log.Select(l => l.Operation.IsSuccessful);
+
+            results.ShouldBeEquivalentTo(
+                new object[] { null, false, false, false, true });
         }
     }
 }

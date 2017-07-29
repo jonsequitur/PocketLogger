@@ -15,7 +15,7 @@ namespace Pocket.Tests
         public LoggerTests(ITestOutputHelper output)
         {
             disposables = Subscribe(e =>
-                                        output.WriteLine(e.Format()));
+                                        output.WriteLine(e.ToLogString(), false));
         }
 
         public void Dispose() => disposables.Dispose();
