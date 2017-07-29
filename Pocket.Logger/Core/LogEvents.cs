@@ -21,12 +21,12 @@ namespace Pocket
 
         public static IDisposable Enrich(Action<Action<(string Name, object Value)>> enrich)
         {
-            var enrichSafely = Safely(enrich);
-            Logger.Enrich += enrichSafely;
+            enrich = enrich.Catch();
+            Logger.Enrich += enrich;
 
             return Disposable.Create(() =>
             {
-                Logger.Enrich -= enrichSafely;
+                Logger.Enrich -= enrich;
             });
         }
 
@@ -44,7 +44,7 @@ namespace Pocket
                     bool? IsSuccessful,
                     TimeSpan? Duration) Operation)>
                 onEntryPosted,
-            bool discoverOtherPocketLoggers = false)
+            bool discoverOtherPocketLoggers = true)
         {
             if (onEntryPosted == null)
             {
@@ -53,7 +53,7 @@ namespace Pocket
 
             var disposables = new CompositeDisposable();
 
-            var postSafely = Safely(onEntryPosted);
+            var postSafely = onEntryPosted.Catch();
             Logger.Posted += postSafely;
 
             disposables.Add(Disposable.Create(() =>
@@ -67,7 +67,7 @@ namespace Pocket
                 {
                     var entryPosted = (EventInfo) loggerType.GetMember(nameof(Logger.Posted)).Single();
 
-                    postSafely = Safely(onEntryPosted);
+                    postSafely = onEntryPosted.Catch();
 
                     entryPosted.AddEventHandler(null, postSafely);
 
@@ -81,8 +81,9 @@ namespace Pocket
             return disposables;
         }
 
-        private static Action<T> Safely<T>(Action<T> action) =>
-            e =>
+        internal static Action<T> Catch<T>(this Action<T> action)
+        {
+            void invoke(T e)
             {
                 try
                 {
@@ -92,6 +93,9 @@ namespace Pocket
                 {
                     // TODO: (Subscribe) publish on error channel
                 }
-            };
+            }
+
+            return invoke;
+        }
     }
 }
