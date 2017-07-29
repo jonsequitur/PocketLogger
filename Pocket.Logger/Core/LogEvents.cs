@@ -9,12 +9,8 @@ namespace Pocket
         private static readonly Lazy<Type[]> loggerTypes = new Lazy<Type[]>(
             () =>
             {
-                var thisAssembly = typeof(Logger).GetTypeInfo().Assembly;
-
                 return Discover.ConcreteTypes()
-                               .Where(t => !t.GetTypeInfo()
-                                             .Assembly
-                                             .Equals(thisAssembly))
+                               .Where(t => t.AssemblyQualifiedName != typeof(Logger).AssemblyQualifiedName)
                                .Where(t => t.FullName == typeof(Logger).FullName)
                                .ToArray();
             });
@@ -53,27 +49,31 @@ namespace Pocket
 
             var disposables = new CompositeDisposable();
 
-            var postSafely = onEntryPosted.Catch();
-            Logger.Posted += postSafely;
+            var postSafeltFromLocalLogger = onEntryPosted.Catch();
+            Logger.Posted += postSafeltFromLocalLogger;
 
             disposables.Add(Disposable.Create(() =>
             {
-                Logger.Posted -= postSafely;
+                Logger.Posted -= postSafeltFromLocalLogger;
             }));
 
             if (discoverOtherPocketLoggers)
             {
                 foreach (var loggerType in loggerTypes.Value)
                 {
-                    var entryPosted = (EventInfo) loggerType.GetMember(nameof(Logger.Posted)).Single();
+                    var entryPostedEventHandler = (EventInfo) loggerType.GetMember(nameof(Logger.Posted)).Single();
 
-                    postSafely = onEntryPosted.Catch();
+                    var postSafelyFromDiscoveredLogger = onEntryPosted.Catch();
 
-                    entryPosted.AddEventHandler(null, postSafely);
+                    entryPostedEventHandler.AddEventHandler(
+                        null,
+                        postSafelyFromDiscoveredLogger);
 
                     disposables.Add(Disposable.Create(() =>
                     {
-                        entryPosted.RemoveEventHandler(null, postSafely);
+                        entryPostedEventHandler.RemoveEventHandler(
+                            null,
+                            postSafelyFromDiscoveredLogger);
                     }));
                 }
             }
