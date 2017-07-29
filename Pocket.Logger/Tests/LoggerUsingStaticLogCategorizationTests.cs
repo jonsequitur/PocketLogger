@@ -15,7 +15,7 @@ namespace Pocket.Tests
         {
             disposables =
                 Subscribe(e =>
-                                  output.WriteLine(e.Format()));
+                                  output.WriteLine(e.ToLogString()));
         }
 
         [Fact]

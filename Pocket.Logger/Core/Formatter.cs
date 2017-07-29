@@ -56,7 +56,7 @@ namespace Pocket
 
                     if (formattedParam == null)
                     {
-                        formattedParam = Format(value);
+                        formattedParam = value.ToLogString();
                     }
 
                     sb.Replace(replacementTarget, formattedParam);
@@ -92,13 +92,13 @@ namespace Pocket
                 for (var i = argumentFormatters.Count; i < args.Count - 1; i++)
                 {
                     var argument = args[i];
-                    stringBuilder.Append(argument);
+                    stringBuilder.Append(argument.ToLogString());
                     stringBuilder.Append(", ");
                     result.Add($"arg{i}", argument);
                 }
 
                 var lastArgument = args[args.Count - 1];
-                stringBuilder.Append(lastArgument);
+                stringBuilder.Append(lastArgument.ToLogString());
                 stringBuilder.Append(" ]");
                 result.Add($"arg{args.Count - 1}", lastArgument);
             }
@@ -107,24 +107,6 @@ namespace Pocket
         }
 
         public FormatterResult Format(params object[] args) => Format((IReadOnlyList<object>) args);
-
-        private static string Format(object objectToFormat)
-        {
-            if (objectToFormat == null)
-            {
-                return "[null]";
-            }
-
-            var enumerable = objectToFormat as IEnumerable;
-
-            if (enumerable != null &&
-                !(objectToFormat is string))
-            {
-                return $"[ {string.Join(", ", enumerable.Cast<object>())} ]";
-            }
-
-            return objectToFormat.ToString();
-        }
 
         internal class FormatterResult : IReadOnlyList<(string Name, object Value)>
         {

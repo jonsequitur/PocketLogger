@@ -18,7 +18,7 @@ namespace Pocket.Tests
         {
             disposables =
                 Subscribe(e =>
-                              output.WriteLine(e.Format()));
+                              output.WriteLine(e.ToLogString()));
         }
 
         public void Dispose() => disposables.Dispose();
@@ -70,7 +70,7 @@ namespace Pocket.Tests
         {
             var log = new List<string>();
 
-            using (Subscribe(e => log.Add(e.Format())))
+            using (Subscribe(e => log.Add(e.ToLogString())))
             using (Log.OnEnterAndExit())
             {
             }
@@ -84,7 +84,7 @@ namespace Pocket.Tests
         {
             var log = new List<string>();
 
-            using (Subscribe(e => log.Add(e.Format())))
+            using (Subscribe(e => log.Add(e.ToLogString())))
             using (var operation = Log.ConfirmOnExit())
             {
                 operation.Succeed();
@@ -98,12 +98,12 @@ namespace Pocket.Tests
         {
             var log = new List<string>();
 
-            using (Subscribe(e => log.Add(e.Format())))
+            using (Subscribe(e => log.Add(e.ToLogString())))
             using (Log.ConfirmOnExit())
             {
             }
 
-            log[0].Should().Contain("⏹ -> ✖");
+            log[0].Should().Contain("⏹ -> ❌");
         }
 
         [Fact]
@@ -111,7 +111,7 @@ namespace Pocket.Tests
         {
             var log = new List<string>();
 
-            using (Subscribe(e => log.Add(e.Format())))
+            using (Subscribe(e => log.Add(e.ToLogString())))
             using (Log.OnExit())
             {
                 await Task.Delay(10);
@@ -125,7 +125,7 @@ namespace Pocket.Tests
         {
             var log = new List<string>();
 
-            using (Subscribe(e => log.Add(e.Format())))
+            using (Subscribe(e => log.Add(e.ToLogString())))
             using (var operation = Log.ConfirmOnExit())
             {
                 await Task.Delay(10);
@@ -140,13 +140,13 @@ namespace Pocket.Tests
         {
             var log = new List<string>();
 
-            using (Subscribe(e => log.Add(e.Format())))
+            using (Subscribe(e => log.Add(e.ToLogString())))
             using (Log.ConfirmOnExit())
             {
                 await Task.Delay(10);
             }
 
-            log[0].Should().Match("*⏹ -> ✖ (*ms)*");
+            log[0].Should().Match("*⏹ -> ❌ (*ms)*");
         }
 
         [Fact]
@@ -265,7 +265,7 @@ namespace Pocket.Tests
         {
             var log = new List<string>();
 
-            using (Subscribe(e => log.Add(e.Format())))
+            using (Subscribe(e => log.Add(e.ToLogString())))
             using (var operation = Log.OnExit())
             {
                 await Task.Delay(20);

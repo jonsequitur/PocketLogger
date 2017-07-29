@@ -81,7 +81,7 @@ namespace Pocket
 
     internal static partial class LogFormattingExtensions
     {
-        public static string Format(
+        public static string ToLogString(
             this (
                 int LogLevel,
                 DateTimeOffset Timestamp,
@@ -108,11 +108,30 @@ namespace Pocket
                 $"{e.Timestamp:o} {e.Operation.Id.IfNotEmpty()}{e.Category.IfNotEmpty()}{e.OperationName.IfNotEmpty()} {logLevelString}  {evaluated.Message} {e.Exception}";
         }
 
-        public static string IfNotEmpty(
+        
+        internal static string ToLogString(this object objectToFormat)
+        {
+            if (objectToFormat == null)
+            {
+                return "[null]";
+            }
+
+            if (objectToFormat is IEnumerable enumerable &&
+                !(objectToFormat is string))
+            {
+                return $"[ {string.Join(", ", enumerable.Cast<object>())} ]";
+            }
+
+            return objectToFormat.ToString();
+        }
+
+        private static string IfNotEmpty(
             this string value,
             string prefix = "[",
             string suffix = "] ") =>
-            string.IsNullOrEmpty(value) ? "" : $"{prefix}{value}{suffix}";
+            string.IsNullOrEmpty(value)
+                ? ""
+                : $"{prefix}{value}{suffix}";
 
         private static string LogLevelString(
             LogLevel logLevel,
