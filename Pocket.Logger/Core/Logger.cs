@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -196,7 +197,7 @@ namespace Pocket
                 }
             }
 
-            return duration == null
+            return duration == TimeSpan.Zero
                        ? symbol()
                        : $"{symbol()} ({duration?.TotalMilliseconds}ms)";
         }
@@ -295,16 +296,13 @@ namespace Pocket
             string id = null,
             Func<(string name, object value)[]> exitArgs = null)
         {
-            var operation = new OperationLogger(
+            return new OperationLogger(
                 name,
                 logger.Category,
                 id,
                 logger as OperationLogger,
-                exitArgs);
-
-            operation.Post(operation[0]);
-
-            return operation;
+                exitArgs, 
+                true);
         }
 
         public static OperationLogger OnExit(
@@ -337,16 +335,13 @@ namespace Pocket
             string id = null,
             Func<(string name, object value)[]> exitArgs = null)
         {
-            var operation = new ConfirmationLogger(
+            return new ConfirmationLogger(
                 name,
                 logger.Category,
                 id,
                 logger as OperationLogger,
-                exitArgs);
-
-            operation.Post(operation[0]);
-
-            return operation;
+                exitArgs,
+                true);
         }
 
         public static void Event(
@@ -397,9 +392,9 @@ namespace Pocket
             if (operation != null)
             {
                 OperationDuration = operation.Duration;
-                IsStartOfOperation = operation.Count == 0;
+                IsStartOfOperation = operation.Duration == TimeSpan.Zero;
                 IsEndOfOperation = operation.IsComplete;
-                OperationId = operation?.Id;
+                OperationId = operation.Id;
                 OperationName = operationName ?? operation.Name;
                 IsOperationSuccessful = operation.IsSuccessful;
             }
@@ -467,8 +462,9 @@ namespace Pocket
             string category = null,
             string id = null,
             OperationLogger parentOperation = null,
-            Func<(string name, object value)[]> exitArgs = null) :
-            base(operationName, category, id, parentOperation, exitArgs)
+            Func<(string name, object value)[]> exitArgs = null,
+            bool logOnStart = false) :
+            base(operationName, category, id, parentOperation, exitArgs, logOnStart)
         {
         }
 
@@ -505,8 +501,8 @@ namespace Pocket
     internal class OperationLogger : Logger, IDisposable
     {
         private readonly Func<(string name, object value)[]> exitArgs;
-        private readonly List<LogEntry> logEntries = new List<LogEntry>();
-        private readonly Stopwatch stopwatch = Stopwatch.StartNew();
+        private readonly Stopwatch stopwatch;
+        private readonly LogEntry initialEntry;
         private bool disposed;
         private int sequenceNumber;
 
@@ -515,20 +511,30 @@ namespace Pocket
             string category = null,
             string id = null,
             OperationLogger parentOperation = null,
-            Func<(string name, object value)[]> exitArgs = null) : base(category)
+            Func<(string name, object value)[]> exitArgs = null,
+            bool logOnStart = false) : base(category)
         {
             this.exitArgs = exitArgs;
             Id = id ?? CreateId(parentOperation);
 
             Name = operationName;
 
-            logEntries.Add(new LogEntry(
-                               LogLevel.Information,
-                               null,
-                               null,
-                               category,
-                               operationName,
-                               this));
+            stopwatch = new Stopwatch();
+
+            initialEntry = new LogEntry(
+                LogLevel.Information,
+                null,
+                null,
+                category,
+                operationName,
+                this);
+
+            if (logOnStart)
+            {
+                Post(initialEntry);
+            }
+
+            stopwatch.Start();
         }
 
         private string CreateId(OperationLogger parentOperation = null) =>
@@ -546,14 +552,14 @@ namespace Pocket
 
         public bool? IsSuccessful { get; protected set; }
 
+        public int SequenceNumber => sequenceNumber;
+
         public override void Post(LogEntry entry)
         {
             if (disposed)
             {
                 return;
             }
-
-            logEntries.Add(entry);
 
             base.Post(entry);
         }
@@ -585,7 +591,7 @@ namespace Pocket
             }
 
             Post(message,
-                 this[0].LogLevel,
+                 initialEntry.LogLevel,
                  exception: exception,
                  args: args,
                  properties: evaluatedExitArgs);
@@ -596,11 +602,5 @@ namespace Pocket
             Complete();
             disposed = true;
         }
-
-        public IEnumerator<LogEntry> GetEnumerator() => logEntries.GetEnumerator();
-
-        public int Count => logEntries.Count;
-
-        public LogEntry this[int index] => logEntries[index];
     }
 }
