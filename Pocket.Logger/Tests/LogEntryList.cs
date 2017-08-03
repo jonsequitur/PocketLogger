@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Pocket.Tests
 {
     public class LogEntryList : List<(
-        int LogLevel,
+        byte LogLevel,
         DateTimeOffset Timestamp,
         Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
         Exception Exception,

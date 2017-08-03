@@ -28,7 +28,7 @@ namespace Pocket
 
         public static IDisposable Subscribe(
             Action<(
-                    int LogLevel,
+                    byte LogLevel,
                     DateTimeOffset Timestamp,
                     Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                     Exception Exception,

@@ -28,7 +28,7 @@ namespace Pocket.For.ApplicationInsights.Tests
 
             disposables =
                 Subscribe(e =>
-                              this.output.WriteLine(e.ToString()));
+                              this.output.WriteLine(e.ToLogString()));
 
             client = new TelemetryClient(
                 new TelemetryConfiguration(
@@ -96,7 +96,7 @@ namespace Pocket.For.ApplicationInsights.Tests
             {
                 Log.Event("my-event",
                           ("my-metric", 1.23),
-                          ("my-other-metric",  123));
+                          ("my-other-metric", 123));
             }
 
             var expected = (EventTelemetry) telemetrySent[0];
@@ -197,6 +197,22 @@ namespace Pocket.For.ApplicationInsights.Tests
             actual.Properties.ShouldBeEquivalentTo(expected.Properties);
             actual.SeverityLevel.Should().Be(expected.SeverityLevel);
             actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
+        }
+
+        [Fact]
+        public void Events_sent_after_operation_completion_are_treated_as_custom_events()
+        {
+            using (client.SubscribeToPocketLogger())
+            using (var operation = Log.ConfirmOnExit())
+            {
+                operation.Succeed();
+
+                operation.Event();
+            }
+
+            telemetrySent.Last()
+                         .Should()
+                         .BeOfType<EventTelemetry>();
         }
     }
 }

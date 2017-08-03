@@ -14,13 +14,13 @@ namespace Pocket.For.ApplicationInsights
         {
             return LogEvents.Subscribe(e =>
             {
-                if (e.Operation.IsEnd)
-                {
-                    telemetryClient.TrackDependency(e.ToDependencyTelemetry());
-                }
-                else if (e.LogLevel == (int) LogLevel.Telemetry)
+                if (e.LogLevel == (byte) LogLevel.Telemetry)
                 {
                     telemetryClient.TrackEvent(e.ToEventTelemetry());
+                }
+                else if (e.Operation.IsEnd)
+                {
+                    telemetryClient.TrackDependency(e.ToDependencyTelemetry());
                 }
                 else if (e.Exception != null)
                 {
@@ -34,7 +34,7 @@ namespace Pocket.For.ApplicationInsights
         }
 
         internal static DependencyTelemetry ToDependencyTelemetry(
-            this (int LogLevel,
+            this (byte LogLevel,
                 DateTimeOffset Timestamp,
                 Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
@@ -78,7 +78,7 @@ namespace Pocket.For.ApplicationInsights
         }
 
         internal static EventTelemetry ToEventTelemetry(
-            this ( int LogLevel,
+            this (byte LogLevel,
                 DateTimeOffset Timestamp,
                 Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
@@ -117,7 +117,7 @@ namespace Pocket.For.ApplicationInsights
         }
 
         internal static ExceptionTelemetry ToExceptionTelemetry(
-            this ( int LogLevel,
+            this (byte LogLevel,
                 DateTimeOffset Timestamp,
                 Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
@@ -138,7 +138,7 @@ namespace Pocket.For.ApplicationInsights
         }
 
         internal static TraceTelemetry ToTraceTelemetry(
-            this ( int LogLevel,
+            this (byte LogLevel,
                 DateTimeOffset Timestamp,
                 Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,

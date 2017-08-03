@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -19,7 +18,7 @@ namespace Pocket
         public static event Action<Action<(string Name, object Value)>> Enrich;
 
         public static event Action<(
-            int LogLevel,
+            byte LogLevel,
             DateTimeOffset Timestamp,
             Func<(string Message, (string Name, object Value)[] properties)> Evaluate,
             Exception Exception,
@@ -36,7 +35,7 @@ namespace Pocket
             Enrich?.Invoke(entry.AddProperty);
 
             Posted?.Invoke(
-                ((int) entry.LogLevel,
+                ((byte) entry.LogLevel,
                 entry.Timestamp,
                 entry.Evaluate,
                 entry.Exception,
@@ -98,7 +97,7 @@ namespace Pocket
     {
         public static string ToLogString(
             this (
-                int LogLevel,
+                byte LogLevel,
                 DateTimeOffset Timestamp,
                 Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
@@ -120,7 +119,7 @@ namespace Pocket
                                e.Operation.Duration);
 
             return
-                $"{e.Timestamp:o} {e.Operation.Id.IfNotEmpty()}{e.Category.IfNotEmpty()}{e.OperationName.IfNotEmpty()} {logLevelString}  {evaluated.Message} {e.Exception}";
+                $"{e.Timestamp:o} {e.Operation.Id.IfNotEmpty()}{e.Category.IfNotEmpty()}{e.OperationName.IfNotEmpty()} {logLevelString} {evaluated.Message} {e.Exception}";
         }
 
         
@@ -203,7 +202,7 @@ namespace Pocket
         }
     }
 
-    internal enum LogLevel
+    internal enum LogLevel : byte
     {
         Telemetry,
         Trace,
