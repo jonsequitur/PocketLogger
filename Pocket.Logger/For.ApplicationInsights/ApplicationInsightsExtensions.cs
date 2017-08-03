@@ -35,7 +35,7 @@ namespace Pocket.For.ApplicationInsights
 
         internal static DependencyTelemetry ToDependencyTelemetry(
             this (byte LogLevel,
-                DateTimeOffset Timestamp,
+                DateTime TimestampUtc,
                 Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
                 string OperationName,
@@ -79,7 +79,7 @@ namespace Pocket.For.ApplicationInsights
 
         internal static EventTelemetry ToEventTelemetry(
             this (byte LogLevel,
-                DateTimeOffset Timestamp,
+                DateTime TimestampUtc,
                 Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
                 string OperationName,
@@ -118,7 +118,7 @@ namespace Pocket.For.ApplicationInsights
 
         internal static ExceptionTelemetry ToExceptionTelemetry(
             this (byte LogLevel,
-                DateTimeOffset Timestamp,
+                DateTime TimestampUtc,
                 Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
                 string OperationName,
@@ -139,7 +139,7 @@ namespace Pocket.For.ApplicationInsights
 
         internal static TraceTelemetry ToTraceTelemetry(
             this (byte LogLevel,
-                DateTimeOffset Timestamp,
+                DateTime TimestampUtc,
                 Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
                 string OperationName,

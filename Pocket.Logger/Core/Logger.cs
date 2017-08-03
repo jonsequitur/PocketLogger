@@ -19,7 +19,7 @@ namespace Pocket
 
         public static event Action<(
             byte LogLevel,
-            DateTimeOffset Timestamp,
+            DateTime TimestampUtc,
             Func<(string Message, (string Name, object Value)[] properties)> Evaluate,
             Exception Exception,
             string OperationName,
@@ -36,7 +36,7 @@ namespace Pocket
 
             Posted?.Invoke(
                 ((byte) entry.LogLevel,
-                entry.Timestamp,
+                entry.TimestampUtc,
                 entry.Evaluate,
                 entry.Exception,
                 entry.OperationName,
@@ -98,7 +98,7 @@ namespace Pocket
         public static string ToLogString(
             this (
                 byte LogLevel,
-                DateTimeOffset Timestamp,
+                DateTime TimestampUtc,
                 Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
                 string OperationName,
@@ -119,7 +119,7 @@ namespace Pocket
                                e.Operation.Duration);
 
             return
-                $"{e.Timestamp:o} {e.Operation.Id.IfNotEmpty()}{e.Category.IfNotEmpty()}{e.OperationName.IfNotEmpty()} {logLevelString} {evaluated.Message} {e.Exception}";
+                $"{e.TimestampUtc:o} {e.Operation.Id.IfNotEmpty()}{e.Category.IfNotEmpty()}{e.OperationName.IfNotEmpty()} {logLevelString} {evaluated.Message} {e.Exception}";
         }
 
         
@@ -442,7 +442,7 @@ namespace Pocket
 
         public OperationLogger Operation { get; }
 
-        public DateTimeOffset Timestamp { get; } = DateTimeOffset.Now;
+        public DateTime TimestampUtc { get; } = DateTime.UtcNow;
 
         public LogLevel LogLevel { get; }
 
