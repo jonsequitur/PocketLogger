@@ -186,7 +186,7 @@ namespace Pocket.Tests
             using (var operation = Log.ConfirmOnExit())
             {
                 operation.Succeed("success!");
-                await Task.Delay(50);
+                await Task.Delay(100);
                 operation.Info("hello");
             }
 
@@ -202,7 +202,7 @@ namespace Pocket.Tests
                 .Value;
 
             infoEvent.Should()
-                     .BeCloseTo(successEvent + 50.Milliseconds());
+                     .BeCloseTo(successEvent + 100.Milliseconds(), precision: 50);
         }
 
         [Fact]
