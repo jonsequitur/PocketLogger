@@ -4,6 +4,7 @@ using System.Diagnostics;
 using FluentAssertions;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
@@ -42,7 +43,7 @@ namespace Pocket.For.ApplicationInsights.Tests
         public void Dispose() => disposables.Dispose();
 
         [Fact]
-        public void Log_events_can_be_used_to_send_dependency_tracking_on_operation_complete()
+        public async Task Log_events_can_be_used_to_send_dependency_tracking_on_operation_complete()
         {
             var id = Guid.NewGuid().ToString();
             client.TrackDependency(new DependencyTelemetry
@@ -67,7 +68,7 @@ namespace Pocket.For.ApplicationInsights.Tests
                 id,
                 exitArgs: () => new (string, object)[] { ("RequestUri", new Uri("http://example.com") ) }))
             {
-                Thread.Sleep(500);
+                await Task.Delay(500);
                 operation.Succeed("{ResultCode}", 200);
             }
 
@@ -75,7 +76,7 @@ namespace Pocket.For.ApplicationInsights.Tests
             var actual = (DependencyTelemetry) telemetrySent[1];
 
             actual.Data.Should().Be(expected.Data);
-            actual.Duration.Should().BeCloseTo(expected.Duration);
+            actual.Duration.Should().BeCloseTo(expected.Duration, precision: 50);
             actual.Id.Should().Be(expected.Id);
             actual.Name.Should().Be(expected.Name);
             actual.Properties.ShouldBeEquivalentTo(expected.Properties);
