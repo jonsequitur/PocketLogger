@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
+using System.Diagnostics;
 using FluentAssertions;
+using System.Linq;
+using System.Threading;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
+using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
 using static Pocket.LogEvents;
@@ -213,6 +216,68 @@ namespace Pocket.For.ApplicationInsights.Tests
             telemetrySent.Last()
                          .Should()
                          .BeOfType<EventTelemetry>();
+        }
+
+        [Fact]
+        public void Context_Operation_name_is_set_in_all_telemetry()
+        {
+            using (client.SubscribeToPocketLogger())
+            using (var operation = Log.OnEnterAndConfirmOnExit())
+            {
+                operation.Event();
+                operation.Info("hi!");
+                operation.Succeed();
+            }
+
+            WriteTelemetryToConsole();
+
+            telemetrySent.Should()
+                         .OnlyContain(t => t.Context.Operation.Name == nameof(Context_Operation_name_is_set_in_all_telemetry));
+        }
+
+        [Fact]
+        public void Context_Operation_id_is_set_in_all_telemetry()
+        {
+            using (client.SubscribeToPocketLogger())
+            using (var operation = Log.OnEnterAndConfirmOnExit())
+            {
+                operation.Event();
+                operation.Info("hi!");
+                operation.Succeed();
+            }
+
+            WriteTelemetryToConsole();
+
+            telemetrySent.Should()
+                         .OnlyContain(t => t.Context.Operation.Id != null);
+        }
+
+        [Fact]
+        public void Context_Operation_parent_id_is_set_in_all_telemetry()
+        {
+            var activity = new Activity("the-ambient-activity").Start();
+
+            using (Disposable.Create(() => activity.Stop()))
+            using (client.SubscribeToPocketLogger())
+            using (var operation = Log.OnEnterAndConfirmOnExit())
+            {
+                operation.Event();
+                operation.Info("hi!");
+                operation.Succeed();
+            }
+
+            WriteTelemetryToConsole();
+
+            telemetrySent.Should()
+                         .OnlyContain(t => t.Context.Operation.ParentId == activity.Id);
+        }
+
+        private void WriteTelemetryToConsole()
+        {
+            foreach (var telemetry in telemetrySent)
+            {
+                output.WriteLine(JsonConvert.SerializeObject(telemetry, Formatting.Indented));
+            }
         }
     }
 }

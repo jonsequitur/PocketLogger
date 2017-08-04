@@ -3,7 +3,7 @@
   <metadata>
     <id>PocketLogger</id>
     <title>PocketLogger</title>
-    <version>0.1.5</version>
+    <version>0.2.0</version>
     <authors>jonsequitur</authors>
     <owners>jonsequitur</owners>
     <projectUrl>https://github.com/jonsequitur/pocketlogger</projectUrl>
@@ -19,6 +19,7 @@ An embeddable logging and telemetry library for concise, multi-purpose instrumen
     <developmentDependency>true</developmentDependency>
     <dependencies>
       <dependency id="System.ValueTuple" version="[4.3.1,)" />
+      <dependency id="System.Diagnostics.DiagnosticSource" version="[4.4.1,)" />
     </dependencies>
   </metadata>
   <files>

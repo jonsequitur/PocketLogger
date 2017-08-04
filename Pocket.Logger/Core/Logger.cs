@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading;
 
 namespace Pocket
 {
@@ -122,7 +121,6 @@ namespace Pocket
                 $"{e.TimestampUtc:o} {e.Operation.Id.IfNotEmpty()}{e.Category.IfNotEmpty()}{e.OperationName.IfNotEmpty()} {logLevelString} {evaluated.Message} {e.Exception}";
         }
 
-        
         internal static string ToLogString(this object objectToFormat)
         {
             if (objectToFormat == null)
@@ -299,8 +297,7 @@ namespace Pocket
                 name,
                 logger.Category,
                 id,
-                logger as OperationLogger,
-                exitArgs, 
+                exitArgs,
                 true);
         }
 
@@ -313,7 +310,6 @@ namespace Pocket
                 name,
                 logger.Category,
                 id,
-                logger as OperationLogger,
                 exitArgs);
 
         public static ConfirmationLogger ConfirmOnExit(
@@ -325,7 +321,6 @@ namespace Pocket
                 name,
                 logger.Category,
                 id,
-                logger as OperationLogger,
                 exitArgs);
 
         public static ConfirmationLogger OnEnterAndConfirmOnExit(
@@ -338,7 +333,6 @@ namespace Pocket
                 name,
                 logger.Category,
                 id,
-                logger as OperationLogger,
                 exitArgs,
                 true);
         }
@@ -391,7 +385,7 @@ namespace Pocket
             if (operation != null)
             {
                 OperationDuration = operation.Duration;
-                IsStartOfOperation = operation.Duration == TimeSpan.Zero;
+                IsStartOfOperation = operation.IsStarting;
                 IsEndOfOperation = operation.IsComplete;
                 OperationId = operation.Id;
                 OperationName = operationName ?? operation.Name;
@@ -460,10 +454,9 @@ namespace Pocket
             string operationName = null,
             string category = null,
             string id = null,
-            OperationLogger parentOperation = null,
             Func<(string name, object value)[]> exitArgs = null,
             bool logOnStart = false) :
-            base(operationName, category, id, parentOperation, exitArgs, logOnStart)
+            base(operationName, category, id, exitArgs, logOnStart)
         {
         }
 
@@ -500,25 +493,24 @@ namespace Pocket
     internal class OperationLogger : Logger, IDisposable
     {
         private readonly Func<(string name, object value)[]> exitArgs;
-        private readonly Stopwatch stopwatch;
         private readonly LogEntry initialEntry;
         private bool disposed;
-        private int sequenceNumber;
+        private readonly Activity activity;
 
         public OperationLogger(
             string operationName = null,
             string category = null,
             string id = null,
-            OperationLogger parentOperation = null,
             Func<(string name, object value)[]> exitArgs = null,
             bool logOnStart = false) : base(category)
         {
             this.exitArgs = exitArgs;
-            Id = id ?? CreateId(parentOperation);
 
-            Name = operationName;
+            activity = new Activity(operationName).Start();
 
-            stopwatch = new Stopwatch();
+            Id = id ?? activity.Id;
+
+            IsStarting = true;
 
             initialEntry = new LogEntry(
                 LogLevel.Information,
@@ -528,30 +520,25 @@ namespace Pocket
                 operationName,
                 this);
 
+            IsStarting = false;
+
             if (logOnStart)
             {
                 Post(initialEntry);
             }
-
-            stopwatch.Start();
         }
-
-        private string CreateId(OperationLogger parentOperation = null) =>
-            parentOperation != null
-                ? $"{parentOperation.Id}.{Interlocked.Increment(ref parentOperation.sequenceNumber)}"
-                : Guid.NewGuid().ToString();
 
         public string Id { get; }
 
-        public string Name { get; }
+        public string Name => activity.OperationName;
 
-        public TimeSpan Duration => stopwatch.Elapsed;
+        public TimeSpan Duration => DateTime.UtcNow - activity.StartTimeUtc;
 
         public bool IsComplete { get; private set; }
 
-        public bool? IsSuccessful { get; protected set; }
+        public bool IsStarting { get; }
 
-        public int SequenceNumber => sequenceNumber;
+        public bool? IsSuccessful { get; protected set; }
 
         public override void Post(LogEntry entry)
         {
@@ -599,6 +586,7 @@ namespace Pocket
         public virtual void Dispose()
         {
             Complete();
+            activity.Stop();
             disposed = true;
         }
     }
