@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 using Metric = System.ValueTuple<string, double>;
 
@@ -14,13 +16,13 @@ namespace Pocket.For.ApplicationInsights
         {
             return LogEvents.Subscribe(e =>
             {
-                if (e.Operation.IsEnd)
-                {
-                    telemetryClient.TrackDependency(e.ToDependencyTelemetry());
-                }
-                else if (e.LogLevel == (int) LogLevel.Telemetry)
+                if (e.LogLevel == (byte) LogLevel.Telemetry)
                 {
                     telemetryClient.TrackEvent(e.ToEventTelemetry());
+                }
+                else if (e.Operation.IsEnd)
+                {
+                    telemetryClient.TrackDependency(e.ToDependencyTelemetry());
                 }
                 else if (e.Exception != null)
                 {
@@ -33,9 +35,36 @@ namespace Pocket.For.ApplicationInsights
             }, discoverOtherPocketLoggers: discoverOtherPocketLoggers);
         }
 
+        private static void AddProperties(this ISupportProperties telemetry, (string Name, object Value)[] properties)
+        {
+            foreach (var pair in properties)
+            {
+                if (!(pair.Value is Metric))
+                {
+                    telemetry.Properties.Add(
+                        pair.Item1,
+                        pair.Item2?.ToString());
+                }
+            }
+        }
+
+        internal static T AttachActivity<T>(this T telemetry) where T : ITelemetry
+        {
+            var activity = Activity.Current;
+
+            if (activity != null)
+            {
+                telemetry.Context.Operation.Name = activity.OperationName;
+                telemetry.Context.Operation.Id = activity.Id;
+                telemetry.Context.Operation.ParentId = activity.ParentId;
+            }
+
+            return telemetry;
+        }
+
         internal static DependencyTelemetry ToDependencyTelemetry(
-            this (int LogLevel,
-                DateTimeOffset Timestamp,
+            this (byte LogLevel,
+                DateTime TimestampUtc,
                 Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
                 string OperationName,
@@ -61,25 +90,12 @@ namespace Pocket.For.ApplicationInsights
 
             telemetry.AddProperties(properties);
 
-            return telemetry;
-        }
-
-        private static void AddProperties(this ISupportProperties telemetry, (string Name, object Value)[] properties)
-        {
-            foreach (var pair in properties)
-            {
-                if (!(pair.Value is Metric))
-                {
-                    telemetry.Properties.Add(
-                        pair.Item1,
-                        pair.Item2?.ToString());
-                }
-            }
+            return telemetry.AttachActivity();
         }
 
         internal static EventTelemetry ToEventTelemetry(
-            this ( int LogLevel,
-                DateTimeOffset Timestamp,
+            this (byte LogLevel,
+                DateTime TimestampUtc,
                 Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
                 string OperationName,
@@ -113,12 +129,12 @@ namespace Pocket.For.ApplicationInsights
                 }
             }
 
-            return telemetry;
+            return telemetry.AttachActivity();
         }
 
         internal static ExceptionTelemetry ToExceptionTelemetry(
-            this ( int LogLevel,
-                DateTimeOffset Timestamp,
+            this (byte LogLevel,
+                DateTime TimestampUtc,
                 Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
                 string OperationName,
@@ -127,19 +143,17 @@ namespace Pocket.For.ApplicationInsights
                 bool IsStart,
                 bool IsEnd,
                 bool? IsSuccessful,
-                TimeSpan? Duration) Operation) e)
-        {
-            return new ExceptionTelemetry
+                TimeSpan? Duration) Operation) e) =>
+            new ExceptionTelemetry
             {
                 Message = e.Evaluate().Message,
                 Exception = e.Exception,
                 SeverityLevel = MapSeverityLevel((LogLevel) e.LogLevel)
-            };
-        }
+            }.AttachActivity();
 
         internal static TraceTelemetry ToTraceTelemetry(
-            this ( int LogLevel,
-                DateTimeOffset Timestamp,
+            this (byte LogLevel,
+                DateTime TimestampUtc,
                 Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
                 string OperationName,
@@ -158,7 +172,7 @@ namespace Pocket.For.ApplicationInsights
 
             telemetry.AddProperties(e.Evaluate().Properties);
 
-            return telemetry;
+            return telemetry.AttachActivity();
         }
 
         private static SeverityLevel MapSeverityLevel(LogLevel logLevel)

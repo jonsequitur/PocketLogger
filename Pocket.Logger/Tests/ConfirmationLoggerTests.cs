@@ -186,7 +186,7 @@ namespace Pocket.Tests
             using (var operation = Log.ConfirmOnExit())
             {
                 operation.Succeed("success!");
-                await Task.Delay(50);
+                await Task.Delay(100);
                 operation.Info("hello");
             }
 
@@ -202,7 +202,7 @@ namespace Pocket.Tests
                 .Value;
 
             infoEvent.Should()
-                     .BeCloseTo(successEvent + 50.Milliseconds());
+                     .BeCloseTo(successEvent + 100.Milliseconds(), precision: 50);
         }
 
         [Fact]
@@ -251,14 +251,12 @@ namespace Pocket.Tests
         [Fact]
         public void Child_operations_have_ids_derived_from_their_parent_by_default()
         {
-            using (var parent = Log.ConfirmOnExit(id: "the-parent"))
+            using (var parent = Log.ConfirmOnExit())
             using (var child = parent.ConfirmOnExit())
-            using (var grandchild1 = child.ConfirmOnExit())
-            using (var grandchild2 = child.ConfirmOnExit())
+            using (var grandchild = child.ConfirmOnExit())
             {
-                child.Id.Should().Be("the-parent.1");
-                grandchild1.Id.Should().Be("the-parent.1.1");
-                grandchild2.Id.Should().Be("the-parent.1.2");
+                child.Id.Should().Contain(parent.Id);
+                grandchild.Id.Should().Contain(parent.Id);
             }
         }
 
@@ -268,7 +266,7 @@ namespace Pocket.Tests
             var log = new LogEntryList();
 
             using (Subscribe(log.Add))
-            using (var parent = Log.OnEnterAndConfirmOnExit(id: "the-parent"))
+            using (var parent = Log.OnEnterAndConfirmOnExit())
             {
                 for (var index = 0; index < 3; index++)
                 {

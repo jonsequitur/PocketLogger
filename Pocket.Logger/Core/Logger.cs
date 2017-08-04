@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading;
 
 namespace Pocket
 {
@@ -19,8 +17,8 @@ namespace Pocket
         public static event Action<Action<(string Name, object Value)>> Enrich;
 
         public static event Action<(
-            int LogLevel,
-            DateTimeOffset Timestamp,
+            byte LogLevel,
+            DateTime TimestampUtc,
             Func<(string Message, (string Name, object Value)[] properties)> Evaluate,
             Exception Exception,
             string OperationName,
@@ -36,8 +34,8 @@ namespace Pocket
             Enrich?.Invoke(entry.AddProperty);
 
             Posted?.Invoke(
-                ((int) entry.LogLevel,
-                entry.Timestamp,
+                ((byte) entry.LogLevel,
+                entry.TimestampUtc,
                 entry.Evaluate,
                 entry.Exception,
                 entry.OperationName,
@@ -98,8 +96,8 @@ namespace Pocket
     {
         public static string ToLogString(
             this (
-                int LogLevel,
-                DateTimeOffset Timestamp,
+                byte LogLevel,
+                DateTime TimestampUtc,
                 Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
                 string OperationName,
@@ -120,10 +118,9 @@ namespace Pocket
                                e.Operation.Duration);
 
             return
-                $"{e.Timestamp:o} {e.Operation.Id.IfNotEmpty()}{e.Category.IfNotEmpty()}{e.OperationName.IfNotEmpty()} {logLevelString}  {evaluated.Message} {e.Exception}";
+                $"{e.TimestampUtc:o} {e.Operation.Id.IfNotEmpty()}{e.Category.IfNotEmpty()}{e.OperationName.IfNotEmpty()} {logLevelString} {evaluated.Message} {e.Exception}";
         }
 
-        
         internal static string ToLogString(this object objectToFormat)
         {
             if (objectToFormat == null)
@@ -203,7 +200,7 @@ namespace Pocket
         }
     }
 
-    internal enum LogLevel
+    internal enum LogLevel : byte
     {
         Telemetry,
         Trace,
@@ -293,53 +290,41 @@ namespace Pocket
         public static OperationLogger OnEnterAndExit(
             this Logger logger,
             [CallerMemberName] string name = null,
-            string id = null,
             Func<(string name, object value)[]> exitArgs = null)
         {
             return new OperationLogger(
                 name,
                 logger.Category,
-                id,
-                logger as OperationLogger,
-                exitArgs, 
+                exitArgs,
                 true);
         }
 
         public static OperationLogger OnExit(
             this Logger logger,
             [CallerMemberName] string name = null,
-            string id = null,
             Func<(string name, object value)[]> exitArgs = null) =>
             new OperationLogger(
                 name,
                 logger.Category,
-                id,
-                logger as OperationLogger,
                 exitArgs);
 
         public static ConfirmationLogger ConfirmOnExit(
             this Logger logger,
             [CallerMemberName] string name = null,
-            string id = null,
             Func<(string name, object value)[]> exitArgs = null) =>
             new ConfirmationLogger(
                 name,
                 logger.Category,
-                id,
-                logger as OperationLogger,
                 exitArgs);
 
         public static ConfirmationLogger OnEnterAndConfirmOnExit(
             this Logger logger,
             [CallerMemberName] string name = null,
-            string id = null,
             Func<(string name, object value)[]> exitArgs = null)
         {
             return new ConfirmationLogger(
                 name,
                 logger.Category,
-                id,
-                logger as OperationLogger,
                 exitArgs,
                 true);
         }
@@ -392,7 +377,7 @@ namespace Pocket
             if (operation != null)
             {
                 OperationDuration = operation.Duration;
-                IsStartOfOperation = operation.Duration == TimeSpan.Zero;
+                IsStartOfOperation = operation.IsStarting;
                 IsEndOfOperation = operation.IsComplete;
                 OperationId = operation.Id;
                 OperationName = operationName ?? operation.Name;
@@ -443,7 +428,7 @@ namespace Pocket
 
         public OperationLogger Operation { get; }
 
-        public DateTimeOffset Timestamp { get; } = DateTimeOffset.Now;
+        public DateTime TimestampUtc { get; } = DateTime.UtcNow;
 
         public LogLevel LogLevel { get; }
 
@@ -460,11 +445,9 @@ namespace Pocket
         public ConfirmationLogger(
             string operationName = null,
             string category = null,
-            string id = null,
-            OperationLogger parentOperation = null,
             Func<(string name, object value)[]> exitArgs = null,
             bool logOnStart = false) :
-            base(operationName, category, id, parentOperation, exitArgs, logOnStart)
+            base(operationName, category, exitArgs, logOnStart)
         {
         }
 
@@ -501,25 +484,21 @@ namespace Pocket
     internal class OperationLogger : Logger, IDisposable
     {
         private readonly Func<(string name, object value)[]> exitArgs;
-        private readonly Stopwatch stopwatch;
         private readonly LogEntry initialEntry;
         private bool disposed;
-        private int sequenceNumber;
+        private readonly Activity activity;
 
         public OperationLogger(
             string operationName = null,
             string category = null,
-            string id = null,
-            OperationLogger parentOperation = null,
             Func<(string name, object value)[]> exitArgs = null,
             bool logOnStart = false) : base(category)
         {
             this.exitArgs = exitArgs;
-            Id = id ?? CreateId(parentOperation);
 
-            Name = operationName;
+            activity = new Activity(operationName).Start();
 
-            stopwatch = new Stopwatch();
+            IsStarting = true;
 
             initialEntry = new LogEntry(
                 LogLevel.Information,
@@ -529,30 +508,25 @@ namespace Pocket
                 operationName,
                 this);
 
+            IsStarting = false;
+
             if (logOnStart)
             {
                 Post(initialEntry);
             }
-
-            stopwatch.Start();
         }
 
-        private string CreateId(OperationLogger parentOperation = null) =>
-            parentOperation != null
-                ? $"{parentOperation.Id}.{Interlocked.Increment(ref parentOperation.sequenceNumber)}"
-                : Guid.NewGuid().ToString();
+        public string Id => activity.Id;
 
-        public string Id { get; }
+        public string Name => activity.OperationName;
 
-        public string Name { get; }
-
-        public TimeSpan Duration => stopwatch.Elapsed;
+        public TimeSpan Duration => DateTime.UtcNow - activity.StartTimeUtc;
 
         public bool IsComplete { get; private set; }
 
-        public bool? IsSuccessful { get; protected set; }
+        public bool IsStarting { get; }
 
-        public int SequenceNumber => sequenceNumber;
+        public bool? IsSuccessful { get; protected set; }
 
         public override void Post(LogEntry entry)
         {
@@ -600,6 +574,7 @@ namespace Pocket
         public virtual void Dispose()
         {
             Complete();
+            activity.Stop();
             disposed = true;
         }
     }

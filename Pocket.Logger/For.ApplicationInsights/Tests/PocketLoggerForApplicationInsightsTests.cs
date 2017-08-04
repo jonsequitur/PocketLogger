@@ -1,11 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
+using System.Diagnostics;
 using FluentAssertions;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
+using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
 using static Pocket.LogEvents;
@@ -28,7 +32,7 @@ namespace Pocket.For.ApplicationInsights.Tests
 
             disposables =
                 Subscribe(e =>
-                              this.output.WriteLine(e.ToString()));
+                              this.output.WriteLine(e.ToLogString()));
 
             client = new TelemetryClient(
                 new TelemetryConfiguration(
@@ -39,14 +43,12 @@ namespace Pocket.For.ApplicationInsights.Tests
         public void Dispose() => disposables.Dispose();
 
         [Fact]
-        public void Log_events_can_be_used_to_send_dependency_tracking_on_operation_complete()
+        public async Task Log_events_can_be_used_to_send_dependency_tracking_on_operation_complete()
         {
-            var id = Guid.NewGuid().ToString();
             client.TrackDependency(new DependencyTelemetry
             {
                 Data = "http://example.com/",
                 Duration = 500.Milliseconds(),
-                Id = id,
                 Success = true,
                 Timestamp = DateTimeOffset.UtcNow,
                 Name = "my-operation",
@@ -61,10 +63,9 @@ namespace Pocket.For.ApplicationInsights.Tests
             using (client.SubscribeToPocketLogger())
             using (var operation = Log.ConfirmOnExit(
                 "my-operation",
-                id,
                 exitArgs: () => new (string, object)[] { ("RequestUri", new Uri("http://example.com") ) }))
             {
-                Thread.Sleep(500);
+                await Task.Delay(200);
                 operation.Succeed("{ResultCode}", 200);
             }
 
@@ -72,8 +73,7 @@ namespace Pocket.For.ApplicationInsights.Tests
             var actual = (DependencyTelemetry) telemetrySent[1];
 
             actual.Data.Should().Be(expected.Data);
-            actual.Duration.Should().BeCloseTo(expected.Duration);
-            actual.Id.Should().Be(expected.Id);
+            actual.Duration.Should().BeGreaterOrEqualTo(200.Milliseconds());
             actual.Name.Should().Be(expected.Name);
             actual.Properties.ShouldBeEquivalentTo(expected.Properties);
             actual.ResultCode.Should().Be(expected.ResultCode);
@@ -96,7 +96,7 @@ namespace Pocket.For.ApplicationInsights.Tests
             {
                 Log.Event("my-event",
                           ("my-metric", 1.23),
-                          ("my-other-metric",  123));
+                          ("my-other-metric", 123));
             }
 
             var expected = (EventTelemetry) telemetrySent[0];
@@ -197,6 +197,84 @@ namespace Pocket.For.ApplicationInsights.Tests
             actual.Properties.ShouldBeEquivalentTo(expected.Properties);
             actual.SeverityLevel.Should().Be(expected.SeverityLevel);
             actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
+        }
+
+        [Fact]
+        public void Events_sent_after_operation_completion_are_treated_as_custom_events()
+        {
+            using (client.SubscribeToPocketLogger())
+            using (var operation = Log.ConfirmOnExit())
+            {
+                operation.Succeed();
+
+                operation.Event();
+            }
+
+            telemetrySent.Last()
+                         .Should()
+                         .BeOfType<EventTelemetry>();
+        }
+
+        [Fact]
+        public void Context_Operation_name_is_set_in_all_telemetry()
+        {
+            using (client.SubscribeToPocketLogger())
+            using (var operation = Log.OnEnterAndConfirmOnExit())
+            {
+                operation.Event();
+                operation.Info("hi!");
+                operation.Succeed();
+            }
+
+            WriteTelemetryToConsole();
+
+            telemetrySent.Should()
+                         .OnlyContain(t => t.Context.Operation.Name == nameof(Context_Operation_name_is_set_in_all_telemetry));
+        }
+
+        [Fact]
+        public void Context_Operation_id_is_set_in_all_telemetry()
+        {
+            using (client.SubscribeToPocketLogger())
+            using (var operation = Log.OnEnterAndConfirmOnExit())
+            {
+                operation.Event();
+                operation.Info("hi!");
+                operation.Succeed();
+            }
+
+            WriteTelemetryToConsole();
+
+            telemetrySent.Should()
+                         .OnlyContain(t => t.Context.Operation.Id != null);
+        }
+
+        [Fact]
+        public void Context_Operation_parent_id_is_set_in_all_telemetry()
+        {
+            var activity = new Activity("the-ambient-activity").Start();
+
+            using (Disposable.Create(() => activity.Stop()))
+            using (client.SubscribeToPocketLogger())
+            using (var operation = Log.OnEnterAndConfirmOnExit())
+            {
+                operation.Event();
+                operation.Info("hi!");
+                operation.Succeed();
+            }
+
+            WriteTelemetryToConsole();
+
+            telemetrySent.Should()
+                         .OnlyContain(t => t.Context.Operation.ParentId == activity.Id);
+        }
+
+        private void WriteTelemetryToConsole()
+        {
+            foreach (var telemetry in telemetrySent)
+            {
+                output.WriteLine(JsonConvert.SerializeObject(telemetry, Formatting.Indented));
+            }
         }
     }
 }
