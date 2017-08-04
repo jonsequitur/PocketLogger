@@ -65,7 +65,7 @@ namespace Pocket.For.ApplicationInsights.Tests
                 "my-operation",
                 exitArgs: () => new (string, object)[] { ("RequestUri", new Uri("http://example.com") ) }))
             {
-                await Task.Delay(500);
+                await Task.Delay(200);
                 operation.Succeed("{ResultCode}", 200);
             }
 
@@ -73,7 +73,7 @@ namespace Pocket.For.ApplicationInsights.Tests
             var actual = (DependencyTelemetry) telemetrySent[1];
 
             actual.Data.Should().Be(expected.Data);
-            actual.Duration.Should().BeCloseTo(expected.Duration, precision: 50);
+            actual.Duration.Should().BeGreaterOrEqualTo(200.Milliseconds());
             actual.Name.Should().Be(expected.Name);
             actual.Properties.ShouldBeEquivalentTo(expected.Properties);
             actual.ResultCode.Should().Be(expected.ResultCode);
