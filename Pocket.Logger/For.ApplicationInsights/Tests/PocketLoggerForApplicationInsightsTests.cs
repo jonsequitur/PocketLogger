@@ -45,12 +45,10 @@ namespace Pocket.For.ApplicationInsights.Tests
         [Fact]
         public async Task Log_events_can_be_used_to_send_dependency_tracking_on_operation_complete()
         {
-            var id = Guid.NewGuid().ToString();
             client.TrackDependency(new DependencyTelemetry
             {
                 Data = "http://example.com/",
                 Duration = 500.Milliseconds(),
-                Id = id,
                 Success = true,
                 Timestamp = DateTimeOffset.UtcNow,
                 Name = "my-operation",
@@ -65,7 +63,6 @@ namespace Pocket.For.ApplicationInsights.Tests
             using (client.SubscribeToPocketLogger())
             using (var operation = Log.ConfirmOnExit(
                 "my-operation",
-                id,
                 exitArgs: () => new (string, object)[] { ("RequestUri", new Uri("http://example.com") ) }))
             {
                 await Task.Delay(500);
@@ -77,7 +74,6 @@ namespace Pocket.For.ApplicationInsights.Tests
 
             actual.Data.Should().Be(expected.Data);
             actual.Duration.Should().BeCloseTo(expected.Duration, precision: 50);
-            actual.Id.Should().Be(expected.Id);
             actual.Name.Should().Be(expected.Name);
             actual.Properties.ShouldBeEquivalentTo(expected.Properties);
             actual.ResultCode.Should().Be(expected.ResultCode);

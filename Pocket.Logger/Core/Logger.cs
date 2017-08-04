@@ -290,13 +290,11 @@ namespace Pocket
         public static OperationLogger OnEnterAndExit(
             this Logger logger,
             [CallerMemberName] string name = null,
-            string id = null,
             Func<(string name, object value)[]> exitArgs = null)
         {
             return new OperationLogger(
                 name,
                 logger.Category,
-                id,
                 exitArgs,
                 true);
         }
@@ -304,35 +302,29 @@ namespace Pocket
         public static OperationLogger OnExit(
             this Logger logger,
             [CallerMemberName] string name = null,
-            string id = null,
             Func<(string name, object value)[]> exitArgs = null) =>
             new OperationLogger(
                 name,
                 logger.Category,
-                id,
                 exitArgs);
 
         public static ConfirmationLogger ConfirmOnExit(
             this Logger logger,
             [CallerMemberName] string name = null,
-            string id = null,
             Func<(string name, object value)[]> exitArgs = null) =>
             new ConfirmationLogger(
                 name,
                 logger.Category,
-                id,
                 exitArgs);
 
         public static ConfirmationLogger OnEnterAndConfirmOnExit(
             this Logger logger,
             [CallerMemberName] string name = null,
-            string id = null,
             Func<(string name, object value)[]> exitArgs = null)
         {
             return new ConfirmationLogger(
                 name,
                 logger.Category,
-                id,
                 exitArgs,
                 true);
         }
@@ -453,10 +445,9 @@ namespace Pocket
         public ConfirmationLogger(
             string operationName = null,
             string category = null,
-            string id = null,
             Func<(string name, object value)[]> exitArgs = null,
             bool logOnStart = false) :
-            base(operationName, category, id, exitArgs, logOnStart)
+            base(operationName, category, exitArgs, logOnStart)
         {
         }
 
@@ -500,15 +491,12 @@ namespace Pocket
         public OperationLogger(
             string operationName = null,
             string category = null,
-            string id = null,
             Func<(string name, object value)[]> exitArgs = null,
             bool logOnStart = false) : base(category)
         {
             this.exitArgs = exitArgs;
 
             activity = new Activity(operationName).Start();
-
-            Id = id ?? activity.Id;
 
             IsStarting = true;
 
@@ -528,7 +516,7 @@ namespace Pocket
             }
         }
 
-        public string Id { get; }
+        public string Id => activity.Id;
 
         public string Name => activity.OperationName;
 

@@ -266,7 +266,7 @@ namespace Pocket.Tests
             var log = new LogEntryList();
 
             using (Subscribe(log.Add))
-            using (var parent = Log.OnEnterAndConfirmOnExit(id: "the-parent"))
+            using (var parent = Log.OnEnterAndConfirmOnExit())
             {
                 for (var index = 0; index < 3; index++)
                 {

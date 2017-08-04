@@ -125,28 +125,12 @@ namespace Pocket.Tests
         }
 
         [Fact]
-        public void Log_entries_within_an_operation_share_an_id_when_specified()
-        {
-            var log = new LogEntryList();
-            var operationId = "the-operation-id";
-
-            using (Subscribe(log.Add))
-            using (var operation = Log.OnEnterAndExit(id: operationId))
-            {
-                operation.Info("hello");
-            }
-
-            log.Select(e => e.Operation.Id).Should().OnlyContain(id => id == operationId);
-        }
-
-        [Fact]
         public void Log_entries_within_an_operation_share_an_id_when_not_specified()
         {
             var log = new LogEntryList();
-            var operationId = Guid.NewGuid().ToString();
 
             using (Subscribe(log.Add))
-            using (var operation = Log.OnEnterAndExit(id: operationId))
+            using (var operation = Log.OnEnterAndExit())
             {
                 operation.Info("hello");
             }
@@ -158,11 +142,13 @@ namespace Pocket.Tests
         public void Log_entries_within_an_operation_contain_their_id_in_string_output()
         {
             var log = new LogEntryList();
-            var operationId = Guid.NewGuid().ToString();
+            string operationId;
 
             using (Subscribe(log.Add))
-            using (var operation = Log.OnEnterAndExit(id: operationId))
+            using (var operation = Log.OnEnterAndExit())
             {
+                operationId = operation.Id;
+
                 operation.Info("hello");
             }
 
