@@ -80,6 +80,19 @@ namespace Pocket.Tests
         }
 
         [Fact]
+        public void Start_entries_do_not_write_duration_in_string_output()
+        {
+            var log = new List<string>();
+
+            using (Subscribe(e => log.Add(e.ToLogString())))
+            using (Log.OnEnterAndExit())
+            {
+            }
+
+            log[0].Should().NotContain("ms)");
+        }
+
+        [Fact]
         public async Task Stop_entries_write_duration_in_string_output()
         {
             var log = new List<string>();
