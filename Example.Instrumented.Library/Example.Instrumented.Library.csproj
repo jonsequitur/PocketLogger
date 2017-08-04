@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="system.diagnostics.diagnosticsource" Version="4.4.1" />
+    <PackageReference Include="system.diagnostics.diagnosticsource" Version="4.4.0" />
     <PackageReference Include="system.valuetuple" Version="4.3.1" />
   </ItemGroup>
 
