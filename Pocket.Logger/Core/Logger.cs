@@ -194,7 +194,7 @@ namespace Pocket
                 }
             }
 
-            return duration == TimeSpan.Zero
+            return isStartOfOperation
                        ? symbol()
                        : $"{symbol()} ({duration?.TotalMilliseconds}ms)";
         }
