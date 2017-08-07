@@ -3,7 +3,7 @@
   <metadata>
     <id>PocketLogger.Subscribe</id>
     <title>PocketLogger.Subscribe</title>
-    <version>0.2.0</version>
+    <version>0.2.1</version>
     <authors>jonsequitur</authors>
     <owners>jonsequitur</owners>
     <projectUrl>https://github.com/jonsequitur/pocketlogger</projectUrl>
@@ -20,9 +20,9 @@ The PocketLogger.Subscribe package enables subscribing to the log events emitted
     <licenseUrl>https://github.com/jonsequitur/PocketLogger/blob/master/LICENSE</licenseUrl>
     <developmentDependency>true</developmentDependency>
     <dependencies>
-      <dependency id="PocketLogger" version="[0.2.0,0.3)" />
-      <dependency id="Pocket.Disposable" version="[1.0.0,2)" />
-      <dependency id="Pocket.TypeDiscovery" version="[0.3.11,0.4)" />
+      <dependency id="PocketLogger" version="[0.2.0,0.3)" include="all" />
+      <dependency id="Pocket.Disposable" version="[1.0.0,2)" include="all" />
+      <dependency id="Pocket.TypeDiscovery" version="[0.3.11,0.4)" include="all" />
     </dependencies>
   </metadata>
   <files>
