@@ -9,9 +9,9 @@ namespace Pocket
 {
     internal class Logger
     {
-        public Logger(string category = null)
+        public Logger(string category = "")
         {
-            Category = category;
+            Category = category ?? "";
         }
 
         public static event Action<Action<(string Name, object Value)>> Enrich;
@@ -194,7 +194,8 @@ namespace Pocket
                 }
             }
 
-            return isStartOfOperation
+            return duration == null ||
+                   isStartOfOperation
                        ? symbol()
                        : $"{symbol()} ({duration?.TotalMilliseconds}ms)";
         }
