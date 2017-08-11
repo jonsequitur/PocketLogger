@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using FluentAssertions;
 using System.Linq;
 using Xunit;
@@ -224,10 +225,27 @@ namespace Pocket.Tests
 
             using (Subscribe(log.Add))
             {
+                new Logger().Info("hello");
                 Log.Info("hello");
             }
 
             log.Should().OnlyContain(e => e.Category == "");
         }
+
+        [Fact]
+        public void Log_entries_have_no_duration()
+        {
+            var log = new LogEntryList();
+
+            using (Subscribe(log.Add))
+            {
+                Log.Info("hello");
+            }
+
+            log.Should().OnlyContain(e => e.Operation.Duration == null);
+            log[0].ToLogString().Should().NotContain("ms)");
+        }
     }
 }
+
+
