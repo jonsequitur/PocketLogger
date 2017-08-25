@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 
 namespace Pocket
 {
+    [DebuggerStepThrough]
     internal class Logger
     {
         public Logger(string category = "")

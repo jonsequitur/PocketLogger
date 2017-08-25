@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Pocket
 {
+    [DebuggerStepThrough]
     internal static class Disposable
     {
         public static IDisposable Create(Action dispose) =>
@@ -25,6 +27,7 @@ namespace Pocket
         }
     }
 
+    [DebuggerStepThrough]
     internal class CompositeDisposable : IDisposable, IEnumerable<IDisposable>
     {
         private bool isDisposed = false;

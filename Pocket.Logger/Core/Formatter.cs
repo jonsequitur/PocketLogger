@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -9,6 +10,7 @@ using System.Text.RegularExpressions;
 
 namespace Pocket
 {
+    [DebuggerStepThrough]
     internal class Formatter
     {
         private readonly string template;
