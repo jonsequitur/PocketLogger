@@ -297,5 +297,18 @@ namespace Pocket.Tests
                .Should()
                .Contain(p => p.Name == "hello" && p.Value.Equals(123));
         }
+
+        [Fact]
+        public void OperationLogger_message_appears_in_initial_log_event_string_output()
+        {
+            var log = new List<string>();
+
+            using (Subscribe(e => log.Add(e.ToLogString())))
+            using (var logger = new OperationLogger(message: "hello!", logOnStart: true))
+            {
+            }
+
+            log.First().Should().Contain("hello!");
+        }
     }
 }

@@ -181,7 +181,7 @@ namespace Pocket
                         return "📊";
                     case LogLevel.Trace:
                     case LogLevel.Debug:
-                        return "🔍";
+                        return "⏱";
                     case LogLevel.Information:
                         return "ℹ";
                     case LogLevel.Warning:
@@ -297,6 +297,7 @@ namespace Pocket
             return new OperationLogger(
                 name,
                 logger.Category,
+                null,
                 exitArgs,
                 true);
         }
@@ -308,6 +309,7 @@ namespace Pocket
             new OperationLogger(
                 name,
                 logger.Category,
+                null,
                 exitArgs);
 
         public static ConfirmationLogger ConfirmOnExit(
@@ -317,6 +319,7 @@ namespace Pocket
             new ConfirmationLogger(
                 name,
                 logger.Category,
+                null,
                 exitArgs);
 
         public static ConfirmationLogger OnEnterAndConfirmOnExit(
@@ -327,6 +330,7 @@ namespace Pocket
             return new ConfirmationLogger(
                 name,
                 logger.Category,
+                null,
                 exitArgs,
                 true);
         }
@@ -447,9 +451,10 @@ namespace Pocket
         public ConfirmationLogger(
             string operationName = null,
             string category = null,
+            string message = null,
             Func<(string name, object value)[]> exitArgs = null,
             bool logOnStart = false) :
-            base(operationName, category, exitArgs, logOnStart)
+            base(operationName, category, message, exitArgs, logOnStart)
         {
         }
 
@@ -493,6 +498,7 @@ namespace Pocket
         public OperationLogger(
             string operationName = null,
             string category = null,
+            string message = null,
             Func<(string name, object value)[]> exitArgs = null,
             bool logOnStart = false) : base(category)
         {
@@ -504,7 +510,7 @@ namespace Pocket
 
             initialEntry = new LogEntry(
                 LogLevel.Information,
-                null,
+                message,
                 null,
                 category,
                 operationName,

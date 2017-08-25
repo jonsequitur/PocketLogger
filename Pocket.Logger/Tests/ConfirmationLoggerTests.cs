@@ -284,5 +284,18 @@ namespace Pocket.Tests
             results.ShouldBeEquivalentTo(
                 new object[] { null, false, false, false, true });
         }
+
+        [Fact]
+        public void ConfirmationLogger_message_appears_in_initial_log_event_string_output()
+        {
+            var log = new List<string>();
+
+            using (Subscribe(e => log.Add(e.ToLogString())))
+            using (var logger = new ConfirmationLogger(message: "hello!", logOnStart: true))
+            {
+            }
+
+            log.First().Should().Contain("hello!");
+        }
     }
 }
