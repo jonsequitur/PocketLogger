@@ -8,6 +8,7 @@ using Metric = System.ValueTuple<string, double>;
 
 namespace Pocket.For.ApplicationInsights
 {
+    [DebuggerStepThrough]
     internal static class ApplicationInsightsExtensions
     {
         public static IDisposable SubscribeToPocketLogger(

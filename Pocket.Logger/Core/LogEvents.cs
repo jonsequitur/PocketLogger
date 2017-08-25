@@ -1,9 +1,11 @@
 using System;
+using System.Diagnostics;
 using System.Reflection;
 using System.Linq;
 
 namespace Pocket
 {
+    [DebuggerStepThrough]
     internal static partial class LogEvents
     {
         private static readonly Lazy<Type[]> loggerTypes = new Lazy<Type[]>(
