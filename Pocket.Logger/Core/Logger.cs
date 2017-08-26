@@ -453,8 +453,9 @@ namespace Pocket
             string category = null,
             string message = null,
             Func<(string name, object value)[]> exitArgs = null,
-            bool logOnStart = false) :
-            base(operationName, category, message, exitArgs, logOnStart)
+            bool logOnStart = false,
+            object[] args = null) :
+            base(operationName, category, message, exitArgs, logOnStart, args)
         {
         }
 
@@ -500,7 +501,8 @@ namespace Pocket
             string category = null,
             string message = null,
             Func<(string name, object value)[]> exitArgs = null,
-            bool logOnStart = false) : base(category)
+            bool logOnStart = false,
+            object[] args = null) : base(category)
         {
             this.exitArgs = exitArgs;
 
@@ -514,7 +516,8 @@ namespace Pocket
                 null,
                 category,
                 operationName,
-                this);
+                this,
+                args);
 
             IsStarting = false;
 
