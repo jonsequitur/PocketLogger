@@ -291,11 +291,24 @@ namespace Pocket.Tests
             var log = new List<string>();
 
             using (Subscribe(e => log.Add(e.ToLogString())))
-            using (var logger = new ConfirmationLogger(message: "hello!", logOnStart: true))
+            using (new ConfirmationLogger(message: "hello!", logOnStart: true))
             {
             }
 
             log.First().Should().Contain("hello!");
+        }
+
+        [Fact]
+        public void ConfirmationLogger_args_appears_in_initial_log_event_string_output()
+        {
+            var log = new List<string>();
+
+            using (Subscribe(e => log.Add(e.ToLogString())))
+            using (new ConfirmationLogger(message: "{one} and {two} and {three}", logOnStart: true, args: new object[] {1, 2, 3}))
+            {
+            }
+
+            log.First().Should().Contain("1 and 2 and 3");
         }
     }
 }
