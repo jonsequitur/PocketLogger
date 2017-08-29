@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading;
-using Pocket.For.Xunit.Tests;
 using Xunit.Abstractions;
 
 namespace Pocket.For.Xunit
