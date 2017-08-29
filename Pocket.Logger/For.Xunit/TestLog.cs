@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading;
+using Pocket.For.Xunit.Tests;
+using Xunit.Abstractions;
 
 namespace Pocket.For.Xunit
 {
@@ -49,13 +51,15 @@ namespace Pocket.For.Xunit
 
         private void LogToFile()
         {
-            var stream = LogFile.AppendText();
+            var stream = File.AppendText(LogFile.FullName);
+
+            stream.AutoFlush = true;
 
             disposables.Add(
-               LogEvents.Subscribe(e =>
-                    stream.WriteLine(e.ToLogString())));
+                LogEvents.Subscribe(e =>
+                                        stream.WriteLine(e.ToLogString())));
 
-            disposables.Add(Disposable.Create(() => stream.Dispose()));
+            disposables.Add(stream);
         }
 
         public OperationLogger Log { get; }
@@ -78,8 +82,22 @@ namespace Pocket.For.Xunit
 
         public void Dispose()
         {
-            Current = null;
+            if (Current == this)
+            {
+                Current = null;
+            }
+
             disposables.Dispose();
+        }
+
+        public void LogTo(ITestOutputHelper output)
+        {
+            if (output == null)
+            {
+                throw new ArgumentNullException(nameof(output));
+            }
+
+            disposables.Add(LogEvents.Subscribe(e => output.WriteLine(e.ToLogString())));
         }
     }
 }
