@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>PocketLogger.For.Xunit</id>
+    <title>PocketLogger.For.Xunit</title>
+    <version>0.1.0</version>
+    <authors>jonsequitur</authors>
+    <owners>jonsequitur</owners>
+    <projectUrl>https://github.com/jonsequitur/pocketlogger</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Logs test run information to PocketLogger and, optionally, to a log file.</description>
+    <tags>logging Xunit unit testing</tags>
+    <licenseUrl>https://github.com/jonsequitur/PocketLogger/blob/master/LICENSE</licenseUrl>
+    <developmentDependency>true</developmentDependency>
+    <dependencies>
+      <dependency id="PocketLogger" version="[0.2.0,0.3)" include="all" />
+      <dependency id="PocketLogger.Subscribe" version="[0.2.0,0.3)" include="all" />
+      <dependency id="xunit" version="[2.2.0,)" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="For.Xunit/TestLog.cs" 
+          target="contentFiles/cs/any/(Pocket)/Logger/For.Xunit/TestLog.cs" />
+    <file src="For.Xunit/LogToPocketLoggerAttribute.cs" 
+          target="contentFiles/cs/any/(Pocket)/Logger/For.Xunit/LogToPocketLoggerAttribute.cs" />
+  </files>
+</package>
