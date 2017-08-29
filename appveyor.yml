@@ -15,6 +15,7 @@ after_build:
   - nuget pack Pocket.Logger\PocketLogger.nuspec  
   - nuget pack Pocket.Logger\PocketLogger.Subscribe.nuspec  
   - nuget pack Pocket.Logger\PocketLogger.For.ApplicationInsights.nuspec  
+  - nuget pack Pocket.Logger\PocketLogger.For.Xunit.nuspec  
   - nuget pack Pocket.Logger\Pocket.Disposable.nuspec  
 
 test_script:
