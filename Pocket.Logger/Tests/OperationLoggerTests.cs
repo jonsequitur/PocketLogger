@@ -124,7 +124,7 @@ namespace Pocket.Tests
         }
 
         [Fact]
-        public void Entries_contain_operation_name_in_string_output()
+        public void Events_contain_operation_name_in_string_output()
         {
             var log = new List<string>();
 
@@ -134,11 +134,11 @@ namespace Pocket.Tests
                 operation.Info("hello");
             }
 
-            log.Should().OnlyContain(e => e.Contains(nameof(Entries_contain_operation_name_in_string_output)));
+            log.Should().OnlyContain(e => e.Contains(nameof(Events_contain_operation_name_in_string_output)));
         }
 
         [Fact]
-        public void Log_entries_within_an_operation_share_an_id_when_not_specified()
+        public void Log_events_within_an_operation_share_an_id()
         {
             var log = new LogEntryList();
 
@@ -149,6 +149,36 @@ namespace Pocket.Tests
             }
 
             log.Select(e => e.Operation.Id).Distinct().Should().HaveCount(1);
+        }
+
+        [Fact]
+        public void Log_events_emitted_by_regular_Loggers_within_the_scope_of_an_operation_bear_the_id_of_the_ambient_operation()
+        {
+            var log = new LogEntryList();
+
+            using (Subscribe(log.Add))
+            using (Log.OnEnterAndExit())
+            {
+                Log.Info("hello");
+            }
+
+            log.Select(e => e.Operation.Id).Distinct().Should().HaveCount(1);
+        }
+
+        [Fact]
+        public void Log_events_emitted_by_regular_Loggers_within_the_scope_of_an_operation_include_the_ambient_operation_id_in_string_output()
+        {
+            var log = new List<string>();
+
+            using (Subscribe(e => log.Add(e.ToLogString())))
+            using (var operation = Log.OnExit())
+            {
+                Log.Info("hello");
+
+                log.First()
+                   .Should()
+                   .Match($"*{operation.Id}*hello*");
+            }
         }
 
         [Fact]
