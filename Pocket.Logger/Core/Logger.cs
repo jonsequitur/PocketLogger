@@ -81,7 +81,7 @@ namespace Pocket
 
         public string Category { get; }
 
-        public static Logger Log { get; } = new Logger(category: "");
+        public static Logger Log { get; } = new Logger();
     }
 
     internal class Logger<TCategory> : Logger
@@ -392,6 +392,7 @@ namespace Pocket
             else
             {
                 OperationName = operationName;
+                OperationId = Activity.Current?.Id;
             }
 
             (string message, (string Name, object Value)[] Properties)? evaluated = null;
