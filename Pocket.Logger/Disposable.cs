@@ -8,8 +8,14 @@ namespace Pocket
     [DebuggerStepThrough]
     internal static class Disposable
     {
+        private static readonly IDisposable empty = Create(() =>
+        {
+        });
+
         public static IDisposable Create(Action dispose) =>
             new AnonymousDisposable(dispose);
+
+        public static IDisposable Empty { get; } = empty;
 
         private class AnonymousDisposable : IDisposable
         {
@@ -47,6 +53,8 @@ namespace Pocket
 
             disposables.Add(disposable);
         }
+
+        public void Add(Action dispose) => Add(Disposable.Create(dispose));
 
         public void Dispose()
         {
