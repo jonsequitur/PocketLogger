@@ -47,8 +47,8 @@ namespace Pocket
 
             var disposables = new CompositeDisposable
             {
-                Disposable.Create(() => oneWasDisposed = true),
-                Disposable.Create(() => twoWasDisposed = true),
+                () => oneWasDisposed = true,
+                () => twoWasDisposed = true
             };
 
             disposables.Dispose();

@@ -11,6 +11,10 @@ namespace Pocket
         public static IDisposable Create(Action dispose) =>
             new AnonymousDisposable(dispose);
 
+        public static IDisposable Empty { get; } = Create(() =>
+        {
+        });
+
         private class AnonymousDisposable : IDisposable
         {
             private Action dispose;
@@ -47,6 +51,8 @@ namespace Pocket
 
             disposables.Add(disposable);
         }
+
+        public void Add(Action dispose) => Add(Disposable.Create(dispose));
 
         public void Dispose()
         {
