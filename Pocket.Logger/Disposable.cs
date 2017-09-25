@@ -8,12 +8,14 @@ namespace Pocket
     [DebuggerStepThrough]
     internal static class Disposable
     {
+        private static readonly IDisposable empty = Create(() =>
+        {
+        });
+
         public static IDisposable Create(Action dispose) =>
             new AnonymousDisposable(dispose);
 
-        public static IDisposable Empty { get; } = Create(() =>
-        {
-        });
+        public static IDisposable Empty { get; } = empty;
 
         private class AnonymousDisposable : IDisposable
         {
