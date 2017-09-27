@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using FluentAssertions;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Channel;
@@ -13,7 +12,7 @@ using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
 using static Pocket.LogEvents;
-using static Pocket.Logger;
+using static Pocket.Logger<Pocket.For.ApplicationInsights.Tests.PocketLoggerForApplicationInsightsTests>;
 
 namespace Pocket.For.ApplicationInsights.Tests
 {
@@ -56,8 +55,9 @@ namespace Pocket.For.ApplicationInsights.Tests
                 Properties =
                 {
                     ["RequestUri"] = "http://example.com/",
-                    ["ResultCode"] = "200"
-                }
+                    ["ResultCode"] = "200",
+                    ["Category"] = GetType().ToString()
+                },
             });
 
             using (client.SubscribeToPocketLogger())
@@ -79,6 +79,8 @@ namespace Pocket.For.ApplicationInsights.Tests
             actual.ResultCode.Should().Be(expected.ResultCode);
             actual.Success.Should().Be(expected.Success);
             actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
+
+            Log.Info(JsonConvert.SerializeObject(actual));
         }
 
         [Fact]
@@ -90,6 +92,10 @@ namespace Pocket.For.ApplicationInsights.Tests
                 {
                     ["my-metric"] = 1.23,
                     ["my-other-metric"] = 123
+                },
+                properties: new Dictionary<string, string>
+                {
+                    ["Category"] = GetType().ToString()
                 });
 
             using (client.SubscribeToPocketLogger())
@@ -116,7 +122,8 @@ namespace Pocket.For.ApplicationInsights.Tests
                 Name = "my-event",
                 Properties =
                 {
-                    ["my-property"] = "my-property-value"
+                    ["my-property"] = "my-property-value",
+                    ["Category"] = GetType().ToString()
                 }
             });
 
@@ -152,7 +159,13 @@ namespace Pocket.For.ApplicationInsights.Tests
                 {
                     Message = "oh no! 1 and 2 happened.",
                     Exception = exception,
-                    SeverityLevel = SeverityLevel.Error
+                    SeverityLevel = SeverityLevel.Error,
+                    Properties =
+                    {
+                        ["Category"] = GetType().ToString(),
+                        ["this"] = 1.ToString(),
+                        ["that"] = 2.ToString()
+                    }
                 });
 
                 using (client.SubscribeToPocketLogger())
@@ -181,7 +194,8 @@ namespace Pocket.For.ApplicationInsights.Tests
                 Properties =
                 {
                     ["some-int"] = "123",
-                    ["some-tuple"] = "(this, 456)"
+                    ["some-tuple"] = "(this, 456)",
+                    ["Category"] = GetType().ToString()
                 }
             });
 

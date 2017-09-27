@@ -33,7 +33,7 @@ namespace Pocket.For.ApplicationInsights
                 {
                     telemetryClient.TrackTrace(e.ToTraceTelemetry());
                 }
-            }, discoverOtherPocketLoggers: discoverOtherPocketLoggers);
+            }, discoverOtherPocketLoggers);
         }
 
         private static void AddProperties(this ISupportProperties telemetry, (string Name, object Value)[] properties)
@@ -90,6 +90,7 @@ namespace Pocket.For.ApplicationInsights
             };
 
             telemetry.AddProperties(properties);
+            telemetry.Properties.Add("Category", e.Category);
 
             return telemetry.AttachActivity();
         }
@@ -130,6 +131,8 @@ namespace Pocket.For.ApplicationInsights
                 }
             }
 
+            telemetry.Properties.Add("Category", e.Category);
+
             return telemetry.AttachActivity();
         }
 
@@ -144,13 +147,20 @@ namespace Pocket.For.ApplicationInsights
                 bool IsStart,
                 bool IsEnd,
                 bool? IsSuccessful,
-                TimeSpan? Duration) Operation) e) =>
-            new ExceptionTelemetry
+                TimeSpan? Duration) Operation) e)
+        {
+            var telemetry = new ExceptionTelemetry
             {
                 Message = e.Evaluate().Message,
                 Exception = e.Exception,
                 SeverityLevel = MapSeverityLevel((LogLevel) e.LogLevel)
-            }.AttachActivity();
+            };
+
+            telemetry.AddProperties(e.Evaluate().Properties);
+            telemetry.Properties.Add("Category", e.Category);
+
+            return telemetry.AttachActivity();
+        }
 
         internal static TraceTelemetry ToTraceTelemetry(
             this (byte LogLevel,
@@ -172,6 +182,7 @@ namespace Pocket.For.ApplicationInsights
             };
 
             telemetry.AddProperties(e.Evaluate().Properties);
+            telemetry.Properties.Add("Category", e.Category);
 
             return telemetry.AttachActivity();
         }
