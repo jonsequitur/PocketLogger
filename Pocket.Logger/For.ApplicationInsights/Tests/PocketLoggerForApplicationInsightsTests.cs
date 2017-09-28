@@ -57,7 +57,7 @@ namespace Pocket.For.ApplicationInsights.Tests
                     ["RequestUri"] = "http://example.com/",
                     ["ResultCode"] = "200",
                     ["Category"] = GetType().ToString()
-                },
+                }
             });
 
             using (client.SubscribeToPocketLogger())

@@ -19,7 +19,10 @@ namespace Pocket.Tests
                                         output.WriteLine(e.ToLogString(), false));
         }
 
-        public void Dispose() => disposables.Dispose();
+        public void Dispose()
+        {
+            disposables.Dispose();
+        }
 
         [Fact]
         public void Subscribe_allows_all_log_events_to_be_monitored()
@@ -245,7 +248,34 @@ namespace Pocket.Tests
             log.Should().OnlyContain(e => e.Operation.Duration == null);
             log[0].ToLogString().Should().NotContain("ms)");
         }
+
+        [Fact]
+        public void Event_metrics_are_written_to_string_output()
+        {
+            var log = new List<string>();
+
+            using (Subscribe(e => log.Add(e.ToLogString())))
+            {
+                Log.Event("some-event", metrics: ("some-metric", 12345));
+            }
+
+            log[0].Should().Contain("some-metric");
+            log[0].Should().Contain("12345");
+        }
+
+        [Fact]
+        public void Event_properties_are_written_to_string_output()
+        {
+            var log = new List<string>();
+
+            using (Subscribe(e => log.Add(e.ToLogString())))
+            {
+               // Log.Info("this", "some-property", "hi!");
+                Log.Event("some-event", properties: ("some-property", "hi!"));
+            }
+
+            log[0].Should().Contain("some-property");
+            log[0].Should().Contain("hi!");
+        }
     }
 }
-
-

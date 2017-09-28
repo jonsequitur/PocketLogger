@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using FluentAssertions;
 using System.Linq;
 using Xunit;
@@ -136,6 +137,40 @@ namespace Pocket.Tests
             result.ToString()
                   .Should()
                   .Be("1 and 2 +[ 3, 4 ]");
+        }
+
+        [Fact]
+        public void When_there_are_additional_properties_then_they_are_appended()
+        {
+            var formatter = Formatter.Parse("");
+
+            var result = formatter.Format(
+                args: null,
+                knownProperties: new List<(string, object)>
+                {
+                    ("also", "this")
+                });
+
+            result.ToString()
+                  .Should()
+                  .Be(" +[ (also, this) ]");
+        }
+
+        [Fact]
+        public void When_there_are_additional_properties_then_they_are_appended_after_additional_args()
+        {
+            var formatter = Formatter.Parse("{one} and {two}");
+
+            var result = formatter.Format(
+                args: new object[] { 1, 2, 3, 4 },
+                knownProperties: new List<(string, object)>
+                {
+                    ("also", "this")
+                });
+
+            result.ToString()
+                  .Should()
+                  .Be("1 and 2 +[ 3, 4, (also, this) ]");
         }
 
         [Fact]

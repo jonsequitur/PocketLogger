@@ -91,7 +91,6 @@ namespace Pocket
                 }
                 catch (Exception exception)
                 {
-                    // TODO: (Subscribe) publish on error channel
                 }
             }
 
