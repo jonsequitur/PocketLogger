@@ -4,6 +4,10 @@
     <TargetFramework>netcoreapp1.1</TargetFramework>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;DEBUG;NETCOREAPP1_1;SourceProject</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="..\Pocket.Logger\Core\Formatter.cs" Link="%28Pocket%29\Formatter.cs" />
     <Compile Include="..\Pocket.Logger\Core\Logger.cs" Link="%28Pocket%29\Logger.cs" />

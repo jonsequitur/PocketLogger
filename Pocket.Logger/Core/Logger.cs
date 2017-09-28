@@ -84,6 +84,7 @@ namespace Pocket
         public static Logger Log { get; } = new Logger();
     }
 
+    [DebuggerStepThrough]
     internal class Logger<TCategory> : Logger
     {
         public Logger() : base(typeof(TCategory).FullName)
@@ -93,6 +94,7 @@ namespace Pocket
         public new static Logger Log { get; } = new Logger<TCategory>();
     }
 
+    [DebuggerStepThrough]
     internal static partial class LogFormattingExtensions
     {
         public static string ToLogString(
@@ -213,6 +215,7 @@ namespace Pocket
         Critical
     }
 
+    [DebuggerStepThrough]
     internal static class LoggerExtensions
     {
         public static TLogger Trace<TLogger>(
@@ -292,15 +295,12 @@ namespace Pocket
         public static OperationLogger OnEnterAndExit(
             this Logger logger,
             [CallerMemberName] string name = null,
-            Func<(string name, object value)[]> exitArgs = null)
-        {
-            return new OperationLogger(
-                name,
-                logger.Category,
-                null,
-                exitArgs,
-                true);
-        }
+            Func<(string name, object value)[]> exitArgs = null) => new OperationLogger(
+            name,
+            logger.Category,
+            null,
+            exitArgs,
+            true);
 
         public static OperationLogger OnExit(
             this Logger logger,
@@ -325,15 +325,13 @@ namespace Pocket
         public static ConfirmationLogger OnEnterAndConfirmOnExit(
             this Logger logger,
             [CallerMemberName] string name = null,
-            Func<(string name, object value)[]> exitArgs = null)
-        {
-            return new ConfirmationLogger(
+            Func<(string name, object value)[]> exitArgs = null) =>
+            new ConfirmationLogger(
                 name,
                 logger.Category,
                 null,
                 exitArgs,
                 true);
-        }
 
         public static void Event(
             this Logger logger,
@@ -361,6 +359,7 @@ namespace Pocket
                         properties: properties);
     }
 
+    [DebuggerStepThrough]
     internal class LogEntry
     {
         private readonly List<(string Name, object Value)> properties = new List<(string, object)>();
@@ -401,11 +400,11 @@ namespace Pocket
             {
                 if (evaluated == null)
                 {
-                    if (args?.Length != 0)
+                    if (args?.Length != 0 || properties.Count > 0)
                     {
                         var formatter = Formatter.Parse(message);
 
-                        var formatterResult = formatter.Format(args);
+                        var formatterResult = formatter.Format(args: args, knownProperties: properties);
 
                         message = formatterResult.ToString();
 
@@ -447,6 +446,7 @@ namespace Pocket
             properties.Add(property);
     }
 
+    [DebuggerStepThrough]
     internal class ConfirmationLogger : OperationLogger
     {
         public ConfirmationLogger(
@@ -490,6 +490,7 @@ namespace Pocket
         }
     }
 
+    [DebuggerStepThrough]
     internal class OperationLogger : Logger, IDisposable
     {
         private readonly Func<(string name, object value)[]> exitArgs;
@@ -572,7 +573,6 @@ namespace Pocket
                 }
                 catch (Exception)
                 {
-                    // TODO: (Complete) publish on error channel
                 }
             }
 

@@ -241,6 +241,27 @@ namespace Pocket.Tests
         }
 
         [Fact]
+        public void Exit_args_appear_in_string_output()
+        {
+            var log = new List<string>();
+
+            using (Subscribe(e => log.Add(e.ToLogString())))
+            using (Log.ConfirmOnExit(exitArgs: () => new (string, object)[]
+            {
+                ("hello", 12345)
+            }))
+            {
+            }
+
+            log.Last()
+               .Should()
+               .Contain("hello");
+            log.Last()
+               .Should()
+               .Contain("12345");
+        }
+
+        [Fact]
         public void When_exit_args_delegate_throws_then_exception_is_not_thrown_to_the_caller()
         {
             using (Log.ConfirmOnExit(exitArgs: () => throw new Exception("oops!")))

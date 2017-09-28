@@ -329,6 +329,27 @@ namespace Pocket.Tests
         }
 
         [Fact]
+        public void Exit_args_appear_in_string_output()
+        {
+            var log = new List<string>();
+
+            using (Subscribe(e => log.Add(e.ToLogString())))
+            using (Log.OnExit(exitArgs: () => new (string, object)[]
+            {
+                ("hello", 12345)
+            }))
+            {
+            }
+
+            log.Last()
+               .Should()
+               .Contain("hello");
+            log.Last()
+               .Should()
+               .Contain("12345");
+        }
+
+        [Fact]
         public void OperationLogger_message_appears_in_initial_log_event_string_output()
         {
             var log = new List<string>();
