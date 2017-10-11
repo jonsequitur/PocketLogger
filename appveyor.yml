@@ -12,11 +12,12 @@ build_script:
       dotnet build Pocket.Logger.sln 
 
 after_build:
-  - nuget pack Pocket.Logger\PocketLogger.nuspec  
-  - nuget pack Pocket.Logger\PocketLogger.Subscribe.nuspec  
-  - nuget pack Pocket.Logger\PocketLogger.For.ApplicationInsights.nuspec  
-  - nuget pack Pocket.Logger\PocketLogger.For.Xunit.nuspec  
-  - nuget pack Pocket.Logger\Pocket.Disposable.nuspec  
+  - nuget pack Pocket.Logger\PocketLogger.nuspec
+  - nuget pack Pocket.Logger\PocketLogger.Subscribe.nuspec
+  - nuget pack Pocket.Logger\PocketLogger.For.ApplicationInsights.nuspec
+  - nuget pack Pocket.Logger\PocketLogger.For.MicrosoftExtensionsLogging.nuspec
+  - nuget pack Pocket.Logger\PocketLogger.For.Xunit.nuspec
+  - nuget pack Pocket.Logger\Pocket.Disposable.nuspec
 
 test_script:
   - cmd: dotnet test .\Pocket.Logger\Pocket.Logger.csproj
