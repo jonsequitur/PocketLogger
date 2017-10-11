@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>PocketLogger.For.MicrosoftExtensionsLogging</id>
+    <title>PocketLogger.For.ApplicationInsights</title>
+    <version>0.1.0</version>
+    <authors>jonsequitur</authors>
+    <owners>jonsequitur</owners>
+    <projectUrl>https://github.com/jonsequitur/pocketlogger</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Provides Microsoft.Extensions.Logging integration for PocketLogger.</description>
+    <tags>logging telemetry</tags>
+    <licenseUrl>https://github.com/jonsequitur/PocketLogger/blob/master/LICENSE</licenseUrl>
+    <developmentDependency>true</developmentDependency>
+    <dependencies>
+      <dependency id="PocketLogger" version="[0.2.6,)" include="all" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="For.MicrosoftExtensionsLogging/LoggerFactoryExtensions.cs" 
+          target="contentFiles/cs/any/(Pocket)/Logger/LoggerFactoryExtensions.cs" />
+  </files>
+</package>
