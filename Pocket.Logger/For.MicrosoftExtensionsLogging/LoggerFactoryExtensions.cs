@@ -89,7 +89,7 @@ namespace Pocket.For.MicrosoftExtensionsLogging
             }
         }
 
-        internal static LogLevel ToPocketLoggerLogLevel(this Microsoft.Extensions.Logging.LogLevel logLevel)
+        private static LogLevel ToPocketLoggerLogLevel(this Microsoft.Extensions.Logging.LogLevel logLevel)
         {
             switch (logLevel)
             {
