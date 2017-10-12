@@ -99,7 +99,8 @@ namespace Pocket.For.MicrosoftExtensionsLogging.Tests
 
             logger.LogInformation("This is info with no args");
 
-            log.Single().Category
+            log.Single()
+                .Category
                .Should()
                .Be(typeof(When_publishing_from_ILogger_to_PocketLogger).ToString());
         }
@@ -138,6 +139,29 @@ namespace Pocket.For.MicrosoftExtensionsLogging.Tests
 
             log[2].ToLogString().Should().Contain("⏹");
             log[2].ToLogString().Should().Contain("the-scope");
+        }
+
+        [Fact]
+        public void Verbosity_can_be_specified()
+        {
+            var factory = new LoggerFactory()
+                .AddPocketLogger((category, logLevel) =>
+                                     category == "awesome" ||
+                                     logLevel == Microsoft.Extensions.Logging.LogLevel.Critical);
+
+            var log = new LogEntryList();
+
+            using (LogEvents.Subscribe(e => log.Add(e)))
+            {
+                factory.CreateLogger("awesome").LogInformation("this should absolutely be in the log!");
+
+                factory.CreateLogger<string>().LogCritical("this should also be in the log");
+
+                factory.CreateLogger<string>().LogError("this should NOT be in the log");
+            }
+
+            log.Should().HaveCount(2);
+            log.Should().NotContain(e => e.LogLevel ==(int) LogLevel.Error);
         }
     }
 }
