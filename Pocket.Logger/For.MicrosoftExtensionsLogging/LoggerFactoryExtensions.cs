@@ -7,10 +7,11 @@ namespace Pocket.For.MicrosoftExtensionsLogging
     internal static class LoggerFactoryExtensions
     {
         public static ILoggerFactory AddPocketLogger(
-            this ILoggerFactory factory)
+            this ILoggerFactory factory,
+            Func<string, Microsoft.Extensions.Logging.LogLevel, bool> filter =null)
         {
             factory.AddProvider(
-                new LoggerProvider(category => new Logger(category)));
+                new LoggerProvider(category => new Logger(category, filter)));
 
             return factory;
         }
@@ -19,9 +20,14 @@ namespace Pocket.For.MicrosoftExtensionsLogging
         {
             private readonly string category;
 
-            public Logger(string category)
+            private readonly Func<string, Microsoft.Extensions.Logging.LogLevel, bool> filter;
+
+            public Logger(
+                string category,
+                Func<string, Microsoft.Extensions.Logging.LogLevel, bool> filter = null)
             {
                 this.category = category;
+                this.filter = filter;
             }
 
             public void Log<TState>(
@@ -31,6 +37,11 @@ namespace Pocket.For.MicrosoftExtensionsLogging
                 Exception exception,
                 Func<TState, Exception, string> formatter)
             {
+                if (!IsEnabled(logLevel))
+                {
+                    return;
+                }
+
                 var logEntry = new LogEntry(
                     logLevel: logLevel.ToPocketLoggerLogLevel(),
                     message: state.ToString(),
@@ -52,7 +63,8 @@ namespace Pocket.For.MicrosoftExtensionsLogging
                 Pocket.Logger.Log.Post(logEntry);
             }
 
-            public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel) => true;
+            public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel) =>
+                filter == null || filter(category, logLevel);
 
             public IDisposable BeginScope<TState>(TState state) =>
                 new OperationLogger(
