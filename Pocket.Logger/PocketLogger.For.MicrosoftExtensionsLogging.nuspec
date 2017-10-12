@@ -3,7 +3,7 @@
   <metadata>
     <id>PocketLogger.For.MicrosoftExtensionsLogging</id>
     <title>PocketLogger.For.MicrosoftExtensionsLogging</title>
-    <version>0.1.1</version>
+    <version>0.1.2</version>
     <authors>jonsequitur</authors>
     <owners>jonsequitur</owners>
     <projectUrl>https://github.com/jonsequitur/pocketlogger</projectUrl>
@@ -14,6 +14,7 @@
     <developmentDependency>true</developmentDependency>
     <dependencies>
       <dependency id="PocketLogger" version="[0.2.6,)" include="all" />
+      <dependency id="Microsoft.Extensions.Logging" version="[1.1.2,)" />
     </dependencies>
   </metadata>
   <files>
