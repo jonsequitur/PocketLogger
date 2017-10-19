@@ -1,7 +1,8 @@
-﻿using System.Linq;
-using System.Reflection;
+﻿using System.Reflection;
+using FluentAssertions;
+using System.Linq;
+using System.Threading.Tasks;
 using Xunit;
-using AssertionExtensions = FluentAssertions.AssertionExtensions;
 
 namespace Pocket.For.Xunit.Tests
 {
@@ -20,12 +21,13 @@ namespace Pocket.For.Xunit.Tests
 
             attribute.After(methodInfo);
 
-            AssertionExtensions.Should(log.First())
+            log.First()
+               .Should()
                .Contain($"[{GetType().Name}.{nameof(Start_events_are_logged_for_each_test)}]  ▶");
         }
 
         [Fact]
-        public void Stop_events_are_logged_for_each_test()
+        public async Task Stop_events_are_logged_for_each_test()
         {
             var attribute = new LogToPocketLoggerAttribute();
 
@@ -33,11 +35,13 @@ namespace Pocket.For.Xunit.Tests
 
             attribute.Before(methodInfo);
 
-            var log = TestLog.Current.Text;
+            var log = TestLog.Current;
 
             attribute.After(methodInfo);
 
-            AssertionExtensions.Should(log.Last())
+            log.Text
+               .Last()
+               .Should()
                .Match($"*[{GetType().Name}.{nameof(Stop_events_are_logged_for_each_test)}]  ⏹ (*ms)*");
         }
     }

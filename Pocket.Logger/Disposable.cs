@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Pocket
 {
@@ -37,6 +39,7 @@ namespace Pocket
     internal class CompositeDisposable : IDisposable, IEnumerable<IDisposable>
     {
         private bool isDisposed = false;
+ 
         private readonly List<IDisposable> disposables = new List<IDisposable>();
 
         public void Add(IDisposable disposable)
@@ -65,6 +68,11 @@ namespace Pocket
                 disposables.Remove(disposable);
                 disposable.Dispose();
             }
+//
+//            while (disposables.TryTake(out var disposable))
+//            {
+//                disposable.Dispose();
+//            }
         }
 
         public IEnumerator<IDisposable> GetEnumerator() => disposables.GetEnumerator();
