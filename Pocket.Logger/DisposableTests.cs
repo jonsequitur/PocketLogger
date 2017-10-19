@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Xunit;
 
@@ -58,6 +61,22 @@ namespace Pocket
         }
 
         [Fact]
+        public void Disposables_added_to_a_CompositeDisposable_are_dispoed_in_the_order_they_were_added()
+        {
+            var items = new List<int>();
+
+            var disposable = new CompositeDisposable
+            {
+                () => items.Add(1),
+                () => items.Add(2),
+            };
+
+            disposable.Add(() => items.Add(3));
+
+            items.Should().BeInAscendingOrder();
+        }
+
+        [Fact]
         public void CompositeDisposable_can_safely_be_disposed_more_than_once_when_child_disposables_cannot()
         {
             var disposable = new CompositeDisposable
@@ -82,6 +101,36 @@ namespace Pocket
             disposables.Add(Disposable.Create(() => wasDisposed = true));
 
             wasDisposed.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task CompositeDisposable_is_threadsafe_for_adding_disposables_while_being_disposed()
+        {
+            var oneWasDisposed = false;
+            var twoWasDisposed = false;
+            var barrier = new Barrier(2);
+
+            var disposable = new CompositeDisposable
+            {
+                () =>
+                {
+                    barrier.SignalAndWait();
+                    oneWasDisposed = true;
+                }
+            };
+
+            var task1 = Task.Run(() => disposable.Dispose());
+
+            var task2 = Task.Run(() => disposable.Add(() =>
+            {
+                barrier.SignalAndWait();
+                twoWasDisposed = true;
+            }));
+
+            await Task.WhenAll(task1, task2);
+
+            oneWasDisposed.Should().BeTrue();
+            twoWasDisposed.Should().BeTrue();
         }
 
         private class DisposableThatThrowsOnRepeatDisposal : IDisposable

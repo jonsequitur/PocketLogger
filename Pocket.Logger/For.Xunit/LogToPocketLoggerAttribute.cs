@@ -35,9 +35,9 @@ namespace Pocket.For.Xunit
 
         public override void After(MethodInfo methodUnderTest)
         {
-            base.After(methodUnderTest);
-
             TestLog.Current.Dispose();
+
+            base.After(methodUnderTest);
         }
     }
 }
