@@ -89,7 +89,7 @@ namespace Pocket
                 {
                     action(e);
                 }
-                catch (Exception exception)
+                catch (Exception)
                 {
                 }
             }
