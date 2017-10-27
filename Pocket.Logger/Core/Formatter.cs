@@ -6,13 +6,16 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace Pocket
 {
     [DebuggerStepThrough]
     internal class Formatter
     {
-        private readonly string template;
+        private static bool stopCaching = false;
+
+        private static int cacheCount = 0;
 
         private static readonly Regex tokenRegex = new Regex(
             @"{(?<key>[^{}:]*)(?:\:(?<format>.+))?}",
@@ -21,6 +24,8 @@ namespace Pocket
             RegexOptions.CultureInvariant |
             RegexOptions.Compiled
         );
+
+        private readonly string template;
 
         private readonly List<Action<StringBuilder, object>> argumentFormatters = new List<Action<StringBuilder, object>>();
 
@@ -48,8 +53,7 @@ namespace Pocket
 
                     if (!string.IsNullOrEmpty(formatStr))
                     {
-                        var formattableParamValue = value as IFormattable;
-                        if (formattableParamValue != null)
+                        if (value is IFormattable formattableParamValue)
                         {
                             formattedParam = formattableParamValue.ToString(formatStr, CultureInfo.CurrentCulture);
                         }
@@ -98,11 +102,7 @@ namespace Pocket
                     for (var i = argumentFormatters.Count; i < args.Count; i++)
                     {
                         var argument = args[i];
-                        if (!first)
-                        {
-                            stringBuilder.Append(", ");
-                        }
-                        first = false;
+                        TryAppendComma();
                         stringBuilder.Append(argument.ToLogString());
                         result.Add($"arg{i}", argument);
                     }
@@ -113,22 +113,46 @@ namespace Pocket
                     for (var i = 0; i < knownProperties.Count; i++)
                     {
                         var property = knownProperties[i];
-                        if (!first)
-                        {
-                            stringBuilder.Append(", ");
-                        }
-                        first = false;
+                        TryAppendComma();
                         stringBuilder.Append(property.ToLogString());
                     }
                 }
 
                 stringBuilder.Append(" ]");
+
+                void TryAppendComma()
+                {
+                    if (!first)
+                    {
+                        stringBuilder.Append(", ");
+                    }
+                    first = false;
+                }
             }
 
             return result;
         }
 
         public FormatterResult Format(params object[] args) => Format(args, null);
+
+        private static readonly ConcurrentDictionary<string, Formatter> cache = new ConcurrentDictionary<string, Formatter>();
+
+        public static int CacheCount => cacheCount;
+
+        public static int CacheLimit { get; set; } = 300;
+
+        public static Formatter Parse(string template) =>
+            stopCaching
+                ? new Formatter(template)
+                : cache.GetOrAdd(template, t =>
+                {
+                    if (Interlocked.Increment(ref cacheCount) >= CacheLimit)
+                    {
+                        stopCaching = true;
+                    }
+
+                    return new Formatter(t);
+                });
 
         internal class FormatterResult : IReadOnlyList<(string Name, object Value)>
         {
@@ -141,36 +165,17 @@ namespace Pocket
 
             private readonly List<(string Name, object Value)> properties = new List<(string, object )>();
 
-            public void Add(string key, object value)
-            {
-                properties.Add((key, value));
-            }
+            public void Add(string key, object value) => properties.Add((key, value));
 
-            public IEnumerator<(string Name, object Value)> GetEnumerator()
-            {
-                return properties.GetEnumerator();
-            }
+            public IEnumerator<(string Name, object Value)> GetEnumerator() => properties.GetEnumerator();
 
-            IEnumerator IEnumerable.GetEnumerator()
-            {
-                return GetEnumerator();
-            }
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
             public int Count => properties.Count;
 
             public (string Name, object Value) this[int index] => properties[index];
 
-            public override string ToString()
-            {
-                return formattedMessage.ToString();
-            }
-        }
-
-        private static readonly ConcurrentDictionary<string, Formatter> formatters = new ConcurrentDictionary<string, Formatter>();
-
-        public static Formatter Parse(string template)
-        {
-            return formatters.GetOrAdd(template, t => new Formatter(t));
+            public override string ToString() => formattedMessage?.ToString() ?? "";
         }
     }
 }

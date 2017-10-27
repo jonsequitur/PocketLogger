@@ -195,5 +195,18 @@ namespace Pocket.Tests
                   .Should()
                   .Be("The values in the array are: [ 1, 2, 3, 4 ] +[ [ 4, 5, 6 ] ]");
         }
+
+        [Fact]
+        public void Formatter_cache_stops_adding_items_after_specified_size()
+        {
+            Formatter.CacheLimit = 50;
+
+            for (var i = 0; i < 103; i++)
+            {
+                Formatter.Parse($"{i}");
+            }
+
+            Formatter.CacheCount.Should().Be(50);
+        }
     }
 }
