@@ -102,11 +102,7 @@ namespace Pocket
                     for (var i = argumentFormatters.Count; i < args.Count; i++)
                     {
                         var argument = args[i];
-                        if (!first)
-                        {
-                            stringBuilder.Append(", ");
-                        }
-                        first = false;
+                        TryAppendComma();
                         stringBuilder.Append(argument.ToLogString());
                         result.Add($"arg{i}", argument);
                     }
@@ -117,22 +113,46 @@ namespace Pocket
                     for (var i = 0; i < knownProperties.Count; i++)
                     {
                         var property = knownProperties[i];
-                        if (!first)
-                        {
-                            stringBuilder.Append(", ");
-                        }
-                        first = false;
+                        TryAppendComma();
                         stringBuilder.Append(property.ToLogString());
                     }
                 }
 
                 stringBuilder.Append(" ]");
+
+                void TryAppendComma()
+                {
+                    if (!first)
+                    {
+                        stringBuilder.Append(", ");
+                    }
+                    first = false;
+                }
             }
 
             return result;
         }
 
         public FormatterResult Format(params object[] args) => Format(args, null);
+
+        private static readonly ConcurrentDictionary<string, Formatter> cache = new ConcurrentDictionary<string, Formatter>();
+
+        public static int CacheCount => cacheCount;
+
+        public static int CacheLimit { get; set; } = 300;
+
+        public static Formatter Parse(string template) =>
+            stopCaching
+                ? new Formatter(template)
+                : cache.GetOrAdd(template, t =>
+                {
+                    if (Interlocked.Increment(ref cacheCount) >= CacheLimit)
+                    {
+                        stopCaching = true;
+                    }
+
+                    return new Formatter(t);
+                });
 
         internal class FormatterResult : IReadOnlyList<(string Name, object Value)>
         {
@@ -155,26 +175,7 @@ namespace Pocket
 
             public (string Name, object Value) this[int index] => properties[index];
 
-            public override string ToString() => formattedMessage.ToString();
+            public override string ToString() => formattedMessage?.ToString() ?? "";
         }
-
-        public static ConcurrentDictionary<string, Formatter> Cache { get; } = new ConcurrentDictionary<string, Formatter>();
-
-        public static int CacheCount => cacheCount;
-
-        public static int CacheLimit { get; set; } = 300;
-
-        public static Formatter Parse(string template) =>
-            stopCaching
-                ? new Formatter(template)
-                : Cache.GetOrAdd(template, t =>
-                {
-                    if (Interlocked.Increment(ref cacheCount) >= CacheLimit)
-                    {
-                        stopCaching = true;
-                    }
-
-                    return new Formatter(t);
-                });
     }
 }

@@ -206,7 +206,7 @@ namespace Pocket.Tests
                 Formatter.Parse($"{i}");
             }
 
-            Formatter.Cache.Count.Should().Be(50);
+            Formatter.CacheCount.Should().Be(50);
         }
     }
 }
