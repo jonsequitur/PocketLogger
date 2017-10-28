@@ -49,12 +49,12 @@ namespace Pocket
 
             var disposables = new CompositeDisposable();
 
-            var postSafeltFromLocalLogger = onEntryPosted.Catch();
-            Logger.Posted += postSafeltFromLocalLogger;
+            var postSafelyFromLocalLogger = onEntryPosted.Catch();
+            Logger.Posted += postSafelyFromLocalLogger;
 
             disposables.Add(Disposable.Create(() =>
             {
-                Logger.Posted -= postSafeltFromLocalLogger;
+                Logger.Posted -= postSafelyFromLocalLogger;
             }));
 
             if (discoverOtherPocketLoggers)
