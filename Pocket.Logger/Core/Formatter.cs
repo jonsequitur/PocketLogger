@@ -36,8 +36,9 @@ namespace Pocket
             this.template = template;
             var matches = tokenRegex.Matches(template);
 
-            foreach (Match match in matches)
+            for (var index = 0; index < matches.Count; index++)
             {
+                var match = matches[index];
                 var argName = match.Groups["key"].Captures[0].Value;
                 tokens.Add(argName);
 
@@ -47,7 +48,7 @@ namespace Pocket
                                     ? match.Groups["format"].Captures[0].Value
                                     : null;
 
-                void format(StringBuilder sb, object value)
+                void Format(StringBuilder sb, object value)
                 {
                     string formattedParam = null;
 
@@ -67,7 +68,7 @@ namespace Pocket
                     sb.Replace(replacementTarget, formattedParam);
                 }
 
-                argumentFormatters.Add(format);
+                argumentFormatters.Add(Format);
             }
         }
 
@@ -141,18 +142,22 @@ namespace Pocket
 
         public static int CacheLimit { get; set; } = 300;
 
-        public static Formatter Parse(string template) =>
-            stopCaching
-                ? new Formatter(template)
-                : cache.GetOrAdd(template, t =>
-                {
-                    if (Interlocked.Increment(ref cacheCount) >= CacheLimit)
-                    {
-                        stopCaching = true;
-                    }
+        public static Formatter Parse(string template)
+        {
+            return stopCaching
+                       ? new Formatter(template)
+                       : cache.GetOrAdd(template, CreateFormatter);
 
-                    return new Formatter(t);
-                });
+            Formatter CreateFormatter(string t)
+            {
+                if (Interlocked.Increment(ref cacheCount) >= CacheLimit)
+                {
+                    stopCaching = true;
+                }
+
+                return new Formatter(t);
+            }
+        }
 
         internal class FormatterResult : IReadOnlyList<(string Name, object Value)>
         {
