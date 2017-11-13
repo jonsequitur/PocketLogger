@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Example.Instrumented.Library;
 using FluentAssertions;
@@ -8,13 +9,19 @@ using static Pocket.LogEvents;
 
 namespace Pocket.Tests
 {
-    public class LoggerDiscoveryTests
+    public class LoggerDiscoveryTests : IDisposable
     {
-        private readonly ITestOutputHelper output;
+        private readonly IDisposable disposables;
 
         public LoggerDiscoveryTests(ITestOutputHelper output)
         {
-            this.output = output;
+            disposables = Subscribe(e =>
+                                        output.WriteLine(e.ToLogString(), false));
+        }
+
+        public void Dispose()
+        {
+            disposables?.Dispose();
         }
 
         [Fact]
@@ -28,11 +35,6 @@ namespace Pocket.Tests
             {
                 Class1.EmitSomeLogEvents(message);
                 await Task.Delay(100);
-            }
-
-            foreach (var e in log)
-            {
-                output.WriteLine(e.ToLogString());
             }
 
             log.Should().Contain(e => e.ToLogString().Contains(message));
@@ -51,11 +53,6 @@ namespace Pocket.Tests
 
             Class1.EmitSomeLogEvents($"after unsubscribe");
 
-            foreach (var e in log)
-            {
-                output.WriteLine(e.ToLogString());
-            }
-
             log.Should().Contain(e => e.ToLogString().Contains("before unsubscribe"));
             log.Should().NotContain(e => e.ToLogString().Contains("after unsubscribe"));
         }
@@ -66,6 +63,28 @@ namespace Pocket.Tests
             using (Subscribe(_ => throw new Exception("oops!"), discoverOtherPocketLoggers: true))
             {
                 Class1.EmitSomeLogEvents();
+            }
+        }
+
+        [Fact]
+        public void Discovered_loggers_can_be_inspected_via_the_returned_LoggerSubscription()
+        {
+            using (var subscription = Subscribe(e =>
+            {
+            }))
+            {
+                foreach (var type in subscription.DiscoveredLoggerTypes)
+                {
+                    Logger.Log.Info(type.Assembly.ToString());
+                }
+
+                subscription
+                    .DiscoveredLoggerTypes
+                    .Select(t => t.Assembly)
+                    .Should()
+                    .BeEquivalentTo(
+                        typeof(Class1).Assembly,
+                        GetType().Assembly);
             }
         }
     }
