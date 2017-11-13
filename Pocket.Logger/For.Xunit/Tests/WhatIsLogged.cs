@@ -1,7 +1,5 @@
-﻿using System.Reflection;
-using FluentAssertions;
+﻿using FluentAssertions;
 using System.Linq;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace Pocket.For.Xunit.Tests
@@ -27,7 +25,7 @@ namespace Pocket.For.Xunit.Tests
         }
 
         [Fact]
-        public async Task Stop_events_are_logged_for_each_test()
+        public void Stop_events_are_logged_for_each_test()
         {
             var attribute = new LogToPocketLoggerAttribute();
 
