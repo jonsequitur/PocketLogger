@@ -396,7 +396,7 @@ namespace Pocket
 
             (string message, (string Name, object Value)[] Properties)? evaluated = null;
 
-            Evaluate = () =>
+            (string message, (string Name, object Value)[] Properties) evaluate()
             {
                 if (evaluated == null)
                 {
@@ -415,7 +415,9 @@ namespace Pocket
                 }
 
                 return evaluated.Value;
-            };
+            }
+
+            Evaluate = evaluate;
         }
 
         public Func<(string message, (string Name, object Value)[] Properties)> Evaluate { get; }

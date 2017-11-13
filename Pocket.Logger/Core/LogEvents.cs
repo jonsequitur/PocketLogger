@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using System.Linq;
@@ -26,7 +27,7 @@ namespace Pocket
             });
         }
 
-        public static IDisposable Subscribe(
+        public static LoggerSubscription Subscribe(
             Action<(
                     byte LogLevel,
                     DateTime TimestampUtc,
@@ -47,12 +48,12 @@ namespace Pocket
                 throw new ArgumentNullException(nameof(onEntryPosted));
             }
 
-            var disposables = new CompositeDisposable();
+            var subscription = new LoggerSubscription();
 
             var postSafelyFromLocalLogger = onEntryPosted.Catch();
             Logger.Posted += postSafelyFromLocalLogger;
 
-            disposables.Add(Disposable.Create(() =>
+            subscription.Add(typeof(Logger), Disposable.Create(() =>
             {
                 Logger.Posted -= postSafelyFromLocalLogger;
             }));
@@ -69,16 +70,17 @@ namespace Pocket
                         null,
                         postSafelyFromDiscoveredLogger);
 
-                    disposables.Add(Disposable.Create(() =>
+                    subscription.Add(loggerType, Disposable.Create(() =>
                     {
                         entryPostedEventHandler.RemoveEventHandler(
                             null,
                             postSafelyFromDiscoveredLogger);
                     }));
+
                 }
             }
 
-            return disposables;
+            return subscription;
         }
 
         internal static Action<T> Catch<T>(this Action<T> action)
@@ -96,5 +98,20 @@ namespace Pocket
 
             return invoke;
         }
+    }
+
+    internal class LoggerSubscription : IDisposable
+    {
+        private readonly CompositeDisposable disposables = new CompositeDisposable();
+
+        public void Add(Type pocketLoggerType, IDisposable unsubscribe)
+        {
+            DiscoveredLoggerTypes.Add(pocketLoggerType);
+            disposables.Add(unsubscribe);
+        }
+
+        public List<Type> DiscoveredLoggerTypes { get; } = new List<Type>();
+
+        public void Dispose() => disposables.Dispose();
     }
 }

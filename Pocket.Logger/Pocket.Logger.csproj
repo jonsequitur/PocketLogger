@@ -1,10 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netcoreapp1.1</TargetFramework>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
     <RootNamespace>Pocket</RootNamespace>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <LangVersion>7.1</LangVersion>
+    <DefineConstants>TRACE;DEBUG;NETCOREAPP2_0; SourceProject</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="TestResults\**" />
@@ -19,7 +20,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="1.1.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0" />
     <PackageReference Include="newtonsoft.json" Version="10.0.3" />
-    <PackageReference Include="pocket.typediscovery" Version="0.3.11" />
+    <PackageReference Include="pocket.typediscovery" Version="0.4.0" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.4.0" />
     <PackageReference Include="System.ValueTuple" Version="4.3.1" />
     <PackageReference Include="xunit" Version="2.2.0" />

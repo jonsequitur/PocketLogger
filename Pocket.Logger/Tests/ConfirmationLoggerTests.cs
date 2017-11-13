@@ -189,12 +189,7 @@ namespace Pocket.Tests
                 await Task.Delay(100);
                 operation.Info("hello");
             }
-
-            var successEvent = log
-                .Single(e => e.Evaluate().Message == "success!")
-                .Operation
-                .Duration
-                .Value;
+          
             var infoEvent = log
                 .Single(e => e.Evaluate().Message == "hello")
                 .Operation
@@ -202,7 +197,7 @@ namespace Pocket.Tests
                 .Value;
 
             infoEvent.Should()
-                     .BeCloseTo(successEvent + 100.Milliseconds(), precision: 50);
+                     .BeGreaterOrEqualTo(100.Milliseconds());
         }
 
         [Fact]
