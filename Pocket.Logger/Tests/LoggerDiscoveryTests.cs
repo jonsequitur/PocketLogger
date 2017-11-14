@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Example.Instrumented.Library;
 using FluentAssertions;
@@ -85,6 +86,27 @@ namespace Pocket.Tests
                     .BeEquivalentTo(
                         typeof(Class1).Assembly,
                         GetType().Assembly);
+            }
+        }
+
+        [Fact]
+        public void Logger_discovery_can_specify_assemblies_to_search()
+        {
+            using (var subscription = Subscribe(e =>
+            {
+            }, new[] { typeof(Class1).Assembly }))
+            {
+                foreach (var type in subscription.DiscoveredLoggerTypes)
+                {
+                    Logger.Log.Info(type.Assembly.ToString());
+                }
+
+                subscription
+                    .DiscoveredLoggerTypes
+                    .Select(t => t.Assembly)
+                    .Should()
+                    .BeEquivalentTo(
+                        typeof(Class1).Assembly);
             }
         }
     }
