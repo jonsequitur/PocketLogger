@@ -12,6 +12,7 @@ namespace Pocket
         private static readonly Lazy<Type[]> loggerTypes = new Lazy<Type[]>(
             () => Discover.ConcreteTypes()
                           .PocketLoggers()
+                          .Where(t => t.AssemblyQualifiedName != typeof(Logger).AssemblyQualifiedName)
                           .ToArray());
 
         public static IDisposable Enrich(Action<Action<(string Name, object Value)>> enrich)
@@ -179,8 +180,7 @@ namespace Pocket
         }
 
         private static IEnumerable<Type> PocketLoggers(this IEnumerable<Type> types) =>
-            types.Where(t => t.AssemblyQualifiedName != typeof(Logger).AssemblyQualifiedName)
-                 .Where(t => t.FullName == typeof(Logger).FullName);
+            types.Where(t => t.FullName == typeof(Logger).FullName);
     }
 
     internal class LoggerSubscription : IDisposable
