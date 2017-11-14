@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Reflection;
 using System.Linq;
+using System.Reflection;
 
 namespace Pocket
 {
@@ -10,11 +10,9 @@ namespace Pocket
     internal static partial class LogEvents
     {
         private static readonly Lazy<Type[]> loggerTypes = new Lazy<Type[]>(
-            () =>
-                Discover.ConcreteTypes()
-                        .Where(t => t.AssemblyQualifiedName != typeof(Logger).AssemblyQualifiedName)
-                        .Where(t => t.FullName == typeof(Logger).FullName)
-                        .ToArray());
+            () => Discover.ConcreteTypes()
+                          .PocketLoggers()
+                          .ToArray());
 
         public static IDisposable Enrich(Action<Action<(string Name, object Value)>> enrich)
         {
@@ -41,6 +39,44 @@ namespace Pocket
                     bool? IsSuccessful,
                     TimeSpan? Duration) Operation)>
                 onEntryPosted,
+            IReadOnlyCollection<Assembly> assembliesToSubscribe)
+        {
+            if (onEntryPosted == null)
+            {
+                throw new ArgumentNullException(nameof(onEntryPosted));
+            }
+
+            if (assembliesToSubscribe == null)
+            {
+                throw new ArgumentNullException(nameof(assembliesToSubscribe));
+            }
+
+            var subscription = new LoggerSubscription();
+
+            SubscribeLoggersFromOtherAssemblies(
+                onEntryPosted,
+                assembliesToSubscribe
+                    .Types()
+                    .PocketLoggers(),
+                subscription);
+
+            return subscription;
+        }
+
+        public static LoggerSubscription Subscribe(
+            Action<(
+                    byte LogLevel,
+                    DateTime TimestampUtc,
+                    Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
+                    Exception Exception,
+                    string OperationName,
+                    string Category,
+                    (string Id,
+                    bool IsStart,
+                    bool IsEnd,
+                    bool? IsSuccessful,
+                    TimeSpan? Duration) Operation)>
+                onEntryPosted,
             bool discoverOtherPocketLoggers = true)
         {
             if (onEntryPosted == null)
@@ -50,6 +86,37 @@ namespace Pocket
 
             var subscription = new LoggerSubscription();
 
+            SubscribeContainingAssembly(
+                onEntryPosted, 
+                subscription);
+
+            if (discoverOtherPocketLoggers)
+            {
+                SubscribeLoggersFromOtherAssemblies(
+                    onEntryPosted, 
+                    loggerTypes.Value, 
+                    subscription);
+            }
+
+            return subscription;
+        }
+
+        private static void SubscribeContainingAssembly(
+            Action<(
+                    byte LogLevel,
+                    DateTime TimestampUtc,
+                    Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
+                    Exception Exception,
+                    string OperationName,
+                    string Category,
+                    (string Id,
+                    bool IsStart,
+                    bool IsEnd,
+                    bool? IsSuccessful,
+                    TimeSpan? Duration) Operation)>
+                onEntryPosted,
+            LoggerSubscription subscription)
+        {
             var postSafelyFromLocalLogger = onEntryPosted.Catch();
             Logger.Posted += postSafelyFromLocalLogger;
 
@@ -57,30 +124,42 @@ namespace Pocket
             {
                 Logger.Posted -= postSafelyFromLocalLogger;
             }));
+        }
 
-            if (discoverOtherPocketLoggers)
+        private static void SubscribeLoggersFromOtherAssemblies(
+            Action<(
+                    byte LogLevel,
+                    DateTime TimestampUtc,
+                    Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
+                    Exception Exception,
+                    string OperationName,
+                    string Category,
+                    (string Id,
+                    bool IsStart,
+                    bool IsEnd,
+                    bool? IsSuccessful,
+                    TimeSpan? Duration) Operation)>
+                onEntryPosted,
+            IEnumerable<Type> pocketLoggerTypes,
+            LoggerSubscription subscription)
+        {
+            foreach (var loggerType in pocketLoggerTypes)
             {
-                foreach (var loggerType in loggerTypes.Value)
+                var entryPostedEventHandler = (EventInfo) loggerType.GetMember(nameof(Logger.Posted)).Single();
+
+                var postSafelyFromDiscoveredLogger = onEntryPosted.Catch();
+
+                entryPostedEventHandler.AddEventHandler(
+                    null,
+                    postSafelyFromDiscoveredLogger);
+
+                subscription.Add(loggerType, Disposable.Create(() =>
                 {
-                    var entryPostedEventHandler = (EventInfo) loggerType.GetMember(nameof(Logger.Posted)).Single();
-
-                    var postSafelyFromDiscoveredLogger = onEntryPosted.Catch();
-
-                    entryPostedEventHandler.AddEventHandler(
+                    entryPostedEventHandler.RemoveEventHandler(
                         null,
                         postSafelyFromDiscoveredLogger);
-
-                    subscription.Add(loggerType, Disposable.Create(() =>
-                    {
-                        entryPostedEventHandler.RemoveEventHandler(
-                            null,
-                            postSafelyFromDiscoveredLogger);
-                    }));
-
-                }
+                }));
             }
-
-            return subscription;
         }
 
         internal static Action<T> Catch<T>(this Action<T> action)
@@ -98,6 +177,10 @@ namespace Pocket
 
             return invoke;
         }
+
+        private static IEnumerable<Type> PocketLoggers(this IEnumerable<Type> types) =>
+            types.Where(t => t.AssemblyQualifiedName != typeof(Logger).AssemblyQualifiedName)
+                 .Where(t => t.FullName == typeof(Logger).FullName);
     }
 
     internal class LoggerSubscription : IDisposable
