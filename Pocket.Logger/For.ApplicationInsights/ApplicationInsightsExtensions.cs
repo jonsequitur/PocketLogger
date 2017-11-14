@@ -11,7 +11,7 @@ namespace Pocket.For.ApplicationInsights
     [DebuggerStepThrough]
     internal static class ApplicationInsightsExtensions
     {
-        public static IDisposable SubscribeToPocketLogger(
+        public static LoggerSubscription SubscribeToPocketLogger(
             this TelemetryClient telemetryClient,
             bool discoverOtherPocketLoggers = true)
         {

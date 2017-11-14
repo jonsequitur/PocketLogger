@@ -109,5 +109,27 @@ namespace Pocket.Tests
                         typeof(Class1).Assembly);
             }
         }
+
+        [Fact]
+        public void When_logger_discovery_specifies_assemblies_to_search_it_can_include_the_current_assembly()
+        {
+            using (var subscription = Subscribe(e =>
+            {
+            }, new[] { typeof(Class1).Assembly, GetType().Assembly }))
+            {
+                foreach (var type in subscription.DiscoveredLoggerTypes)
+                {
+                    Logger.Log.Info(type.Assembly.ToString());
+                }
+
+                subscription
+                    .DiscoveredLoggerTypes
+                    .Select(t => t.Assembly)
+                    .Should()
+                    .BeEquivalentTo(
+                        typeof(Class1).Assembly,
+                        GetType().Assembly);
+            }
+        }
     }
 }
