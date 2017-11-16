@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
@@ -13,27 +15,56 @@ namespace Pocket.For.ApplicationInsights
     {
         public static LoggerSubscription SubscribeToPocketLogger(
             this TelemetryClient telemetryClient,
-            bool discoverOtherPocketLoggers = true)
-        {
-            return LogEvents.Subscribe(e =>
+            IReadOnlyCollection<Assembly> assembliesToSubscribe) =>
+            LogEvents.Subscribe(e =>
             {
-                if (e.LogLevel == (byte) LogLevel.Telemetry)
-                {
-                    telemetryClient.TrackEvent(e.ToEventTelemetry());
-                }
-                else if (e.Operation.IsEnd)
-                {
-                    telemetryClient.TrackDependency(e.ToDependencyTelemetry());
-                }
-                else if (e.Exception != null)
-                {
-                    telemetryClient.TrackException(e.ToExceptionTelemetry());
-                }
-                else
-                {
-                    telemetryClient.TrackTrace(e.ToTraceTelemetry());
-                }
+                WriteTelemetry(telemetryClient, e);
+            }, assembliesToSubscribe);
+
+        public static LoggerSubscription SubscribeToPocketLogger(
+            this TelemetryClient telemetryClient,
+            bool discoverOtherPocketLoggers = true) =>
+            LogEvents.Subscribe(e =>
+            {
+                WriteTelemetry(telemetryClient, e);
             }, discoverOtherPocketLoggers);
+
+        private static void WriteTelemetry(
+            TelemetryClient telemetryClient,
+            (
+                byte LogLevel,
+                DateTime TimestampUtc,
+                Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
+                Exception Exception,
+                string OperationName,
+                string Category,
+                (string Id,
+                bool IsStart,
+                bool IsEnd,
+                bool? IsSuccessful,
+                TimeSpan? Duration) Operation) e)
+        {
+            if (telemetryClient == null)
+            {
+                throw new ArgumentNullException(nameof(telemetryClient));
+            }
+
+            if (e.LogLevel == (byte) LogLevel.Telemetry)
+            {
+                telemetryClient.TrackEvent(e.ToEventTelemetry());
+            }
+            else if (e.Operation.IsEnd)
+            {
+                telemetryClient.TrackDependency(e.ToDependencyTelemetry());
+            }
+            else if (e.Exception != null)
+            {
+                telemetryClient.TrackException(e.ToExceptionTelemetry());
+            }
+            else
+            {
+                telemetryClient.TrackTrace(e.ToTraceTelemetry());
+            }
         }
 
         private static void AddProperties(this ISupportProperties telemetry, (string Name, object Value)[] properties)
