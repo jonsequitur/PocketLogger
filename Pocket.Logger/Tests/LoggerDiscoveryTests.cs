@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using Example.Instrumented.Library;
 using FluentAssertions;
@@ -96,11 +95,6 @@ namespace Pocket.Tests
             {
             }, new[] { typeof(Class1).Assembly }))
             {
-                foreach (var type in subscription.DiscoveredLoggerTypes)
-                {
-                    Logger.Log.Info(type.Assembly.ToString());
-                }
-
                 subscription
                     .DiscoveredLoggerTypes
                     .Select(t => t.Assembly)
@@ -117,11 +111,6 @@ namespace Pocket.Tests
             {
             }, new[] { typeof(Class1).Assembly, GetType().Assembly }))
             {
-                foreach (var type in subscription.DiscoveredLoggerTypes)
-                {
-                    Logger.Log.Info(type.Assembly.ToString());
-                }
-
                 subscription
                     .DiscoveredLoggerTypes
                     .Select(t => t.Assembly)
