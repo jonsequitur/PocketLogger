@@ -357,6 +357,17 @@ namespace Pocket
                         LogLevel.Telemetry,
                         operationName: name,
                         properties: properties);
+
+        public static void Event(
+            this Logger logger,
+            (string, double)[] metrics,
+            (string name, object value)[] properties,
+            [CallerMemberName] string name = null) =>
+            logger.Post(null,
+                        LogLevel.Telemetry,
+                        operationName: name,
+                        args: metrics?.Cast<object>().ToArray(),
+                        properties: properties);
     }
 
     [DebuggerStepThrough]
