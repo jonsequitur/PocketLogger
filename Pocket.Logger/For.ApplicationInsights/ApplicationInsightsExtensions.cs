@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using Microsoft.ApplicationInsights;
@@ -121,7 +122,7 @@ namespace Pocket.For.ApplicationInsights
             };
 
             telemetry.AddProperties(properties);
-            telemetry.Properties.Add("Category", e.Category);
+            telemetry.AddCategory(e.Category);
 
             return telemetry.AttachActivity();
         }
@@ -162,7 +163,8 @@ namespace Pocket.For.ApplicationInsights
                 }
             }
 
-            telemetry.Properties.Add("Category", e.Category);
+            telemetry.AddCategory(e.Category);
+            telemetry.AddDuration(e.Operation.Duration);
 
             return telemetry.AttachActivity();
         }
@@ -188,7 +190,8 @@ namespace Pocket.For.ApplicationInsights
             };
 
             telemetry.AddProperties(e.Evaluate().Properties);
-            telemetry.Properties.Add("Category", e.Category);
+            telemetry.AddCategory(e.Category);
+            telemetry.AddDuration(e.Operation.Duration);
 
             return telemetry.AttachActivity();
         }
@@ -213,9 +216,21 @@ namespace Pocket.For.ApplicationInsights
             };
 
             telemetry.AddProperties(e.Evaluate().Properties);
-            telemetry.Properties.Add("Category", e.Category);
+            telemetry.AddCategory(e.Category);
+            telemetry.AddDuration(e.Operation.Duration);
 
             return telemetry.AttachActivity();
+        }
+
+        private static void AddCategory(this ISupportProperties telemetry, string value) =>
+            telemetry.Properties.Add("Category", value);
+
+        private static void AddDuration(this ISupportProperties telemetry, TimeSpan? duration)
+        {
+            if (duration.HasValue)
+            {
+                telemetry.Properties.Add("Duration", duration.Value.TotalMilliseconds.ToString(CultureInfo.InvariantCulture));
+            }
         }
 
         private static SeverityLevel MapSeverityLevel(LogLevel logLevel)

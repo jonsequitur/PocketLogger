@@ -114,6 +114,7 @@ namespace Pocket.For.ApplicationInsights.Tests
             actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
         }
 
+
         [Fact]
         public void Log_events_can_be_used_to_send_custom_events_with_properties()
         {
@@ -144,6 +145,25 @@ namespace Pocket.For.ApplicationInsights.Tests
             actual.Metrics.ShouldBeEquivalentTo(expected.Metrics);
             actual.Properties.ShouldBeEquivalentTo(expected.Properties);
             actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
+        }
+
+        [Fact]
+        public void When_a_custom_event_is_part_of_an_operation_it_includes_a_Duration_property()
+        {
+            using (var operation = Log.OnExit())
+            using (client.SubscribeToPocketLogger())
+            {
+                operation.Event();
+            }
+
+            var @event = (EventTelemetry) telemetrySent[0];
+
+            @event.Properties
+                  .Should()
+                  .ContainKey("Duration")
+                  .WhichValue
+                  .Should()
+                  .MatchRegex(@"\d+", "it should be an int");
         }
 
         [Fact]
@@ -185,6 +205,25 @@ namespace Pocket.For.ApplicationInsights.Tests
         }
 
         [Fact]
+        public void When_an_exception_is_part_of_an_operation_it_includes_a_Duration_property()
+        {
+            using (var operation = Log.OnExit())
+            using (client.SubscribeToPocketLogger())
+            {
+                operation.Warning(new Exception("oops"));
+            }
+
+            var exceptionTelemetry = (ExceptionTelemetry) telemetrySent[0];
+
+            exceptionTelemetry.Properties
+                              .Should()
+                              .ContainKey("Duration")
+                              .WhichValue
+                              .Should()
+                              .MatchRegex(@"\d+", "it should be an int");
+        }
+
+        [Fact]
         public void Log_events_can_be_used_to_send_traces()
         {
             client.TrackTrace(new TraceTelemetry
@@ -211,6 +250,25 @@ namespace Pocket.For.ApplicationInsights.Tests
             actual.Properties.ShouldBeEquivalentTo(expected.Properties);
             actual.SeverityLevel.Should().Be(expected.SeverityLevel);
             actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
+        }
+
+        [Fact]
+        public void When_a_trace_is_part_of_an_operation_it_includes_a_Duration_property()
+        {
+            using (var operation = Log.OnExit())
+            using (client.SubscribeToPocketLogger())
+            {
+                operation.Trace("checkpoint");
+            }
+
+            var trace = (TraceTelemetry) telemetrySent[0];
+         
+            trace.Properties
+                 .Should()
+                 .ContainKey("Duration")
+                 .WhichValue
+                 .Should()
+                 .MatchRegex(@"\d+", "it should be an int");
         }
 
         [Fact]
