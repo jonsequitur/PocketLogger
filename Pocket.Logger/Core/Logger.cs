@@ -35,7 +35,7 @@ namespace Pocket
             Enrich?.Invoke(entry.AddProperty);
 
             Posted?.Invoke(
-                ((byte) entry.LogLevel,
+                ((byte)entry.LogLevel,
                 entry.TimestampUtc,
                 entry.Evaluate,
                 entry.Exception,
@@ -114,7 +114,7 @@ namespace Pocket
             var evaluated = e.Evaluate();
 
             var logLevelString =
-                LogLevelString((LogLevel) e.LogLevel,
+                LogLevelString((LogLevel)e.LogLevel,
                                e.Operation.IsStart,
                                e.Operation.IsEnd,
                                e.Operation.IsSuccessful,
@@ -601,6 +601,14 @@ namespace Pocket
             Complete();
             activity.Stop();
             disposed = true;
+        }
+
+        protected virtual void Finalize()
+        {
+            if (!disposed)
+            {
+                Log.Warning($"Finalize called on non-disposed OperationLogger with id {Id}");
+            }
         }
     }
 }
