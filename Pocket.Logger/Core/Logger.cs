@@ -607,7 +607,7 @@ namespace Pocket
         {
             if (!disposed)
             {
-                Log.Warning($"Finalize called on non-disposed OperationLogger with id {Id}");
+                this.Warning($"Finalize called on non-disposed logger with id {Id}");
             }
         }
     }
