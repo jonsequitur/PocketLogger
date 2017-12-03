@@ -152,6 +152,32 @@ namespace Pocket.Tests
         }
 
         [Fact]
+        public async Task Operation_id_is_the_same_before_and_after_operation()
+        {
+            var log = new LogEntryList();
+
+            using (Subscribe(log.Add))
+            {
+                Log.Info("not part of the operation");
+
+                using (Log.OnEnterAndExit())
+                using (Log.OnEnterAndConfirmOnExit())
+                {
+                    await Task.Yield();
+                    Log.Info("hello");
+                }
+
+                Log.Info("not part of the operation");
+            }
+
+            log.Where(e => e.Evaluate().Message == "not part of the operation")
+               .Select(e => e.Operation.Id)
+               .Distinct()
+               .Should()
+               .HaveCount(1);
+        }
+
+        [Fact]
         public void Log_events_emitted_by_regular_Loggers_within_the_scope_of_an_operation_bear_the_id_of_the_ambient_operation()
         {
             var log = new LogEntryList();
