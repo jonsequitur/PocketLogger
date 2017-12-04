@@ -81,7 +81,7 @@ namespace Pocket.Tests
                .Evaluate()
                .Message
                .Should()
-               .Match("*It's 12/12/2012 12:00:00 AM * and all is well*");
+               .Match("*It's 12/12/*12 12:00:00 AM * and all is well*");
         }
 
         [Fact]
@@ -99,8 +99,8 @@ namespace Pocket.Tests
                .Properties
                .Should()
                .ContainSingle(p =>
-                                  p.Name == "how" &&
-                                  p.Value == "well");
+                                  p.Name.Equals("how") &&
+                                  p.Value.Equals("well"));
         }
 
         [Fact]
