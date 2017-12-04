@@ -140,7 +140,7 @@ namespace Pocket.Tests
                .Properties
                .Select(_ => _.Value)
                .Should()
-               .ContainSingle(arg => arg == "bye!");
+               .ContainSingle(arg => arg.Equals("bye!"));
         }
 
         [Fact]
@@ -159,7 +159,7 @@ namespace Pocket.Tests
                .Properties
                .Select(_ => _.Value)
                .Should()
-               .ContainSingle(arg => arg == "bye!");
+               .ContainSingle(arg => arg.Equals("bye!"));
         }
 
         [Fact]
@@ -186,10 +186,10 @@ namespace Pocket.Tests
             using (var operation = Log.ConfirmOnExit())
             {
                 operation.Succeed("success!");
-                await Task.Delay(100);
+                await Task.Delay(150);
                 operation.Info("hello");
             }
-          
+
             var infoEvent = log
                 .Single(e => e.Evaluate().Message == "hello")
                 .Operation
