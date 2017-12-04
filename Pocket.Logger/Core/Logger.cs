@@ -603,6 +603,7 @@ namespace Pocket
             disposed = true;
         }
 
+        #pragma warning disable CS0465
         protected virtual void Finalize()
         {
             if (!disposed)
