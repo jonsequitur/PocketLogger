@@ -48,8 +48,7 @@ namespace Pocket.For.MicrosoftExtensionsLogging
                     exception: exception,
                     category: category);
 
-                var formattedLogValues = state as FormattedLogValues;
-                if (formattedLogValues != null)
+                if (state is FormattedLogValues formattedLogValues)
                 {
                     foreach (var value in formattedLogValues)
                     {
