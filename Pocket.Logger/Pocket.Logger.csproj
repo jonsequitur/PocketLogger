@@ -2,9 +2,9 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <RootNamespace>Pocket</RootNamespace>
+    <LangVersion>7.1</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <LangVersion>7.1</LangVersion>
     <DefineConstants>TRACE;DEBUG;NETCOREAPP2_0; SourceProject</DefineConstants>
   </PropertyGroup>
   <ItemGroup>

@@ -120,5 +120,20 @@ namespace Pocket.Tests
                         GetType().Assembly);
             }
         }
+
+        [Fact]
+        public void When_logger_discovery_specifies_the_same_assembly_more_than_once_it_is_only_subscribed_once()
+        {
+            var log = new LogEntryList();
+
+            using (Subscribe(
+                log.Add,
+                new[] { typeof(Class1).Assembly, typeof(Class1).Assembly }))
+            {
+                Class1.EmitSomeLogEvents();
+            }
+
+            log.Count.Should().Be(3, $"{nameof(Class1.EmitSomeLogEvents)} writes 3 log events.");
+        }
     }
 }

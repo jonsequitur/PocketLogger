@@ -144,7 +144,7 @@ namespace Pocket
             IEnumerable<Type> pocketLoggerTypes,
             LoggerSubscription subscription)
         {
-            foreach (var loggerType in pocketLoggerTypes)
+            foreach (var loggerType in pocketLoggerTypes.Distinct())
             {
                 var entryPostedEventHandler = (EventInfo) loggerType.GetMember(nameof(Logger.Posted)).Single();
 
