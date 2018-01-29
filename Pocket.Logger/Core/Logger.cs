@@ -60,7 +60,7 @@ namespace Pocket
             (string Name, object Value)[] properties = null)
         {
             var logEntry = new LogEntry(
-                message: message,
+                message: message ?? exception?.Message,
                 logLevel: logLevel,
                 operationName: operationName,
                 exception: exception,

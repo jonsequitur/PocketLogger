@@ -205,6 +205,35 @@ namespace Pocket.For.ApplicationInsights.Tests
         }
 
         [Fact]
+        public void Log_Error_uses_the_exception_message_if_no_message_is_specified()
+        {
+            string exceptionMessage;
+
+            try
+            {
+                throw new Exception("oops!");
+            }
+            catch (Exception exception)
+            {
+                exceptionMessage = exception.Message;
+
+                client.TrackException(new ExceptionTelemetry
+                {
+                    Exception = exception
+                });
+
+                using (client.SubscribeToPocketLogger())
+                {
+                    Log.Error(exception);
+                }
+            }
+
+            var actual = (ExceptionTelemetry) telemetrySent[1];
+
+            actual.Message.Should().Be(exceptionMessage);
+        }
+
+        [Fact]
         public void When_an_exception_is_part_of_an_operation_it_includes_a_Duration_property()
         {
             using (var operation = Log.OnExit())
