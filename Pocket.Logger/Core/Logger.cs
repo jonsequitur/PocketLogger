@@ -189,7 +189,7 @@ namespace Pocket
                     case LogLevel.Warning:
                         return "⚠";
                     case LogLevel.Error:
-                        return "✖";
+                        return "❌";
                     case LogLevel.Critical:
                         return "💩";
                     default:
