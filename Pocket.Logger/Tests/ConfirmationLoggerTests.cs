@@ -265,6 +265,30 @@ namespace Pocket.Tests
         }
 
         [Fact]
+        public void Fail_uses_exception_as_message_when_no_message_is_specified()
+        {
+            var log = new LogEntryList();
+            var exception = new Exception("bad");
+            string exceptionString;
+
+            using (Subscribe(log.Add))
+            using (var operation = Log.OnEnterAndConfirmOnExit())
+            {
+                try
+                {
+                    throw exception;
+                }
+                catch (Exception e)
+                {
+                    exceptionString = e.ToString();
+                    operation.Fail(e);
+                }
+            }
+
+            log.Last().Evaluate().Message.Should().Be(exceptionString);
+        }
+
+        [Fact]
         public void Child_operations_have_ids_derived_from_their_parent_by_default()
         {
             using (var parent = Log.ConfirmOnExit())
