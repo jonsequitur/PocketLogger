@@ -205,22 +205,17 @@ namespace Pocket.For.ApplicationInsights.Tests
         }
 
         [Fact]
-        public void Log_Error_uses_the_exception_message_if_no_message_is_specified()
+        public void Log_Error_uses_exception_ToString_if_no_message_is_specified()
         {
-            string exceptionMessage;
+            string exceptionString;
 
             try
             {
-                throw new Exception("oops!");
+                throw new Exception("oops!", new Exception("drat!"));
             }
             catch (Exception exception)
             {
-                exceptionMessage = exception.Message;
-
-                client.TrackException(new ExceptionTelemetry
-                {
-                    Exception = exception
-                });
+                exceptionString = exception.ToString();
 
                 using (client.SubscribeToPocketLogger())
                 {
@@ -228,9 +223,33 @@ namespace Pocket.For.ApplicationInsights.Tests
                 }
             }
 
-            var actual = (ExceptionTelemetry) telemetrySent[1];
+            var actual = (ExceptionTelemetry) telemetrySent[0];
 
-            actual.Message.Should().Be(exceptionMessage);
+            actual.Message.Should().Be(exceptionString);
+        }
+
+        [Fact]
+        public void Log_Warning_uses_exception_ToString_if_no_message_is_specified()
+        {
+            string exceptionString;
+
+            try
+            {
+                throw new Exception("oops!", new Exception("drat!"));
+            }
+            catch (Exception exception)
+            {
+                exceptionString = exception.ToString();
+
+                using (client.SubscribeToPocketLogger())
+                {
+                    Log.Warning(exception);
+                }
+            }
+
+            var actual = (ExceptionTelemetry) telemetrySent[0];
+
+            actual.Message.Should().Be(exceptionString);
         }
 
         [Fact]
