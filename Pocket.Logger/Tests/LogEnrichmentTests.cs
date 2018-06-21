@@ -1,6 +1,7 @@
 using System;
 using FluentAssertions;
 using System.Linq;
+using Example.Instrumented.Library;
 using Xunit;
 using Xunit.Abstractions;
 using static Pocket.Logger<Pocket.Tests.LogEnrichmentTests>;
@@ -24,11 +25,8 @@ namespace Pocket.Tests
         {
             var log = new LogEntryList();
 
-            using (Enrich(add =>
-            {
-                add(("enriched", "hello!"));
-            }))
-            using (Subscribe(log.Add))
+            using (Subscribe(log.Add,
+                             enrich: add => add(("enriched", "hello!"))))
             using (var operation = Log.OnEnterAndExit())
             {
                 operation.Info("one");
@@ -45,12 +43,74 @@ namespace Pocket.Tests
         }
 
         [Fact]
+        public void Enrichers_can_be_added_to_a_subscription_to_the_current_assembly()
+        {
+            var log = new LogEntryList();
+
+            using (Subscribe(
+                e => log.Add(e),
+                new[] { typeof(Class1).Assembly, GetType().Assembly },
+                enrich: add =>
+                {
+                    add(("enriched", "with extra stuff"));
+                }))
+            {
+                using (var operation = Logger.Log.OnEnterAndExit())
+                {
+                    operation.Info("hello!");
+                }
+            }
+
+            log.Count
+               .Should()
+               .Be(3);
+
+            foreach (var e in log)
+            {
+                e.Evaluate()
+                 .Properties
+                 .Should()
+                 .ContainSingle(t => Equals(t.Name, "enriched") &&
+                                     Equals(t.Value, "with extra stuff"));
+            }
+        }
+
+        [Fact]
+        public void Enrichers_can_be_added_to_a_subscription_to_another_assembly()
+        {
+            var log = new LogEntryList();
+            using (var subscription = Subscribe(
+                e => log.Add(e),
+                new[] { typeof(Class1).Assembly, GetType().Assembly },
+                enrich: add =>
+                {
+                    add(("enriched", "with extra stuff"));
+                }))
+            {
+                Class1.EmitSomeLogEvents("hello!");
+            }
+
+            log.Count
+               .Should()
+               .Be(3);
+
+            foreach (var e in log)
+            {
+                e.Evaluate()
+                 .Properties
+                 .Should()
+                 .ContainSingle(t => Equals(t.Name, "enriched") &&
+                                     Equals(t.Value, "with extra stuff"));
+            }
+        }
+
+        [Fact]
         public void Enriching_log_events_does_not_hide_normal_properties()
         {
             var log = new LogEntryList();
 
-            using (Enrich(add => add(("enriched-property", "hello!"))))
-            using (Subscribe(log.Add))
+            using (Subscribe(log.Add,
+                             enrich: add => add(("enriched-property", "hello!"))))
             using (var operation = Logger.Log.OnEnterAndExit())
             {
                 operation.Info("one {one}", 1);
@@ -76,59 +136,41 @@ namespace Pocket.Tests
         }
 
         [Fact]
-        public void Multiple_enrichers_can_be_in_effect_at_once()
+        public void Enrichers_affect_all_active_subscriptions()
         {
-            var log = new LogEntryList();
+            var outerSubscription = new LogEntryList();
+            var innerSubscription = new LogEntryList();
 
-            using (Subscribe(log.Add))
-            using (Enrich(add => add(("enricher-1", 1))))
+            using (Subscribe(outerSubscription.Add,
+                             enrich: add => add(("enricher-1", 1))))
             {
                 Log.Event();
 
-                using (Enrich(add => add(("enricher-2", 3))))
+                using (Subscribe(innerSubscription.Add,
+                                 enrich: add => add(("enricher-2", 3))))
                 {
                     Log.Event();
                 }
             }
 
-            log[0].Evaluate()
-                  .Properties
-                  .Should()
-                  .Contain(p => p.Name == "enricher-1");
+            outerSubscription[0].Evaluate()
+                                .Properties
+                                .Should()
+                                .OnlyContain(p => p.Name == "enricher-1");
 
-            log[1].Evaluate()
-                  .Properties
-                  .Should()
-                  .Contain(p => p.Name == "enricher-1");
-            log[1].Evaluate()
-                  .Properties
-                  .Should()
-                  .Contain(p => p.Name == "enricher-2");
-        }
+            outerSubscription[1].Evaluate()
+                                .Properties
+                                .Should()
+                                .Contain(p => p.Name == "enricher-1")
+                                .And
+                                .Contain(p => p.Name == "enricher-2");
 
-        [Fact]
-        public void Enrichers_can_be_removed()
-        {
-            var log = new LogEntryList();
-
-            using (Subscribe(log.Add))
-            using (Enrich(add => add(("enricher-1", 1))))
-            {
-                using (Enrich(add => add(("enricher-2", 3))))
-                {
-                }
-
-                Log.Event();
-            }
-
-            log[0].Evaluate()
-                  .Properties
-                  .Should()
-                  .Contain(p => p.Name == "enricher-1");
-            log[0].Evaluate()
-                  .Properties
-                  .Should()
-                  .NotContain(p => p.Name == "enricher-2");
+            innerSubscription[0].Evaluate()
+                                .Properties
+                                .Should()
+                                .Contain(p => p.Name == "enricher-1")
+                                .And
+                                .Contain(p => p.Name == "enricher-2");
         }
     }
 }

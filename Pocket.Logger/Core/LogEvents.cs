@@ -15,17 +15,6 @@ namespace Pocket
                           .Where(t => t.AssemblyQualifiedName != typeof(Logger).AssemblyQualifiedName)
                           .ToArray());
 
-        public static IDisposable Enrich(Action<Action<(string Name, object Value)>> enrich)
-        {
-            enrich = enrich.Catch();
-            Logger.Enrich += enrich;
-
-            return Disposable.Create(() =>
-            {
-                Logger.Enrich -= enrich;
-            });
-        }
-
         public static LoggerSubscription Subscribe(
             Action<(
                     byte LogLevel,
@@ -40,7 +29,8 @@ namespace Pocket
                     bool? IsSuccessful,
                     TimeSpan? Duration) Operation)>
                 onEntryPosted,
-            IReadOnlyCollection<Assembly> assembliesToSubscribe)
+            IReadOnlyCollection<Assembly> assembliesToSubscribe,
+            Action<Action<(string Name, object Value)>> enrich = null)
         {
             if (onEntryPosted == null)
             {
@@ -54,12 +44,13 @@ namespace Pocket
 
             var subscription = new LoggerSubscription();
 
-            SubscribeLoggersFromOtherAssemblies(
+            SubscribeLoggers(
                 onEntryPosted,
                 assembliesToSubscribe
                     .Types()
                     .PocketLoggers(),
-                subscription);
+                subscription,
+                enrich);
 
             return subscription;
         }
@@ -78,7 +69,8 @@ namespace Pocket
                     bool? IsSuccessful,
                     TimeSpan? Duration) Operation)>
                 onEntryPosted,
-            bool discoverOtherPocketLoggers = true)
+            bool discoverOtherPocketLoggers = true,
+            Action<Action<(string Name, object Value)>> enrich = null)
         {
             if (onEntryPosted == null)
             {
@@ -88,95 +80,87 @@ namespace Pocket
             var subscription = new LoggerSubscription();
 
             SubscribeContainingAssembly(
-                onEntryPosted, 
-                subscription);
+                onEntryPosted,
+                subscription,
+                enrich);
 
             if (discoverOtherPocketLoggers)
             {
-                SubscribeLoggersFromOtherAssemblies(
-                    onEntryPosted, 
-                    loggerTypes.Value, 
-                    subscription);
+                SubscribeLoggers(
+                    onEntryPosted,
+                    loggerTypes.Value,
+                    subscription,
+                    enrich);
             }
 
             return subscription;
         }
 
-        private static void SubscribeContainingAssembly(
-            Action<(
-                    byte LogLevel,
-                    DateTime TimestampUtc,
-                    Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
-                    Exception Exception,
-                    string OperationName,
-                    string Category,
-                    (string Id,
-                    bool IsStart,
-                    bool IsEnd,
-                    bool? IsSuccessful,
-                    TimeSpan? Duration) Operation)>
+        private static void SubscribeContainingAssembly<T>(
+            Action<T> onEntryPosted,
+            LoggerSubscription subscription,
+            Action<Action<(string Name, object Value)>> enrich = null) =>
+            SubscribeLoggers(
                 onEntryPosted,
-            LoggerSubscription subscription)
-        {
-            var postSafelyFromLocalLogger = onEntryPosted.Catch();
-            Logger.Posted += postSafelyFromLocalLogger;
+                new[] { typeof(Logger) },
+                subscription, enrich);
 
-            subscription.Add(typeof(Logger), Disposable.Create(() =>
-            {
-                Logger.Posted -= postSafelyFromLocalLogger;
-            }));
-        }
-
-        private static void SubscribeLoggersFromOtherAssemblies(
-            Action<(
-                    byte LogLevel,
-                    DateTime TimestampUtc,
-                    Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
-                    Exception Exception,
-                    string OperationName,
-                    string Category,
-                    (string Id,
-                    bool IsStart,
-                    bool IsEnd,
-                    bool? IsSuccessful,
-                    TimeSpan? Duration) Operation)>
-                onEntryPosted,
+        private static void SubscribeLoggers<T>(
+            Action<T> onEntryPosted,
             IEnumerable<Type> pocketLoggerTypes,
-            LoggerSubscription subscription)
+            LoggerSubscription subscription,
+            Action<Action<(string Name, object Value)>> enrich = null)
         {
             foreach (var loggerType in pocketLoggerTypes.Distinct())
             {
-                var entryPostedEventHandler = (EventInfo) loggerType.GetMember(nameof(Logger.Posted)).Single();
+                var onDispose = new CompositeDisposable();
 
-                var postSafelyFromDiscoveredLogger = onEntryPosted.Catch();
+                var posted = (EventInfo) loggerType.GetMember(nameof(Logger.Posted)).Single();
 
-                entryPostedEventHandler.AddEventHandler(
+                var subscriber = onEntryPosted.Catch();
+
+                posted.AddEventHandler(
                     null,
-                    postSafelyFromDiscoveredLogger);
+                    subscriber);
 
-                subscription.Add(loggerType, Disposable.Create(() =>
+                onDispose.Add(() => posted.RemoveEventHandler(
+                                  null,
+                                  subscriber));
+
+                if (enrich != null)
                 {
-                    entryPostedEventHandler.RemoveEventHandler(
+                    var enrichEvent = loggerType.GetMember(nameof(Logger.Enrich)).OfType<EventInfo>().Single();
+
+                    var enrichSubscriber = enrich.Catch();
+
+                    enrichEvent.AddEventHandler(
                         null,
-                        postSafelyFromDiscoveredLogger);
-                }));
+                        enrichSubscriber);
+
+                    onDispose.Add(() => enrichEvent.RemoveEventHandler(
+                                      null,
+                                      enrichSubscriber));
+                }
+
+                subscription.Add(loggerType, onDispose);
             }
         }
 
-        internal static Action<T> Catch<T>(this Action<T> action)
+        private static Action<T> Catch<T>(
+            this Action<T> publish)
         {
-            void invoke(T e)
+            return Invoke;
+
+            void Invoke(T e)
             {
                 try
                 {
-                    action(e);
+                    publish(e);
                 }
                 catch (Exception)
                 {
                 }
             }
-
-            return invoke;
         }
 
         private static IEnumerable<Type> PocketLoggers(this IEnumerable<Type> types) =>
