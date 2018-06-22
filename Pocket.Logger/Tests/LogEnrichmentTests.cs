@@ -25,8 +25,8 @@ namespace Pocket.Tests
         {
             var log = new LogEntryList();
 
-            using (Subscribe(log.Add,
-                             enrich: add => add(("enriched", "hello!"))))
+            using (Subscribe(log.Add))
+            using (Enrich(add => add(("enriched", "hello!"))))
             using (var operation = Log.OnEnterAndExit())
             {
                 operation.Info("one");
@@ -43,17 +43,16 @@ namespace Pocket.Tests
         }
 
         [Fact]
-        public void Enrichers_can_be_added_to_a_subscription_to_the_current_assembly()
+        public void Enrichers_affect_events_from_the_current_assembly()
         {
             var log = new LogEntryList();
 
-            using (Subscribe(
-                e => log.Add(e),
-                new[] { typeof(Class1).Assembly, GetType().Assembly },
-                enrich: add =>
-                {
-                    add(("enriched", "with extra stuff"));
-                }))
+            using (Subscribe(log.Add,
+                             new[] { typeof(Class1).Assembly, GetType().Assembly }))
+            using (Enrich(add =>
+            {
+                add(("enriched", "with extra stuff"));
+            }))
             {
                 using (var operation = Logger.Log.OnEnterAndExit())
                 {
@@ -76,16 +75,15 @@ namespace Pocket.Tests
         }
 
         [Fact]
-        public void Enrichers_can_be_added_to_a_subscription_to_another_assembly()
+        public void Enrichers_affect_events_from_another_assembly()
         {
             var log = new LogEntryList();
-            using (var subscription = Subscribe(
-                e => log.Add(e),
-                new[] { typeof(Class1).Assembly, GetType().Assembly },
-                enrich: add =>
-                {
-                    add(("enriched", "with extra stuff"));
-                }))
+            var assembliesToSearch = new[] { typeof(Class1).Assembly, GetType().Assembly };
+            using (Subscribe(log.Add, assembliesToSearch))
+            using (Enrich(add =>
+            {
+                add(("enriched", "with extra stuff"));
+            }, assembliesToSearch))
             {
                 Class1.EmitSomeLogEvents("hello!");
             }
@@ -109,8 +107,8 @@ namespace Pocket.Tests
         {
             var log = new LogEntryList();
 
-            using (Subscribe(log.Add,
-                             enrich: add => add(("enriched-property", "hello!"))))
+            using (Subscribe(log.Add))
+            using (Enrich(add => add(("enriched-property", "hello!"))))
             using (var operation = Logger.Log.OnEnterAndExit())
             {
                 operation.Info("one {one}", 1);
@@ -141,13 +139,13 @@ namespace Pocket.Tests
             var outerSubscription = new LogEntryList();
             var innerSubscription = new LogEntryList();
 
-            using (Subscribe(outerSubscription.Add,
-                             enrich: add => add(("enricher-1", 1))))
+            using (Subscribe(outerSubscription.Add))
+            using (Enrich(add => add(("enricher-1", 1))))
             {
                 Log.Event();
 
-                using (Subscribe(innerSubscription.Add,
-                                 enrich: add => add(("enricher-2", 3))))
+                using (Subscribe(innerSubscription.Add))
+                using (Enrich(add => add(("enricher-2", 3))))
                 {
                     Log.Event();
                 }

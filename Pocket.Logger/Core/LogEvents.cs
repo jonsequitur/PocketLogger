@@ -12,45 +12,33 @@ namespace Pocket
         private static readonly Lazy<Type[]> loggerTypes = new Lazy<Type[]>(
             () => Discover.ConcreteTypes()
                           .PocketLoggers()
-                          .Where(t => t.AssemblyQualifiedName != typeof(Logger).AssemblyQualifiedName)
                           .ToArray());
 
-        public static LoggerSubscription Subscribe(
-            Action<(
-                    byte LogLevel,
-                    DateTime TimestampUtc,
-                    Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
-                    Exception Exception,
-                    string OperationName,
-                    string Category,
-                    (string Id,
-                    bool IsStart,
-                    bool IsEnd,
-                    bool? IsSuccessful,
-                    TimeSpan? Duration) Operation)>
-                onEntryPosted,
-            IReadOnlyCollection<Assembly> assembliesToSubscribe,
-            Action<Action<(string Name, object Value)>> enrich = null)
+        public static IDisposable Enrich(
+            Action<Action<(string Name, object Value)>> onEnrich,
+            IReadOnlyCollection<Assembly> onlySearchAssemblies = null)
         {
-            if (onEntryPosted == null)
-            {
-                throw new ArgumentNullException(nameof(onEntryPosted));
-            }
-
-            if (assembliesToSubscribe == null)
-            {
-                throw new ArgumentNullException(nameof(assembliesToSubscribe));
-            }
-
             var subscription = new LoggerSubscription();
 
-            SubscribeLoggers(
-                onEntryPosted,
-                assembliesToSubscribe
-                    .Types()
-                    .PocketLoggers(),
-                subscription,
-                enrich);
+            foreach (var loggerType in onlySearchAssemblies?.Types().PocketLoggers()
+                                       ??
+                                       loggerTypes.Value)
+            {
+                var enrich = loggerType.GetMember(nameof(Logger.Enrich)).OfType<EventInfo>().Single();
+
+                var enrichSubscriber = onEnrich.Catch();
+
+                enrich.AddEventHandler(
+                    null,
+                    enrichSubscriber);
+
+                subscription.Add(loggerType, Disposable.Create(() =>
+                {
+                    enrich.RemoveEventHandler(
+                        null,
+                        enrichSubscriber);
+                }));
+            }
 
             return subscription;
         }
@@ -69,80 +57,46 @@ namespace Pocket
                     bool? IsSuccessful,
                     TimeSpan? Duration) Operation)>
                 onEntryPosted,
-            bool discoverOtherPocketLoggers = true,
-            Action<Action<(string Name, object Value)>> enrich = null)
+            IReadOnlyCollection<Assembly> onlySearchAssemblies = null)
         {
             if (onEntryPosted == null)
             {
                 throw new ArgumentNullException(nameof(onEntryPosted));
             }
-
+         
             var subscription = new LoggerSubscription();
 
-            SubscribeContainingAssembly(
-                onEntryPosted,
-                subscription,
-                enrich);
-
-            if (discoverOtherPocketLoggers)
-            {
-                SubscribeLoggers(
-                    onEntryPosted,
-                    loggerTypes.Value,
-                    subscription,
-                    enrich);
-            }
+            SubscribeLoggers(onlySearchAssemblies?.Types().PocketLoggers() 
+                             ??
+                             loggerTypes.Value,
+                             subscription,
+                             onEntryPosted);
 
             return subscription;
         }
-
-        private static void SubscribeContainingAssembly<T>(
-            Action<T> onEntryPosted,
-            LoggerSubscription subscription,
-            Action<Action<(string Name, object Value)>> enrich = null) =>
-            SubscribeLoggers(
-                onEntryPosted,
-                new[] { typeof(Logger) },
-                subscription, enrich);
 
         private static void SubscribeLoggers<T>(
-            Action<T> onEntryPosted,
             IEnumerable<Type> pocketLoggerTypes,
             LoggerSubscription subscription,
-            Action<Action<(string Name, object Value)>> enrich = null)
+            Action<T> onEntryPosted = null)
         {
             foreach (var loggerType in pocketLoggerTypes.Distinct())
             {
-                var onDispose = new CompositeDisposable();
-
-                var posted = (EventInfo) loggerType.GetMember(nameof(Logger.Posted)).Single();
-
-                var subscriber = onEntryPosted.Catch();
-
-                posted.AddEventHandler(
-                    null,
-                    subscriber);
-
-                onDispose.Add(() => posted.RemoveEventHandler(
-                                  null,
-                                  subscriber));
-
-                if (enrich != null)
+                if (onEntryPosted != null)
                 {
-                    var enrichEvent = loggerType.GetMember(nameof(Logger.Enrich)).OfType<EventInfo>().Single();
+                    var posted = (EventInfo) loggerType.GetMember(nameof(Logger.Posted)).Single();
 
-                    var enrichSubscriber = enrich.Catch();
+                    var subscriber = onEntryPosted.Catch();
 
-                    enrichEvent.AddEventHandler(
+                    posted.AddEventHandler(
                         null,
-                        enrichSubscriber);
+                        subscriber);
 
-                    onDispose.Add(() => enrichEvent.RemoveEventHandler(
-                                      null,
-                                      enrichSubscriber));
+                    subscription.Add(loggerType,
+                                     Disposable.Create(() => posted.RemoveEventHandler(
+                                                           null,
+                                                           subscriber)));
                 }
-
-                subscription.Add(loggerType, onDispose);
             }
         }
 
