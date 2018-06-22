@@ -31,7 +31,7 @@ namespace Pocket.Tests
 
             var message = $"hello from {nameof(Loggers_in_referenced_assemblies_can_be_discovered_and_subscribed)}";
 
-            using (Subscribe(log.Add, discoverOtherPocketLoggers: true))
+            using (Subscribe(log.Add))
             {
                 Class1.EmitSomeLogEvents(message);
                 await Task.Delay(100);
@@ -45,7 +45,7 @@ namespace Pocket.Tests
         {
             var log = new LogEntryList();
 
-            using (Subscribe(log.Add, discoverOtherPocketLoggers: true))
+            using (Subscribe(log.Add))
             {
                 Class1.EmitSomeLogEvents($"before unsubscribe");
                 await Task.Delay(100);
@@ -60,7 +60,7 @@ namespace Pocket.Tests
         [Fact]
         public void Exceptions_thrown_by_subscribers_are_not_thrown_to_the_caller()
         {
-            using (Subscribe(_ => throw new Exception("oops!"), discoverOtherPocketLoggers: true))
+            using (Subscribe(_ => throw new Exception("oops!")))
             {
                 Class1.EmitSomeLogEvents();
             }

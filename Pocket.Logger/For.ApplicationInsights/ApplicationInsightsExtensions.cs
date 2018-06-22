@@ -16,19 +16,11 @@ namespace Pocket.For.ApplicationInsights
     {
         public static LoggerSubscription SubscribeToPocketLogger(
             this TelemetryClient telemetryClient,
-            IReadOnlyCollection<Assembly> assembliesToSubscribe) =>
+            IReadOnlyCollection<Assembly> onlySearchAssemblies = null) =>
             LogEvents.Subscribe(e =>
             {
                 WriteTelemetry(telemetryClient, e);
-            }, assembliesToSubscribe);
-
-        public static LoggerSubscription SubscribeToPocketLogger(
-            this TelemetryClient telemetryClient,
-            bool discoverOtherPocketLoggers = true) =>
-            LogEvents.Subscribe(e =>
-            {
-                WriteTelemetry(telemetryClient, e);
-            }, discoverOtherPocketLoggers);
+            }, onlySearchAssemblies);
 
         private static void WriteTelemetry(
             TelemetryClient telemetryClient,
