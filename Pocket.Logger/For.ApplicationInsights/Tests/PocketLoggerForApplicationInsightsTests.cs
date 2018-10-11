@@ -229,6 +229,20 @@ namespace Pocket.For.ApplicationInsights.Tests
         }
 
         [Fact]
+        public void Log_Warning_sets_message_property()
+        {
+            using (client.SubscribeToPocketLogger())
+            {
+                Log.Warning("oops...");
+            }
+
+            var actual = (ExceptionTelemetry) telemetrySent[0];
+
+            actual.Message.Should().Be("oops...");
+        }
+
+
+        [Fact]
         public void Log_Warning_uses_exception_ToString_if_no_message_is_specified()
         {
             string exceptionString;

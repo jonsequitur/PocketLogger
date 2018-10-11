@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 
 namespace Pocket
 {
@@ -28,8 +29,7 @@ namespace Pocket
 
             public void Dispose()
             {
-                dispose?.Invoke();
-                dispose = null;
+                Interlocked.CompareExchange(ref dispose, null, dispose)?.Invoke();
             }
         }
     }
@@ -38,7 +38,7 @@ namespace Pocket
     internal class CompositeDisposable : IDisposable, IEnumerable<IDisposable>
     {
         private bool isDisposed = false;
- 
+
         private readonly List<IDisposable> disposables = new List<IDisposable>();
 
         public void Add(IDisposable disposable)
@@ -52,8 +52,10 @@ namespace Pocket
             {
                 disposable.Dispose();
             }
-
-            disposables.Add(disposable);
+            else
+            {
+                disposables.Add(disposable);
+            }
         }
 
         public void Add(Action dispose) => Add(Disposable.Create(dispose));

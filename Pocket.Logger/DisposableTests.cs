@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -43,6 +44,32 @@ namespace Pocket
         }
 
         [Fact]
+        public async Task AnonymousDisposable_is_concurrency_safe_on_dispose()
+        {
+            var barrier = new Barrier(2);
+
+            var disposeCount = 0;
+
+            var disposable = Disposable.Create(() =>
+            {
+                Interlocked.Increment(ref disposeCount);
+
+                barrier.SignalAndWait(100);
+            });
+
+            await Task.WhenAll(
+                Enumerable.Range(1, 20).Select(async _ =>
+                {
+                    await Task.Run(() =>
+                    {
+                        disposable.Dispose();
+                    });
+                }));
+
+            disposeCount.Should().Be(1);
+        }
+
+        [Fact]
         public void All_disposables_added_to_a_CompositeDisposable_are_disposed_when_it_is_disposed()
         {
             var oneWasDisposed = false;
@@ -61,7 +88,7 @@ namespace Pocket
         }
 
         [Fact]
-        public void Disposables_added_to_a_CompositeDisposable_are_dispoed_in_the_order_they_were_added()
+        public void Disposables_added_to_a_CompositeDisposable_are_disposed_in_the_order_they_were_added()
         {
             var items = new List<int>();
 
@@ -112,9 +139,9 @@ namespace Pocket
 
             var disposable = new CompositeDisposable
             {
-                () =>
+                () => 
                 {
-                    barrier.SignalAndWait();
+                    barrier.SignalAndWait(100);
                     oneWasDisposed = true;
                 }
             };
@@ -123,7 +150,7 @@ namespace Pocket
 
             var task2 = Task.Run(() => disposable.Add(() =>
             {
-                barrier.SignalAndWait();
+                barrier.SignalAndWait(100);
                 twoWasDisposed = true;
             }));
 
