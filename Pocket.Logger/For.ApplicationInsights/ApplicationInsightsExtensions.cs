@@ -50,7 +50,8 @@ namespace Pocket.For.ApplicationInsights
             {
                 telemetryClient.TrackDependency(e.ToDependencyTelemetry());
             }
-            else if (e.Exception != null)
+            else if (e.Exception != null ||
+                     e.LogLevel >= (byte) LogLevel.Warning)
             {
                 telemetryClient.TrackException(e.ToExceptionTelemetry());
             }
