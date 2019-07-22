@@ -8,6 +8,7 @@ PocketLogger
 | PocketLogger                                               | [![NuGet Status](http://img.shields.io/nuget/v/PocketLogger.svg?style=flat)](https://www.nuget.org/packages/PocketLogger/) 
 | PocketLogger.Subscribe                                     | [![NuGet Status](http://img.shields.io/nuget/v/PocketLogger.Subscribe.svg?style=flat)](https://www.nuget.org/packages/PocketLogger.Subscribe/) 
 | PocketLogger.For.ApplicationInsights                       | [![NuGet Status](http://img.shields.io/nuget/v/PocketLogger.For.ApplicationInsights.svg?style=flat)](https://www.nuget.org/packages/PocketLogger.For.ApplicationInsights/) 
+| [Pocket.Disposable](#pocketdisposable)                     | [![NuGet Status](http://img.shields.io/nuget/v/Pocket.Disposable.svg?style=flat)](https://www.nuget.org/packages/Pocket.Disposable/) 
 
 PocketLogger is a code instrumentation library for logging and telemetry composed of a few C# files that are linked directly into your project using Nuget. It provides support for the common structured logging API shapes seen in libraries such as [Microsoft.Extensions.Logging](https://github.com/aspnet/Logging) and [Serilog](https://github.com/serilog). Since PocketLogger doesn't add assembly dependencies to your project, it's well-suited for use by library authors, much like [LibLog](https://github.com/damianh/LibLog). It can also be used by application authors. 
 
@@ -23,9 +24,6 @@ PocketLogger's goals are:
 
 * *Don't cause application errors*. If your instrumentation code throws, it shouldn't take down your application.
 
+#### Pocket.Disposable
 
-
-
-
-
-
+A tiny package that includes a single [Disposable.cs](./Pocket.Logger/Disposable.cs) file into your project for all your inline `IDisposable` needs.
