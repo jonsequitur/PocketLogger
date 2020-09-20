@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <RootNamespace>Pocket</RootNamespace>
-    <LangVersion>7.1</LangVersion>
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>TRACE;DEBUG;NETCOREAPP2_0; SourceProject</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;NETCOREAPP3_1; SourceProject</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="TestResults\**" />
