@@ -1,6 +1,6 @@
 ﻿using System;
-using FluentAssertions;
 using System.Linq;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Pocket.Tests;
 using Xunit;
@@ -16,8 +16,7 @@ namespace Pocket.For.MicrosoftExtensionsLogging.Tests
 
         public When_publishing_from_ILogger_to_PocketLogger(ITestOutputHelper output)
         {
-            loggerFactory = new LoggerFactory()
-                .AddConsole()
+            loggerFactory = LoggerFactory.Create(builder => builder.AddConsole())
                 .AddPocketLogger();
 
             disposables.Add(LogEvents.Subscribe(e => output.WriteLine(e.ToLogString())));

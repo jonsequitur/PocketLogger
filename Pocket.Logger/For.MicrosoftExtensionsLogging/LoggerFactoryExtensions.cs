@@ -1,6 +1,6 @@
 using System;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Internal;
 
 namespace Pocket.For.MicrosoftExtensionsLogging
 {
@@ -48,7 +48,7 @@ namespace Pocket.For.MicrosoftExtensionsLogging
                     exception: exception,
                     category: category);
 
-                if (state is FormattedLogValues formattedLogValues)
+                if (state is IReadOnlyList<KeyValuePair<string, object>> formattedLogValues)
                 {
                     foreach (var value in formattedLogValues)
                     {
