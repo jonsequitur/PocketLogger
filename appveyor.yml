@@ -1,3 +1,5 @@
+image: Visual Studio 2019
+
 artifacts:
   - path: '**\*.nupkg'
 
@@ -5,11 +7,11 @@ configuration:
   - Release
 
 before_build:
-  - cmd: dotnet restore Pocket.Logger.sln 
+  - cmd: dotnet restore Pocket.Logger.sln
 
 build_script:
   - cmd: >-
-      dotnet build Pocket.Logger.sln 
+      dotnet build Pocket.Logger.sln
 
 after_build:
   - nuget pack Pocket.Logger\PocketLogger.nuspec
