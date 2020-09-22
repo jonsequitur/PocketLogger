@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentAssertions;
+using FluentAssertions.Extensions;
 using Xunit;
 using Xunit.Abstractions;
 using static Pocket.LogEvents;
@@ -321,7 +322,7 @@ namespace Pocket.Tests
 
             var results = log.Select(l => l.Operation.IsSuccessful);
 
-            results.ShouldBeEquivalentTo(
+            results.Should().BeEquivalentTo(
                 new object[] { null, false, false, false, true });
         }
 

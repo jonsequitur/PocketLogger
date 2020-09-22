@@ -40,7 +40,7 @@ namespace Pocket
 
             Action disposeAgain = () => disposable.Dispose();
 
-            disposeAgain.ShouldNotThrow();
+            disposeAgain.Should().NotThrow();
         }
 
         [Fact]

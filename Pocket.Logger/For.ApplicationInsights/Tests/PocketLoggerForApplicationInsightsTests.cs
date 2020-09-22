@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentAssertions;
+using FluentAssertions.Extensions;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
@@ -75,7 +76,7 @@ namespace Pocket.For.ApplicationInsights.Tests
             actual.Data.Should().Be(expected.Data);
             actual.Duration.Should().BeGreaterOrEqualTo(200.Milliseconds());
             actual.Name.Should().Be(expected.Name);
-            actual.Properties.ShouldBeEquivalentTo(expected.Properties);
+            actual.Properties.Should().BeEquivalentTo(expected.Properties);
             actual.ResultCode.Should().Be(expected.ResultCode);
             actual.Success.Should().Be(expected.Success);
             actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
@@ -109,8 +110,8 @@ namespace Pocket.For.ApplicationInsights.Tests
             var actual = (EventTelemetry) telemetrySent[1];
 
             actual.Name.Should().Be(expected.Name);
-            actual.Metrics.ShouldBeEquivalentTo(expected.Metrics);
-            actual.Properties.ShouldBeEquivalentTo(expected.Properties);
+            actual.Metrics.Should().BeEquivalentTo(expected.Metrics);
+            actual.Properties.Should().BeEquivalentTo(expected.Properties);
             actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
         }
 
@@ -142,8 +143,8 @@ namespace Pocket.For.ApplicationInsights.Tests
             var actual = (EventTelemetry) telemetrySent[1];
 
             actual.Name.Should().Be(expected.Name);
-            actual.Metrics.ShouldBeEquivalentTo(expected.Metrics);
-            actual.Properties.ShouldBeEquivalentTo(expected.Properties);
+            actual.Metrics.Should().BeEquivalentTo(expected.Metrics);
+            actual.Properties.Should().BeEquivalentTo(expected.Properties);
             actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
         }
 
@@ -199,7 +200,7 @@ namespace Pocket.For.ApplicationInsights.Tests
 
             actual.Exception.Should().Be(expected.Exception);
             actual.Message.Should().Be(expected.Message);
-            actual.Properties.ShouldBeEquivalentTo(expected.Properties);
+            actual.Properties.Should().BeEquivalentTo(expected.Properties);
             actual.SeverityLevel.Should().Be(expected.SeverityLevel);
             actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
         }
@@ -309,7 +310,7 @@ namespace Pocket.For.ApplicationInsights.Tests
             var actual = (TraceTelemetry) telemetrySent[1];
 
             actual.Message.Should().Be(expected.Message);
-            actual.Properties.ShouldBeEquivalentTo(expected.Properties);
+            actual.Properties.Should().BeEquivalentTo(expected.Properties);
             actual.SeverityLevel.Should().Be(expected.SeverityLevel);
             actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
         }
