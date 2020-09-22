@@ -11,7 +11,9 @@ using Metric = System.ValueTuple<string, double>;
 
 namespace Pocket.For.ApplicationInsights
 {
-    [DebuggerStepThrough]
+#if !SourceProject
+    [System.Diagnostics.DebuggerStepThrough]
+#endif
     internal static class ApplicationInsightsExtensions
     {
         public static LoggerSubscription SubscribeToPocketLogger(

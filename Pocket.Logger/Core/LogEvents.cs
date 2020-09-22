@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 
 namespace Pocket
 {
-    [DebuggerStepThrough]
+#if !SourceProject
+    [System.Diagnostics.DebuggerStepThrough]
+#endif
     internal static partial class LogEvents
     {
         private static readonly Lazy<Type[]> loggerTypes = new Lazy<Type[]>(
