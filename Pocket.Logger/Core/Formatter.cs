@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -10,7 +9,9 @@ using System.Threading;
 
 namespace Pocket
 {
-    [DebuggerStepThrough]
+#if !SourceProject
+    [System.Diagnostics.DebuggerStepThrough]
+#endif
     internal class Formatter
     {
         private static bool stopCaching = false;

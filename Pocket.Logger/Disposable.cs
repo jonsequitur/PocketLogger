@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 
 namespace Pocket
 {
-    [DebuggerStepThrough]
+#if !SourceProject
+    [System.Diagnostics.DebuggerStepThrough]
+#endif
     internal static class Disposable
     {
         private static readonly IDisposable empty = Create(() =>
@@ -34,7 +34,9 @@ namespace Pocket
         }
     }
 
-    [DebuggerStepThrough]
+#if !SourceProject
+    [System.Diagnostics.DebuggerStepThrough]
+#endif
     internal class CompositeDisposable : IDisposable, IEnumerable<IDisposable>
     {
         private bool isDisposed = false;
