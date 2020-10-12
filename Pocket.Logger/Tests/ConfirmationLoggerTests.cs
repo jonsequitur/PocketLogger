@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -20,6 +21,7 @@ namespace Pocket.Tests
             disposables =
                 Subscribe(e =>
                               output.WriteLine(e.ToLogString()));
+            Activity.DefaultIdFormat = ActivityIdFormat.Hierarchical;
         }
 
         public void Dispose() => disposables.Dispose();
@@ -296,8 +298,8 @@ namespace Pocket.Tests
             using (var child = parent.ConfirmOnExit())
             using (var grandchild = child.ConfirmOnExit())
             {
-                child.Id.Should().Contain(parent.Id);
-                grandchild.Id.Should().Contain(parent.Id);
+                child.Id.Should().StartWith(parent.Id);
+                grandchild.Id.Should().StartWith(parent.Id);
             }
         }
 
