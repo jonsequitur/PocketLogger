@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 
 #nullable disable
+
 namespace Pocket
 {
 #if !SourceProject
@@ -15,17 +16,23 @@ namespace Pocket
 #endif
     internal class Formatter
     {
-        private static bool stopCaching = false;
+        private static readonly ConcurrentDictionary<string, Formatter> cache;
+        private static bool stopCaching;
+        private static int cacheCount;
 
-        private static int cacheCount = 0;
+        private static readonly Regex tokenRegex;
 
-        private static readonly Regex tokenRegex = new Regex(
-            @"{(?<key>[^{}:]*)(?:\:(?<format>.+))?}",
-            RegexOptions.IgnoreCase |
-            RegexOptions.Multiline |
-            RegexOptions.CultureInvariant |
-            RegexOptions.Compiled
-        );
+        static Formatter()
+        {
+            cache = new ConcurrentDictionary<string, Formatter>();
+            tokenRegex = new Regex(
+                @"{(?<key>[^{}:]*)(?:\:(?<format>.+))?}",
+                RegexOptions.IgnoreCase |
+                RegexOptions.Multiline |
+                RegexOptions.CultureInvariant |
+                RegexOptions.Compiled
+            );
+        }
 
         private readonly string template;
 
@@ -137,8 +144,6 @@ namespace Pocket
         }
 
         public FormatterResult Format(params object[] args) => Format(args, null);
-
-        private static readonly ConcurrentDictionary<string, Formatter> cache = new ConcurrentDictionary<string, Formatter>();
 
         public static int CacheCount => cacheCount;
 

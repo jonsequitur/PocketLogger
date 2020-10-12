@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using static Microsoft.Extensions.Logging.LogLevel;
 
 #nullable disable
 
@@ -52,8 +53,9 @@ namespace Pocket.For.MicrosoftExtensionsLogging
 
                 if (state is IReadOnlyList<KeyValuePair<string, object>> formattedLogValues)
                 {
-                    foreach (var value in formattedLogValues)
+                    for (var i = 0; i < formattedLogValues.Count; i++)
                     {
+                        var value = formattedLogValues[i];
                         if (value.Key != "{OriginalFormat}")
                         {
                             logEntry.AddProperty((value.Key, value.Value));
@@ -90,31 +92,16 @@ namespace Pocket.For.MicrosoftExtensionsLogging
             }
         }
 
-        private static LogLevel ToPocketLoggerLogLevel(this Microsoft.Extensions.Logging.LogLevel logLevel)
-        {
-            switch (logLevel)
+        private static LogLevel ToPocketLoggerLogLevel(this Microsoft.Extensions.Logging.LogLevel logLevel) =>
+            logLevel switch
             {
-                case Microsoft.Extensions.Logging.LogLevel.Trace:
-                    return LogLevel.Trace;
-
-                case Microsoft.Extensions.Logging.LogLevel.Debug:
-                    return LogLevel.Debug;
-
-                case Microsoft.Extensions.Logging.LogLevel.Information:
-                    return LogLevel.Information;
-
-                case Microsoft.Extensions.Logging.LogLevel.Warning:
-                    return LogLevel.Warning;
-
-                case Microsoft.Extensions.Logging.LogLevel.Error:
-                    return LogLevel.Error;
-
-                case Microsoft.Extensions.Logging.LogLevel.Critical:
-                    return LogLevel.Critical;
-
-                default:
-                    return LogLevel.Information;
-            }
-        }
+                Trace => LogLevel.Trace,
+                Debug => LogLevel.Debug,
+                Information => LogLevel.Information,
+                Warning => LogLevel.Warning,
+                Error => LogLevel.Error,
+                Critical => LogLevel.Critical,
+                _ => LogLevel.Information
+            };
     }
 }

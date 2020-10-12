@@ -92,8 +92,9 @@ namespace Pocket.Tests
                .Should()
                .Be(3);
 
-            foreach (var e in log)
+            for (var i = 0; i < log.Count; i++)
             {
+                var e = log[i];
                 e.Evaluate()
                  .Properties
                  .Should()

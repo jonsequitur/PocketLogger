@@ -406,8 +406,9 @@ namespace Pocket.For.ApplicationInsights.Tests
 
         private void WriteTelemetryToConsole()
         {
-            foreach (var telemetry in telemetrySent)
+            for (var i = 0; i < telemetrySent.Count; i++)
             {
+                var telemetry = telemetrySent[i];
                 output.WriteLine(JsonConvert.SerializeObject(telemetry, Formatting.Indented));
             }
         }
