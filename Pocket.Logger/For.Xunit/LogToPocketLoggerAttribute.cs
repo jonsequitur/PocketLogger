@@ -2,6 +2,8 @@
 using System.Reflection;
 using Xunit.Sdk;
 
+#nullable disable
+
 namespace Pocket.For.Xunit
 {
     internal class LogToPocketLoggerAttribute : BeforeAfterTestAttribute

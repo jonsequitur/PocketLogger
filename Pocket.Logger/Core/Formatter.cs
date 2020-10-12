@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 
+#nullable disable
 namespace Pocket
 {
 #if !SourceProject

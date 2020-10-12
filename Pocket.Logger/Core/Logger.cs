@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
+#nullable disable
+
 namespace Pocket
 {
 #if !SourceProject

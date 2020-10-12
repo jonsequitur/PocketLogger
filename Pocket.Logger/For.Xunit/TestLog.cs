@@ -6,6 +6,8 @@ using System.Reflection;
 using System.Threading;
 using Xunit.Abstractions;
 
+#nullable disable
+
 namespace Pocket.For.Xunit
 {
     internal class TestLog : IDisposable

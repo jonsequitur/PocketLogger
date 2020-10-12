@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 
+#nullable disable
+
 namespace Pocket
 {
 #if !SourceProject
