@@ -16,6 +16,7 @@ instrumented/
 *.lnk
 TestResults/
 _ReSharper.*/
+.ionide/
 *.vsp
 buildlog.txt
 .DS_Store
