@@ -13,8 +13,8 @@
     <licenseUrl>https://github.com/jonsequitur/PocketLogger/blob/master/LICENSE</licenseUrl>
     <developmentDependency>true</developmentDependency>
     <dependencies>
-      <dependency id="PocketLogger" version="[0.3.0,)" include="all" />
-      <dependency id="PocketLogger.Subscribe" version="[0.6.1,)" include="all" />
+      <dependency id="PocketLogger" version="[0.4.0,)" include="all" />
+      <dependency id="PocketLogger.Subscribe" version="[0.7.0,)" include="all" />
       <dependency id="Microsoft.ApplicationInsights" version="[2.4.0,)" />
     </dependencies>
   </metadata>
