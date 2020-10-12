@@ -74,7 +74,7 @@ namespace Pocket.For.ApplicationInsights.Tests
             var actual = (DependencyTelemetry) telemetrySent[1];
 
             actual.Data.Should().Be(expected.Data);
-            actual.Duration.Should().BeGreaterOrEqualTo(200.Milliseconds());
+            actual.Duration.Should().BeGreaterOrEqualTo(190.Milliseconds());
             actual.Name.Should().Be(expected.Name);
             actual.Properties.Should().BeEquivalentTo(expected.Properties);
             actual.ResultCode.Should().Be(expected.ResultCode);
