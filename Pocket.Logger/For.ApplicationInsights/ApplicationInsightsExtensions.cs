@@ -18,11 +18,18 @@ namespace Pocket.For.ApplicationInsights
     {
         public static LoggerSubscription SubscribeToPocketLogger(
             this TelemetryClient telemetryClient,
-            IReadOnlyCollection<Assembly> onlySearchAssemblies = null) =>
-            LogEvents.Subscribe(e =>
+            IReadOnlyCollection<Assembly> onlySearchAssemblies = null)
+        {
+            if (telemetryClient == null)
+            {
+                throw new ArgumentNullException(nameof(telemetryClient));
+            }
+
+            return LogEvents.Subscribe(e =>
             {
                 WriteTelemetry(telemetryClient, e);
             }, onlySearchAssemblies);
+        }
 
         private static void WriteTelemetry(
             TelemetryClient telemetryClient,
@@ -39,11 +46,6 @@ namespace Pocket.For.ApplicationInsights
                 bool? IsSuccessful,
                 TimeSpan? Duration) Operation) e)
         {
-            if (telemetryClient == null)
-            {
-                throw new ArgumentNullException(nameof(telemetryClient));
-            }
-
             if (e.LogLevel == (byte) LogLevel.Telemetry)
             {
                 telemetryClient.TrackEvent(e.ToEventTelemetry());
@@ -65,8 +67,9 @@ namespace Pocket.For.ApplicationInsights
 
         private static void AddProperties(this ISupportProperties telemetry, (string Name, object Value)[] properties)
         {
-            foreach (var pair in properties)
+            for (var i = 0; i < properties.Length; i++)
             {
+                var pair = properties[i];
                 if (!(pair.Value is Metric))
                 {
                     telemetry.Properties.Add(
@@ -142,8 +145,9 @@ namespace Pocket.For.ApplicationInsights
                 Name = e.OperationName
             };
 
-            foreach (var property in properties)
+            for (var i = 0; i < properties.Length; i++)
             {
+                var property = properties[i];
                 if (property.Value is Metric m)
                 {
                     telemetry.Metrics.Add(
