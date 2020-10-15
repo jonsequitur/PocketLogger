@@ -33,7 +33,7 @@ namespace Pocket.For.ApplicationInsights
 
         private static void WriteTelemetry(
             TelemetryClient telemetryClient,
-            (
+            in (
                 byte LogLevel,
                 DateTime TimestampUtc,
                 Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
@@ -65,16 +65,17 @@ namespace Pocket.For.ApplicationInsights
             }
         }
 
-        private static void AddProperties(this ISupportProperties telemetry, (string Name, object Value)[] properties)
+        private static void AddProperties(this ISupportProperties telemetry, in (string Name, object Value)[] properties)
         {
             for (var i = 0; i < properties.Length; i++)
             {
-                var pair = properties[i];
-                if (!(pair.Value is Metric))
+                var (name, value) = properties[i];
+
+                if (!(value is Metric))
                 {
                     telemetry.Properties.Add(
-                        pair.Item1,
-                        pair.Item2?.ToString());
+                        name,
+                        value?.ToString());
                 }
             }
         }
@@ -94,7 +95,7 @@ namespace Pocket.For.ApplicationInsights
         }
 
         internal static DependencyTelemetry ToDependencyTelemetry(
-            this (byte LogLevel,
+            this in (byte LogLevel,
                 DateTime TimestampUtc,
                 Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
@@ -126,7 +127,7 @@ namespace Pocket.For.ApplicationInsights
         }
 
         internal static EventTelemetry ToEventTelemetry(
-            this (byte LogLevel,
+            this in (byte LogLevel,
                 DateTime TimestampUtc,
                 Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
@@ -147,8 +148,9 @@ namespace Pocket.For.ApplicationInsights
 
             for (var i = 0; i < properties.Length; i++)
             {
-                var property = properties[i];
-                if (property.Value is Metric m)
+                var (name, value) = properties[i];
+
+                if (value is Metric m)
                 {
                     telemetry.Metrics.Add(
                         m.Item1,
@@ -157,8 +159,8 @@ namespace Pocket.For.ApplicationInsights
                 else
                 {
                     telemetry.Properties.Add(
-                        property.Name,
-                        property.Value.ToLogString());
+                        name,
+                        value.ToLogString());
                 }
             }
 
@@ -169,7 +171,7 @@ namespace Pocket.For.ApplicationInsights
         }
 
         internal static ExceptionTelemetry ToExceptionTelemetry(
-            this (byte LogLevel,
+            this in (byte LogLevel,
                 DateTime TimestampUtc,
                 Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
@@ -196,7 +198,7 @@ namespace Pocket.For.ApplicationInsights
         }
 
         internal static TraceTelemetry ToTraceTelemetry(
-            this (byte LogLevel,
+            this in (byte LogLevel,
                 DateTime TimestampUtc,
                 Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,

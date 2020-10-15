@@ -9,7 +9,7 @@ using static Pocket.LogEvents;
 
 namespace Pocket.Tests
 {
-    public class LogEnrichmentTests
+    public class LogEnrichmentTests : IDisposable
     {
         private readonly CompositeDisposable disposables = new CompositeDisposable();
 
@@ -54,10 +54,9 @@ namespace Pocket.Tests
                 add(("enriched", "with extra stuff"));
             }))
             {
-                using (var operation = Logger.Log.OnEnterAndExit())
-                {
-                    operation.Info("hello!");
-                }
+                using var operation = Logger.Log.OnEnterAndExit();
+                
+                operation.Info("hello!");
             }
 
             log.Count

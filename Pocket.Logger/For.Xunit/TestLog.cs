@@ -28,15 +28,14 @@ namespace Pocket.For.Xunit
 
             var testName = $"{testMethod.DeclaringType.Name}.{testMethod.Name}";
 
-            disposables.Add(Disposable.Create(() =>
+            disposables.Add(() =>
             {
                 Log.Dispose();
-            }));
+            });
 
             if (writeToFile)
             {
-                filename = filename ??
-                           $"{testName}-{DateTime.Now:yyyy-MM-dd-hh-mm-ss}.log";
+                filename ??= $"{testName}-{DateTime.Now:yyyy-MM-dd-hh-mm-ss}.log";
                 LogFile = new FileInfo(filename);
 
                 LogToFile();
