@@ -30,14 +30,14 @@ namespace Pocket.For.MicrosoftExtensionsLogging.Tests
         {
             loggerFactory.CreateLogger("the-category").LogInformation("hi!");
 
-            var evaluated = log.Single().Evaluate();
+            var (message, properties) = log.Single().Evaluate();
 
-            evaluated.Message
-                     .Should()
-                     .Be("hi!");
-            evaluated.Properties
-                     .Should()
-                     .HaveCount(0);
+            message.Should()
+                   .Be("hi!");
+
+            properties
+                .Should()
+                .HaveCount(0);
         }
 
         [Fact]

@@ -294,13 +294,12 @@ namespace Pocket.Tests
         [Fact]
         public void Child_operations_have_ids_derived_from_their_parent_by_default()
         {
-            using (var parent = Log.ConfirmOnExit())
-            using (var child = parent.ConfirmOnExit())
-            using (var grandchild = child.ConfirmOnExit())
-            {
-                child.Id.Should().StartWith(parent.Id);
-                grandchild.Id.Should().StartWith(parent.Id);
-            }
+            using var parent = Log.ConfirmOnExit();
+            using var child = parent.ConfirmOnExit();
+            using var grandchild = child.ConfirmOnExit();
+            
+            child.Id.Should().StartWith(parent.Id);
+            grandchild.Id.Should().StartWith(parent.Id);
         }
 
         [Fact]
@@ -313,10 +312,9 @@ namespace Pocket.Tests
             {
                 for (var index = 0; index < 3; index++)
                 {
-                    using (var child = parent.ConfirmOnExit())
-                    {
-                        child.Fail();
-                    }
+                    using var child = parent.ConfirmOnExit();
+                    
+                    child.Fail();
                 }
 
                 parent.Succeed();

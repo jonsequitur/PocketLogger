@@ -87,7 +87,7 @@ namespace Pocket
             {
                 if (onEntryPosted != null)
                 {
-                    var posted = (EventInfo) loggerType.GetMember(nameof(Logger.Posted)).Single();
+                    var posted = (EventInfo) loggerType.GetMember(nameof(Logger.Posted))[0];
 
                     var subscriber = onEntryPosted.Catch();
 

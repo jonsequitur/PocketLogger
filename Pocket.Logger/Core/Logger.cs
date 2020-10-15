@@ -61,7 +61,7 @@ namespace Pocket
             string operationName = null,
             Exception exception = null,
             object[] args = null,
-            (string Name, object Value)[] properties = null)
+            in (string Name, object Value)[] properties = null)
         {
             var logEntry = new LogEntry(
                 message: message,
@@ -106,7 +106,7 @@ namespace Pocket
     internal static partial class LogFormattingExtensions
     {
         public static string ToLogString(
-            this (
+            this in (
                 byte LogLevel,
                 DateTime TimestampUtc,
                 Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
@@ -119,7 +119,7 @@ namespace Pocket
                 bool? IsSuccessful,
                 TimeSpan? Duration) Operation) e)
         {
-            var evaluated = e.Evaluate();
+            var (message, _) = e.Evaluate();
 
             var logLevelString =
                 LogLevelString((LogLevel)e.LogLevel,
@@ -129,7 +129,7 @@ namespace Pocket
                                e.Operation.Duration);
 
             return
-                $"{e.TimestampUtc:o} {e.Operation.Id.IfNotEmpty()}{e.Category.IfNotEmpty()}{e.OperationName.IfNotEmpty()} {logLevelString} {evaluated.Message} {e.Exception}";
+                $"{e.TimestampUtc:o} {e.Operation.Id.IfNotEmpty()}{e.Category.IfNotEmpty()}{e.OperationName.IfNotEmpty()} {logLevelString} {message} {e.Exception}";
         }
 
         internal static string ToLogString(this object objectToFormat)
@@ -370,8 +370,8 @@ namespace Pocket
 
         public static void Event(
             this Logger logger,
-            (string, double)[] metrics,
-            (string name, object value)[] properties,
+            in (string, double)[] metrics,
+            in (string name, object value)[] properties,
             [CallerMemberName] string name = null) =>
             logger.Post(null,
                         LogLevel.Telemetry,
@@ -400,7 +400,7 @@ namespace Pocket
             Exception = exception;
             Category = category;
             Operation = operation;
-            message = message ?? exception?.ToString() ?? "";
+            message ??= exception?.ToString() ?? "";
 
             if (operation != null)
             {
