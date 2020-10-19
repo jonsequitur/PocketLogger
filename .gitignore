@@ -28,4 +28,5 @@ Artifacts
 *.psess
 *.xml
 *.log
+*.binlog
 *.nupkg

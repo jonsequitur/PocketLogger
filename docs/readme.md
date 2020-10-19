@@ -12,10 +12,10 @@ Log.Error("Oh no! Run!");
 ```
 
 ``` console --session HelloPocketLogger
-2020-10-15T02:03:33.7855884Z [Demo.Examples]  ℹ Hello! 
-2020-10-15T02:03:33.7960975Z [Demo.Examples] [LoudNoise]  📊  
-2020-10-15T02:03:33.8149299Z [Demo.Examples]  ⚠ That's strange... 
-2020-10-15T02:03:33.8150887Z [Demo.Examples]  ❌ Oh no! Run! 
+2020-10-19T14:48:20.2916867Z [Demo.Examples]  ℹ Hello! 
+2020-10-19T14:48:20.3083912Z [Demo.Examples] [LoudNoise]  📊  
+2020-10-19T14:48:20.3369062Z [Demo.Examples]  ⚠ That's strange... 
+2020-10-19T14:48:20.3371021Z [Demo.Examples]  ❌ Oh no! Run! 
 
 ```
 
@@ -42,7 +42,7 @@ public static class StaticClassExample
 ```
 
 ``` console --session LogApiStaticClass
-2020-10-15T02:03:35.0737980Z [StaticClassExample]  ℹ Hello! 
+2020-10-19T14:48:22.5374760Z [StaticClassExample]  ℹ Hello! 
 
 ```
 
@@ -62,7 +62,7 @@ Log.Info("Hello", x, y);
 ```
 
 ``` console --session LogInfo
-2020-10-15T02:03:36.3685833Z [Demo.Examples]  ℹ Hello +[ world, 10/14/2020 7:03:36 PM ] 
+2020-10-19T14:48:24.7506254Z [Demo.Examples]  ℹ Hello +[ world, 10/19/2020 7:48:24 AM ] 
 
 ```
 
@@ -76,7 +76,7 @@ Log.Info("Hello {x}! The time is {y}!", x, y);
 ```
 
 ``` console --session LogInfoWithNamedTemplateParams
-2020-10-15T02:03:37.4519291Z [Demo.Examples]  ℹ Hello world! The time is 10/14/2020 7:03:37 PM! 
+2020-10-19T14:48:27.3112359Z [Demo.Examples]  ℹ Hello world! The time is 10/19/2020 7:48:27 AM! 
 
 ```
 
@@ -93,7 +93,7 @@ Log.Event("LoudNoise", ("loudness", 9000), ("nearness", 1.5));
 ```
 
 ``` console --session LogEvent
-2020-10-15T02:03:38.5686319Z [Demo.Examples] [LoudNoise]  📊  +[ (loudness, 9000), (nearness, 1.5) ] 
+2020-10-19T14:48:29.5068135Z [Demo.Examples] [LoudNoise]  📊  +[ (loudness, 9000), (nearness, 1.5) ] 
 
 ```
 
@@ -106,7 +106,7 @@ Log.Warning("That's strange...", new DataMisalignedException());
 ```
 
 ``` console --session LogWarning
-2020-10-15T02:03:39.7180819Z [Demo.Examples]  ⚠ That's strange... System.DataMisalignedException: A datatype misalignment was detected in a load or store instruction.
+2020-10-19T14:48:32.0024070Z [Demo.Examples]  ⚠ That's strange... System.DataMisalignedException: A datatype misalignment was detected in a load or store instruction.
 
 ```
 
@@ -119,7 +119,7 @@ Log.Error("Oh no! Run!", new BarrierPostPhaseException());
 ```
 
 ``` console --session LogError
-2020-10-15T02:03:40.6984659Z [Demo.Examples]  ❌ Oh no! Run! System.Threading.BarrierPostPhaseException: The postPhaseAction failed with an exception.
+2020-10-19T14:48:34.5029801Z [Demo.Examples]  ❌ Oh no! Run! System.Threading.BarrierPostPhaseException: The postPhaseAction failed with an exception.
 
 ```
 
@@ -147,7 +147,7 @@ using (var _ = Log.OnExit())
 ```
 
 ``` console --session LogOnExit
-2020-10-15T02:03:42.0209406Z [00-f0d0fcee4c844d409162f7c5c5778165-076d93a00e5f0144-00] [Demo.Examples] [LogOnExit]  ⏹ (3.0446ms)  
+2020-10-19T14:48:37.1549217Z [00-966fab21b44b9449bb454a7c5c7bb744-d38a57c32ca27142-00] [Demo.Examples] [LogOnExit]  ⏹ (4.761ms)  
 
 ```
 
@@ -164,8 +164,8 @@ using (var _ = Log.OnEnterAndExit())
 ```
 
 ``` console --session LogOnEnterAndExit
-2020-10-15T02:03:43.0829988Z [00-3ea2139f17d2764190c1fa6d81d50142-88e56e06b9b4d141-00] [Demo.Examples] [LogOnEnterAndExit]  ▶  
-2020-10-15T02:03:43.1028598Z [00-3ea2139f17d2764190c1fa6d81d50142-88e56e06b9b4d141-00] [Demo.Examples] [LogOnEnterAndExit]  ⏹ (21.6814ms)  
+2020-10-19T14:48:44.7710432Z [00-0292ec213549ce49bc2c7ff7a72bba7a-9dd89e087c85364b-00] [Demo.Examples] [LogOnEnterAndExit]  ▶  
+2020-10-19T14:48:44.8358579Z [00-0292ec213549ce49bc2c7ff7a72bba7a-9dd89e087c85364b-00] [Demo.Examples] [LogOnEnterAndExit]  ⏹ (70.5147ms)  
 
 ```
 
@@ -184,7 +184,7 @@ using (var operation = Log.ConfirmOnExit())
 ```
 
 ``` console --session LogConfirmOnExit
-2020-10-15T02:03:44.3649797Z [00-ab856a3c98c79e4d86ee86d6f5c58b55-8761b17d22b5994d-00] [Demo.Examples] [LogConfirmOnExit]  ⏹ -> ❌ (4.9807ms)  
+2020-10-19T14:48:47.1430822Z [00-7025ed25e97f3349b29cdc699f91edf2-e05b3039aaf9cd4f-00] [Demo.Examples] [LogConfirmOnExit]  ⏹ -> ❌ (5.5487ms)  
 
 ```
 
@@ -198,7 +198,7 @@ using (var operation = Log.ConfirmOnExit())
 ```
 
 ``` console --session LogConfirmOnExitSucceed
-2020-10-15T02:03:45.4853518Z [00-648fe10f014fea4fa2bfe860836580b2-3f85684644761241-00] [Demo.Examples] [LogConfirmOnExitSucceed]  ⏹ -> ✔ (4.5209ms)  
+2020-10-19T14:48:49.5650660Z [00-8d191944c9b3d54e8ba431532f1e38f2-5829090c7c44424c-00] [Demo.Examples] [LogConfirmOnExitSucceed]  ⏹ -> ✔ (8.4836ms)  
 
 ```
 
@@ -214,7 +214,7 @@ using (var operation = Log.ConfirmOnExit())
 ```
 
 ``` console --session LogConfirmOnExitFail
-2020-10-15T02:03:46.5520662Z [00-33439b22bc82594eafbb66f8e08b7917-4d72b26185b02642-00] [Demo.Examples] [LogConfirmOnExitFail]  ⏹ -> ❌ (4.3392ms)  
+2020-10-19T14:48:52.1841571Z [00-d9f8d2e78ea6fd4d86ee9e998ab61c89-a751114a17084b41-00] [Demo.Examples] [LogConfirmOnExitFail]  ⏹ -> ❌ (6.854ms)  
 
 ```
 
@@ -230,8 +230,8 @@ using (var operation = Log.OnEnterAndConfirmOnExit())
 ```
 
 ``` console --session LogOnEnterAndConfirmOnExit
-2020-10-15T02:03:47.5922984Z [00-e27998ddc5f84d498788d9454b1a1042-9930317b592d064d-00] [Demo.Examples] [LogOnEnterAndConfirmOnExit]  ▶  
-2020-10-15T02:03:47.6258805Z [00-e27998ddc5f84d498788d9454b1a1042-9930317b592d064d-00] [Demo.Examples] [LogOnEnterAndConfirmOnExit]  ⏹ -> ✔ (36.2607ms)  
+2020-10-19T14:48:54.9412576Z [00-93db52d9b9b96144adf0e5f6b1e499e8-0bcaf845f20a2e4d-00] [Demo.Examples] [LogOnEnterAndConfirmOnExit]  ▶  
+2020-10-19T14:48:54.9848635Z [00-93db52d9b9b96144adf0e5f6b1e499e8-0bcaf845f20a2e4d-00] [Demo.Examples] [LogOnEnterAndConfirmOnExit]  ⏹ -> ✔ (46.9984ms)  
 
 ```
 
@@ -253,9 +253,9 @@ using (var operation = Log.OnEnterAndConfirmOnExit())
 ```
 
 ``` console --session Checkpoints
-2020-10-15T02:03:48.6328897Z [00-ac3b89867d845b49ac4db310a3c4788d-39c10e85a3424947-00] [Demo.Examples] [Checkpoints]  ▶  
-2020-10-15T02:03:48.7760502Z [00-ac3b89867d845b49ac4db310a3c4788d-39c10e85a3424947-00] [Demo.Examples] [CalledSomeApi]  📊 (146.2778ms)  +[ (ResultCode, 42) ] 
-2020-10-15T02:03:48.7803699Z [00-ac3b89867d845b49ac4db310a3c4788d-39c10e85a3424947-00] [Demo.Examples] [Checkpoints]  ⏹ -> ✔ (150.5962ms) We did it! 
+2020-10-19T14:48:57.6587778Z [00-823aea6e25a8db4982564c246c995a7d-8af024bd7da72046-00] [Demo.Examples] [Checkpoints]  ▶  
+2020-10-19T14:48:57.8430145Z [00-823aea6e25a8db4982564c246c995a7d-8af024bd7da72046-00] [Demo.Examples] [CalledSomeApi]  📊 (192.1985ms)  +[ (ResultCode, 42) ] 
+2020-10-19T14:48:57.8514195Z [00-823aea6e25a8db4982564c246c995a7d-8af024bd7da72046-00] [Demo.Examples] [Checkpoints]  ⏹ -> ✔ (200.6027ms) We did it! 
 
 ```
 
@@ -280,9 +280,9 @@ using (var operation = Log.OnEnterAndConfirmOnExit(
 ```
 
 ``` console --session ExitArgs
-2020-10-15T02:03:49.9461594Z [00-0e7d16fe6a188c42b766cfcca736aab6-3df8f6a8ec679547-00] [Demo.Examples] [ExitArgs]  ▶  
-2020-10-15T02:03:49.9779749Z [00-0e7d16fe6a188c42b766cfcca736aab6-3df8f6a8ec679547-00] [Demo.Examples] [ExitArgs]  ℹ (34.626ms)  +[ (myVariable, initial value) ] 
-2020-10-15T02:03:49.9815636Z [00-0e7d16fe6a188c42b766cfcca736aab6-3df8f6a8ec679547-00] [Demo.Examples] [ExitArgs]  ⏹ -> ✔ (38.214ms) Yes! +[ (myVariable, new value) ] 
+2020-10-19T14:49:01.1134218Z [00-aebbd19e67d43f419cc1a2221c3529a1-63834dbfb0f1d549-00] [Demo.Examples] [ExitArgs]  ▶  
+2020-10-19T14:49:01.1792742Z [00-aebbd19e67d43f419cc1a2221c3529a1-63834dbfb0f1d549-00] [Demo.Examples] [ExitArgs]  ℹ (69.228ms)  +[ (myVariable, initial value) ] 
+2020-10-19T14:49:01.1869303Z [00-aebbd19e67d43f419cc1a2221c3529a1-63834dbfb0f1d549-00] [Demo.Examples] [ExitArgs]  ⏹ -> ✔ (76.8836ms) Yes! +[ (myVariable, new value) ] 
 
 ```
 
@@ -309,10 +309,10 @@ private static async Task Method2(ConfirmationLogger operation)
 ```
 
 ``` console --session ChildOperations
-2020-10-15T02:03:51.1593849Z [00-e1acf79020105941813eb346610c1708-31526b89e8b5fa41-00] [Demo.Examples] [Method1]  ▶  
-2020-10-15T02:03:51.1815393Z [00-e1acf79020105941813eb346610c1708-62a2a5549807d44b-00] [Demo.Examples] [Method2]  ▶  
-2020-10-15T02:03:51.1826597Z [00-e1acf79020105941813eb346610c1708-62a2a5549807d44b-00] [Demo.Examples] [Method2]  ⏹ -> ✔ (1.1682ms)  
-2020-10-15T02:03:51.1841508Z [00-e1acf79020105941813eb346610c1708-31526b89e8b5fa41-00] [Demo.Examples] [Method1]  ⏹ -> ✔ (26.5825ms)  
+2020-10-19T14:49:03.9373532Z [00-383949c99da44f4f937f691370f9d8e0-db65d40f731e4f43-00] [Demo.Examples] [Method1]  ▶  
+2020-10-19T14:49:03.9790267Z [00-383949c99da44f4f937f691370f9d8e0-4afee73e7d4c3c4f-00] [Demo.Examples] [Method2]  ▶  
+2020-10-19T14:49:03.9811592Z [00-383949c99da44f4f937f691370f9d8e0-4afee73e7d4c3c4f-00] [Demo.Examples] [Method2]  ⏹ -> ✔ (2.3166ms)  
+2020-10-19T14:49:03.9829826Z [00-383949c99da44f4f937f691370f9d8e0-db65d40f731e4f43-00] [Demo.Examples] [Method1]  ⏹ -> ✔ (50.9599ms)  
 
 ```
 
