@@ -13,10 +13,9 @@ namespace Demo
             string package = null,
             string[] args = null)
         {
+            ConsoleSubscription =
             #region LoggingToTheConsole
-
-            var subscription = LogEvents.Subscribe(e => Console.WriteLine(e.ToLogString()));
-
+                LogEvents.Subscribe(e => Console.WriteLine(e.ToLogString()));
             #endregion
 
             return region switch
@@ -55,10 +54,20 @@ namespace Demo
 
                 "Enrich" => Call(Examples.Enrich),
 
+                "SubscribeAndSendToConsole" => Call(Examples.SubscribeAndSendToConsole),
+
+                "LogEventStructure" => Call(Examples.LogEventStructure),
+                
+                "Evaluate" => Call(Examples.Evaluate),
+
+                "SubscribeAndSendToSerilog" => Call(Examples.SubscribeAndSendToSerilog),
+
                 _ =>
                 throw new ArgumentException($"There's no case in Program.Main for {nameof(region)} '{region}'")
             };
         }
+
+        public static LoggerSubscription ConsoleSubscription { get; private set; }
 
         private static int Call(Action action)
         {

@@ -1,13 +1,15 @@
 using System;
+using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Pocket;
+using Serilog.Sinks.RollingFileAlternate;
+using LoggerConfiguration = Serilog.LoggerConfiguration;
 
 #region UsefulUsings
-
 using static Pocket.Logger<Demo.Examples>;
-
 #endregion
 
 namespace Demo
@@ -204,6 +206,111 @@ namespace Demo
         }
 
         #endregion
+
+        public static void SubscribeAndSendToConsole()
+        {
+            Program.ConsoleSubscription.Dispose();
+
+            #region SubscribeAndSendToConsole
+
+            Log.Info("Before subscribing.");
+
+            var subscription = 
+                LogEvents.Subscribe(e => Console.WriteLine(e.ToLogString()));
+
+            Log.Info("After subscribing.");
+
+            subscription.Dispose();
+
+            Log.Info("After disposing the subscription.");
+
+            #endregion
+        }
+
+        public static void LogEventStructure()
+        {
+            Program.ConsoleSubscription.Dispose();
+
+            #region LogEventStructure
+
+            using var subscription =
+                LogEvents.Subscribe(e =>
+                {
+                    Console.WriteLine(e.ToLogString());
+                    Console.WriteLine($"    {nameof(e.TimestampUtc)}: {e.TimestampUtc}");
+                    Console.WriteLine($"    {nameof(e.Operation.Id)}: {e.Operation.Id}");
+                    Console.WriteLine($"    {nameof(e.Category)}: {e.Category}");
+                    Console.WriteLine($"    {nameof(e.OperationName)}: {e.OperationName}");
+                    Console.WriteLine($"    {nameof(e.LogLevel)}: {e.LogLevel}");
+                    Console.WriteLine($"    {nameof(e.Operation.IsStart)}: {e.Operation.IsStart}");
+                    Console.WriteLine($"    {nameof(e.Operation.IsEnd)}: {e.Operation.IsEnd}");
+                    Console.WriteLine($"    {nameof(e.Operation.Duration)}: {e.Operation.Duration}");
+                    Console.WriteLine($"    {nameof(e.Operation.IsSuccessful)}: {e.Operation.IsSuccessful}");
+                });
+
+            Log.Info("INFO");
+
+            using var operation = Log.OnEnterAndConfirmOnExit();
+
+            operation.Event("EVENT");
+
+            operation.Succeed();
+
+            #endregion
+        }
+
+        public static void Evaluate()
+        {
+            Program.ConsoleSubscription.Dispose();
+
+            #region Evaluate
+
+            using var subscription =
+                LogEvents.Subscribe(e =>
+                {
+                    var evaluated = e.Evaluate();
+
+                    Console.WriteLine(evaluated.Message);
+
+                    foreach (var property in evaluated.Properties)
+                    {
+                        Console.WriteLine($"    {property.Name}: {property.Value}");
+                    }
+                });
+
+            Log.Event("EventWithProperties", ("a number", 1), ("a date", DateTime.Now));
+
+            Log.Event("EventWithMetrics", ("one", 1d), ("pi, more or less", 3.14));
+
+            #endregion
+        }
+
+        public static void SubscribeAndSendToSerilog()
+        {
+            Program.ConsoleSubscription.Dispose();
+
+            #region SubscribeAndSendToSerilog
+            
+            using var serilogLogger = new LoggerConfiguration()
+                      .WriteTo
+                      .RollingFileAlternate(".", outputTemplate: "{Message}{NewLine}")
+                      .CreateLogger();
+
+            using (var subscription = LogEvents.Subscribe(
+                e => serilogLogger.Information(e.ToLogString())))
+            {
+                Log.Info("After subscribing.");
+            }
+
+            var logFile = new DirectoryInfo(".")
+                           .GetFiles()
+                           .OrderBy(f => f.LastWriteTime)
+                           .Last();
+
+            Console.WriteLine(File.ReadAllText(logFile.FullName));
+
+            #endregion
+        }
 
         public static void Enrich()
         {
