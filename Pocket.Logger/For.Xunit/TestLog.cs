@@ -51,15 +51,17 @@ namespace Pocket.For.Xunit
 
         private void LogToFile()
         {
-            var stream = File.AppendText(LogFile.FullName);
-
-            stream.AutoFlush = true;
-
             disposables.Add(
                 LogEvents.Subscribe(e =>
-                                        stream.WriteLine(e.ToLogString())));
-
-            disposables.Add(stream);
+                {
+                    try
+                    {
+                        File.AppendAllText(LogFile.FullName, e.ToLogString());
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }));
         }
 
         public OperationLogger Log { get; }
