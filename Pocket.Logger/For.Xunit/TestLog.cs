@@ -12,9 +12,9 @@ namespace Pocket.For.Xunit
 {
     internal class TestLog : IDisposable
     {
-        private readonly CompositeDisposable disposables = new CompositeDisposable();
+        private readonly CompositeDisposable disposables = new();
 
-        private readonly ConcurrentQueue<string> text = new ConcurrentQueue<string>();
+        private readonly ConcurrentQueue<string> text = new();
 
         public TestLog(
             MethodInfo testMethod,
@@ -46,7 +46,7 @@ namespace Pocket.For.Xunit
 
             TestName = testName;
 
-            Log = new OperationLogger(TestName, logOnStart: true);
+            Log = new OperationLogger($"🧪:{TestName}", logOnStart: true);
         }
 
         private void LogToFile()
@@ -74,7 +74,7 @@ namespace Pocket.For.Xunit
 
         public void Write(string text) => this.text.Enqueue(text);
 
-        private static readonly AsyncLocal<TestLog> current = new AsyncLocal<TestLog>();
+        private static readonly AsyncLocal<TestLog> current = new();
 
         public static TestLog Current
         {
@@ -84,11 +84,6 @@ namespace Pocket.For.Xunit
 
         public void Dispose()
         {
-            if (Current == this)
-            {
-                Current = null;
-            }
-
             disposables.Dispose();
         }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Reflection;
 using Xunit.Sdk;
 
@@ -12,6 +13,8 @@ namespace Pocket.For.Xunit
 
         private readonly bool writeToFile;
 
+        private static readonly ConcurrentDictionary<MethodInfo, TestLog> _operations = new();
+
         public LogToPocketLoggerAttribute(bool writeToFile = false)
         {
             this.writeToFile = writeToFile;
@@ -23,21 +26,36 @@ namespace Pocket.For.Xunit
             {
                 throw new ArgumentException("Value cannot be null or whitespace.", nameof(filename));
             }
+
             this.filename = filename;
             writeToFile = true;
         }
 
         public override void Before(MethodInfo methodUnderTest)
         {
-            TestLog.Current = new TestLog(
+            var testLog = new TestLog(
                 methodUnderTest,
                 writeToFile,
                 filename);
+
+            TestLog.Current = testLog;
+
+            _operations.TryAdd(
+                methodUnderTest,
+                testLog);
         }
 
         public override void After(MethodInfo methodUnderTest)
         {
-            TestLog.Current.Dispose();
+            if (_operations.TryRemove(methodUnderTest, out var testLog))
+            {
+                testLog.Dispose();
+
+                if (TestLog.Current == testLog)
+                {
+                    TestLog.Current = default;
+                }
+            }
 
             base.After(methodUnderTest);
         }
