@@ -3,14 +3,14 @@
   <metadata>
     <id>PocketLogger.For.Xunit</id>
     <title>PocketLogger.For.Xunit</title>
-    <version>0.5.1</version>
+    <version>0.5.2</version>
     <authors>jonsequitur</authors>
     <owners>jonsequitur</owners>
     <projectUrl>https://github.com/jonsequitur/pocketlogger</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Logs test run information to PocketLogger and, optionally, to a log file.</description>
     <tags>logging Xunit unit testing</tags>
-    <licenseUrl>https://github.com/jonsequitur/PocketLogger/blob/master/LICENSE</licenseUrl>
+    <license type="expression">MIT</license>
     <developmentDependency>true</developmentDependency>
     <dependencies>
       <dependency id="PocketLogger" version="[0.4.0,)" include="all" />

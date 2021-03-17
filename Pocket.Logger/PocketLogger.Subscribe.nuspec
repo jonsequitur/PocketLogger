@@ -17,7 +17,7 @@ An embeddable logging and telemetry library for concise, multi-purpose instrumen
 The PocketLogger.Subscribe package enables subscribing to the log events emitted by PocketLogger, including from other assemblies where PocketLogger has been embedded as an internal class.
 </summary>
     <tags>logging telemetry</tags>
-    <licenseUrl>https://github.com/jonsequitur/PocketLogger/blob/master/LICENSE</licenseUrl>
+    <license type="expression">MIT</license>
     <developmentDependency>true</developmentDependency>
     <dependencies>
       <dependency id="PocketLogger" version="[0.4.0,0.5)" include="all" />

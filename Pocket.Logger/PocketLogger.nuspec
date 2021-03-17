@@ -15,7 +15,7 @@ An embeddable logging and telemetry library for concise, multi-purpose instrumen
 An embeddable logging and telemetry library for concise, multi-purpose instrumentation of library or application code. PocketLogger embeds C# files directly into your project to help keep your dependency graph small.
     </summary>
     <tags>logging telemetry</tags>
-    <licenseUrl>https://github.com/jonsequitur/PocketLogger/blob/master/LICENSE</licenseUrl>
+    <license type="expression">MIT</license>
     <developmentDependency>true</developmentDependency>
     <dependencies>
       <dependency id="System.ValueTuple" version="[4.3.1,)" />
