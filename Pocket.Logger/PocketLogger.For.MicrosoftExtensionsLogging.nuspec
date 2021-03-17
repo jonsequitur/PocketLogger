@@ -10,7 +10,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Provides Microsoft.Extensions.Logging integration for PocketLogger.</description>
     <tags>logging telemetry</tags>
-    <licenseUrl>https://github.com/jonsequitur/PocketLogger/blob/master/LICENSE</licenseUrl>
+    <license type="expression">MIT</license>
     <developmentDependency>true</developmentDependency>
     <dependencies>
       <dependency id="PocketLogger" version="[0.4.0,)" include="all" />

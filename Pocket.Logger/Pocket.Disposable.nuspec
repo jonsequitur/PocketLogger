@@ -10,7 +10,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Embeddable implementations of IDisposable, for all your disposing needs.</description>
     <tags>IDisposable</tags>
-    <licenseUrl>https://github.com/jonsequitur/PocketLogger/blob/master/LICENSE</licenseUrl>
+    <license type="expression">MIT</license>
     <developmentDependency>true</developmentDependency>
   </metadata>
   <files>
