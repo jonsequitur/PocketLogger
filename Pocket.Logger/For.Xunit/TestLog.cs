@@ -56,7 +56,7 @@ namespace Pocket.For.Xunit
                 {
                     try
                     {
-                        File.AppendAllText(LogFile.FullName, e.ToLogString());
+                        File.AppendAllText(LogFile.FullName, e.ToLogString() + Environment.NewLine);
                     }
                     catch (Exception)
                     {
