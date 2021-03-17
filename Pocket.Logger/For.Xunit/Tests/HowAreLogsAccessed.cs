@@ -50,7 +50,7 @@ namespace Pocket.For.Xunit.Tests
 
         private class TestTestOutputHelper : ITestOutputHelper
         {
-            private readonly ConcurrentQueue<string> text = new ConcurrentQueue<string>();
+            private readonly ConcurrentQueue<string> text = new();
 
             public void WriteLine(string message)
             {

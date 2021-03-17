@@ -21,7 +21,7 @@ namespace Pocket.For.Xunit.Tests
 
             log.First()
                .Should()
-               .Contain($"[{GetType().Name}.{nameof(Start_events_are_logged_for_each_test)}]  ▶");
+               .Contain($"[🧪:{GetType().Name}.{nameof(Start_events_are_logged_for_each_test)}]  ▶");
         }
 
         [Fact]
@@ -40,7 +40,7 @@ namespace Pocket.For.Xunit.Tests
             log.Text
                .Last()
                .Should()
-               .Match($"*[{GetType().Name}.{nameof(Stop_events_are_logged_for_each_test)}]  ⏹ (*ms)*");
+               .Match($"*[🧪:{GetType().Name}.{nameof(Stop_events_are_logged_for_each_test)}]  ⏹ (*ms)*");
         }
     }
 }
