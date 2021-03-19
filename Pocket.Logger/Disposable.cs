@@ -43,7 +43,7 @@ namespace Pocket
     {
         private bool isDisposed = false;
 
-        private readonly List<IDisposable> disposables = new List<IDisposable>();
+        private readonly List<IDisposable> disposables = new();
 
         public void Add(IDisposable disposable)
         {

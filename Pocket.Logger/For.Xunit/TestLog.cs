@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -12,9 +11,11 @@ namespace Pocket.For.Xunit
 {
     internal class TestLog : IDisposable
     {
-        private readonly CompositeDisposable disposables = new();
+        private static readonly AsyncLocal<TestLog> _current = new();
 
-        private readonly ConcurrentQueue<string> text = new();
+        private readonly CompositeDisposable _disposables;
+
+        private static readonly object _lockObj = new();
 
         public TestLog(
             MethodInfo testMethod,
@@ -28,10 +29,10 @@ namespace Pocket.For.Xunit
 
             var testName = $"{testMethod.DeclaringType.Name}.{testMethod.Name}";
 
-            disposables.Add(() =>
+            _disposables = new()
             {
-                Log.Dispose();
-            });
+                () => Log.Dispose()
+            };
 
             if (writeToFile)
             {
@@ -41,9 +42,6 @@ namespace Pocket.For.Xunit
                 LogToFile();
             }
 
-            disposables.Add(
-                LogEvents.Subscribe(e => Write(e.ToLogString())));
-
             TestName = testName;
 
             Log = new OperationLogger($"🧪:{TestName}", logOnStart: true);
@@ -51,15 +49,14 @@ namespace Pocket.For.Xunit
 
         private void LogToFile()
         {
-            disposables.Add(
+            _disposables.Add(
                 LogEvents.Subscribe(e =>
                 {
-                    try
+                    var entry = e.ToLogString() + Environment.NewLine;
+
+                    lock (_lockObj)
                     {
-                        File.AppendAllText(LogFile.FullName, e.ToLogString() + Environment.NewLine);
-                    }
-                    catch (Exception)
-                    {
+                        File.AppendAllText(LogFile.FullName, entry);
                     }
                 }));
         }
@@ -70,21 +67,34 @@ namespace Pocket.For.Xunit
 
         public string TestName { get; }
 
-        public IEnumerable<string> Text => text;
-
-        public void Write(string text) => this.text.Enqueue(text);
-
-        private static readonly AsyncLocal<TestLog> current = new();
+        public IEnumerable<string> Lines
+        {
+            get
+            {
+                if (LogFile is { })
+                {
+                    lock (_lockObj)
+                    {
+                        using var streamReader = new StreamReader(LogFile.OpenRead());
+                        return streamReader.ReadToEnd().Trim().Split(new[] { '\n', '\r' });
+                    }
+                }
+                else
+                {
+                    throw new InvalidOperationException("Logging to file must be enabled in order to read back log content using this method.");
+                }
+            }
+        }
 
         public static TestLog Current
         {
-            get => current.Value;
-            set => current.Value = value;
+            get => _current.Value;
+            set => _current.Value = value;
         }
 
         public void Dispose()
         {
-            disposables.Dispose();
+            _disposables.Dispose();
         }
 
         public void LogTo(ITestOutputHelper output)
@@ -94,7 +104,7 @@ namespace Pocket.For.Xunit
                 throw new ArgumentNullException(nameof(output));
             }
 
-            disposables.Add(LogEvents.Subscribe(e => output.WriteLine(e.ToLogString())));
+            _disposables.Add(LogEvents.Subscribe(e => output.WriteLine(e.ToLogString())));
         }
     }
 }
