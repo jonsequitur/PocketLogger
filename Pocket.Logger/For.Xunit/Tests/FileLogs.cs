@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
-using System.Reflection;
+using System.Linq;
+using System.Threading.Tasks;
 using FluentAssertions;
 using Xunit;
 using static Pocket.Logger<Pocket.For.Xunit.Tests.FileLogs>;
@@ -50,7 +51,7 @@ namespace Pocket.For.Xunit.Tests
 
             text.Should().Contain(message);
         }
-      
+
         [Fact]
         public void When_filename_is_set_then_log_output_is_written_to_the_specified_file()
         {
@@ -76,6 +77,28 @@ namespace Pocket.For.Xunit.Tests
             text.Should().Contain(message);
 
             file.Name.Should().Be(filename);
+        }
+
+        [Fact]
+        public void File_output_can_handle_concurrent_logging()
+        {
+            var filename = $"{Guid.NewGuid()}.log";
+            var attribute = new LogToPocketLoggerAttribute(filename: filename);
+
+            var methodInfo = GetType().GetMethod(nameof(File_output_can_handle_concurrent_logging));
+
+            attribute.Before(methodInfo);
+
+            Parallel.ForEach(
+                Enumerable.Range(1, 25),
+                new ParallelOptions { MaxDegreeOfParallelism = 25 },
+                i => Log.Info(i.ToString()));
+
+            attribute.After(methodInfo);
+
+            var lines = File.ReadAllLines(filename);
+
+            lines.Length.Should().Be(27, because: "we wrote 25 entries, plus there's a stop and start event for the test");
         }
     }
 }

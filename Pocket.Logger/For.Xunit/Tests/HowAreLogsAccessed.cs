@@ -2,14 +2,13 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using FluentAssertions;
-using System.Linq;
 using Xunit;
 using Xunit.Abstractions;
 using static Pocket.Logger<Pocket.For.Xunit.Tests.HowAreLogsAccessed>;
 
 namespace Pocket.For.Xunit.Tests
 {
-    [LogToPocketLogger]
+    [LogToPocketLogger(writeToFile: true)]
     public class HowAreLogsAccessed
     {
         [Fact]
@@ -18,7 +17,7 @@ namespace Pocket.For.Xunit.Tests
             Logger.Log.Info("hi!");
 
             TestLog.Current
-                   .Text
+                   .Lines
                    .Should()
                    .Contain(line => line.Contains("hi!"));
         }
@@ -29,7 +28,7 @@ namespace Pocket.For.Xunit.Tests
             TestLog.Current.Log.Info("hello!");
 
             TestLog.Current
-                   .Text
+                   .Lines
                    .Should()
                    .Contain(line => line.Contains("hello!"));
         }

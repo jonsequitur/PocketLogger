@@ -305,7 +305,7 @@ namespace Pocket
         public static OperationLogger OnEnterAndExit(
             this Logger logger,
             [CallerMemberName] string name = null,
-            Func<(string name, object value)[]> exitArgs = null) => new OperationLogger(
+            Func<(string name, object value)[]> exitArgs = null) => new(
             name,
             logger.Category,
             null,
@@ -316,7 +316,7 @@ namespace Pocket
             this Logger logger,
             [CallerMemberName] string name = null,
             Func<(string name, object value)[]> exitArgs = null) =>
-            new OperationLogger(
+            new(
                 name,
                 logger.Category,
                 null,
@@ -326,7 +326,7 @@ namespace Pocket
             this Logger logger,
             [CallerMemberName] string name = null,
             Func<(string name, object value)[]> exitArgs = null) =>
-            new ConfirmationLogger(
+            new(
                 name,
                 logger.Category,
                 null,
@@ -336,7 +336,7 @@ namespace Pocket
             this Logger logger,
             [CallerMemberName] string name = null,
             Func<(string name, object value)[]> exitArgs = null) =>
-            new ConfirmationLogger(
+            new(
                 name,
                 logger.Category,
                 null,
@@ -385,7 +385,7 @@ namespace Pocket
 #endif
     internal class LogEntry
     {
-        private readonly List<(string Name, object Value)> properties = new List<(string, object)>();
+        private readonly List<(string Name, object Value)> properties = new();
 
         public LogEntry(
             LogLevel logLevel,

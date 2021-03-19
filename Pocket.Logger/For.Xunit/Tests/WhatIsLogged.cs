@@ -9,13 +9,13 @@ namespace Pocket.For.Xunit.Tests
         [Fact]
         public void Start_events_are_logged_for_each_test()
         {
-            var attribute = new LogToPocketLoggerAttribute();
+            var attribute = new LogToPocketLoggerAttribute(true);
 
             var methodInfo = GetType().GetMethod(nameof(Start_events_are_logged_for_each_test));
 
             attribute.Before(methodInfo);
 
-            var log = TestLog.Current.Text;
+            var log = TestLog.Current.Lines;
 
             attribute.After(methodInfo);
 
@@ -27,7 +27,7 @@ namespace Pocket.For.Xunit.Tests
         [Fact]
         public void Stop_events_are_logged_for_each_test()
         {
-            var attribute = new LogToPocketLoggerAttribute();
+            var attribute = new LogToPocketLoggerAttribute(true);
 
             var methodInfo = GetType().GetMethod(nameof(Stop_events_are_logged_for_each_test));
 
@@ -37,7 +37,7 @@ namespace Pocket.For.Xunit.Tests
 
             attribute.After(methodInfo);
 
-            log.Text
+            log.Lines
                .Last()
                .Should()
                .Match($"*[🧪:{GetType().Name}.{nameof(Stop_events_are_logged_for_each_test)}]  ⏹ (*ms)*");
