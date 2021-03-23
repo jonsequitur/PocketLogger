@@ -80,6 +80,38 @@ namespace Pocket.For.Xunit.Tests
         }
 
         [Fact]
+        public void When_filename_environment_variable_is_set_then_log_output_is_written_to_the_specified_file()
+        {
+            var filename = $"{Guid.NewGuid()}.log";
+            var envVarName = nameof(When_filename_environment_variable_is_set_then_log_output_is_written_to_the_specified_file);
+            Environment.SetEnvironmentVariable(envVarName, filename);
+            var attribute = new LogToPocketLoggerAttribute
+            {
+                FileNameEnvironmentVariable = envVarName
+            };
+
+            var methodInfo = GetType().GetMethod(nameof(When_filename_is_set_then_log_output_is_written_to_the_specified_file));
+
+            attribute.Before(methodInfo);
+
+            var file = TestLog.Current.LogFile;
+            var message = "hello from " + methodInfo.Name + $" ({Guid.NewGuid()})";
+
+            Log.Info(message);
+
+            attribute.After(methodInfo);
+
+            file.Should().NotBeNull();
+            file.Exists.Should().BeTrue();
+
+            var text = File.ReadAllText(file.FullName);
+
+            text.Should().Contain(message);
+
+            file.Name.Should().Be(filename);
+        }
+
+        [Fact]
         public void File_output_can_handle_concurrent_logging()
         {
             var filename = $"{Guid.NewGuid()}.log";
