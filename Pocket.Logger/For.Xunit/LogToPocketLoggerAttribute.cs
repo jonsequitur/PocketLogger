@@ -9,15 +9,15 @@ namespace Pocket.For.Xunit
 {
     internal class LogToPocketLoggerAttribute : BeforeAfterTestAttribute
     {
-        private readonly string filename;
-
-        private readonly bool writeToFile;
+        private bool _writeToFile;
+        private string _fileName;
+        private string _fileNameEnvironmentVariable;
 
         private static readonly ConcurrentDictionary<MethodInfo, TestLog> _operations = new();
 
         public LogToPocketLoggerAttribute(bool writeToFile = false)
         {
-            this.writeToFile = writeToFile;
+            _writeToFile = writeToFile;
         }
 
         public LogToPocketLoggerAttribute(string filename)
@@ -27,16 +27,45 @@ namespace Pocket.For.Xunit
                 throw new ArgumentException("Value cannot be null or whitespace.", nameof(filename));
             }
 
-            this.filename = filename;
-            writeToFile = true;
+            FileName = filename;
+            _writeToFile = true;
+        }
+
+        public string FileName
+        {
+            get => _fileName;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    throw new ArgumentException("Value cannot be null or consist entirely of whitespace");
+                }
+                _fileName = value;
+                _writeToFile = true;
+            }
+        }
+
+        public string FileNameEnvironmentVariable
+        {
+            get => _fileNameEnvironmentVariable;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    throw new ArgumentException("Value cannot be null or consist entirely of whitespace");
+                }
+
+                _fileNameEnvironmentVariable = value;
+                FileName = Environment.GetEnvironmentVariable(value);
+            }
         }
 
         public override void Before(MethodInfo methodUnderTest)
         {
             var testLog = new TestLog(
                 methodUnderTest,
-                writeToFile,
-                filename);
+                _writeToFile,
+                FileName);
 
             TestLog.Current = testLog;
 
