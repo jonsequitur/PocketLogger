@@ -112,6 +112,17 @@ namespace Pocket.For.Xunit.Tests
         }
 
         [Fact]
+        public void When_FileNameEnvironmentVariable_is_set_to_an_nonexistent_variable_then_no_exception_is_thrown()
+        {
+            Action initialize = () => new LogToPocketLoggerAttribute
+            {
+                FileNameEnvironmentVariable = Guid.NewGuid().ToString("N")
+            };
+
+            initialize.Should().NotThrow();
+        }
+
+        [Fact]
         public void File_output_can_handle_concurrent_logging()
         {
             var filename = $"{Guid.NewGuid()}.log";
