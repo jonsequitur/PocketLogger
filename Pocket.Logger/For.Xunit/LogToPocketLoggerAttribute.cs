@@ -56,7 +56,12 @@ namespace Pocket.For.Xunit
                 }
 
                 _fileNameEnvironmentVariable = value;
-                FileName = Environment.GetEnvironmentVariable(value);
+
+                if (Environment.GetEnvironmentVariable(value) is { } variableValue && 
+                    !string.IsNullOrWhiteSpace(variableValue))
+                {
+                    FileName = variableValue;
+                }
             }
         }
 
