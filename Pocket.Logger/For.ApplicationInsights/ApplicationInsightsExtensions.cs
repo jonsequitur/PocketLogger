@@ -18,7 +18,7 @@ namespace Pocket.For.ApplicationInsights
     {
         public static LoggerSubscription SubscribeToPocketLogger(
             this TelemetryClient telemetryClient,
-            IReadOnlyCollection<Assembly> onlySearchAssemblies = null)
+            params Assembly[] onlySearchAssemblies)
         {
             if (telemetryClient == null)
             {

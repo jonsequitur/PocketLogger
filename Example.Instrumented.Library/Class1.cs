@@ -1,5 +1,4 @@
-﻿using System;
-using Pocket;
+﻿using Pocket;
 using static Pocket.Logger;
 
 namespace Example.Instrumented.Library
@@ -8,10 +7,9 @@ namespace Example.Instrumented.Library
     {
         public static void EmitSomeLogEvents(string parameter1 = null)
         {
-            using (var operation = Log.OnEnterAndExit())
-            {
-                operation.Info($"{nameof(parameter1)} = {{{nameof(parameter1)}}}", parameter1);
-            }
+            using var operation = Log.OnEnterAndExit();
+
+            operation.Info($"{nameof(parameter1)} = {{{nameof(parameter1)}}}", parameter1);
         }
     }
 }

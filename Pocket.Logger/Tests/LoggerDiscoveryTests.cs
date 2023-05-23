@@ -15,13 +15,12 @@ namespace Pocket.Tests
 
         public LoggerDiscoveryTests(ITestOutputHelper output)
         {
-            disposables = Subscribe(e =>
-                                        output.WriteLine(e.ToLogString(), false));
+            disposables = Subscribe(e => output.WriteLine(e.ToLogString(), false));
         }
 
         public void Dispose()
         {
-            disposables?.Dispose();
+            disposables.Dispose();
         }
 
         [Fact]
@@ -31,7 +30,7 @@ namespace Pocket.Tests
 
             var message = $"hello from {nameof(Loggers_in_referenced_assemblies_can_be_discovered_and_subscribed)}";
 
-            using (Subscribe(log.Add))
+            using (Subscribe(log.Add, typeof(Class1).Assembly))
             {
                 Class1.EmitSomeLogEvents(message);
                 await Task.Delay(100);
@@ -45,9 +44,9 @@ namespace Pocket.Tests
         {
             var log = new LogEntryList();
 
-            using (Subscribe(log.Add))
+            using (Subscribe(log.Add, typeof(Class1).Assembly))
             {
-                Class1.EmitSomeLogEvents($"before unsubscribe");
+                Class1.EmitSomeLogEvents("before unsubscribe");
                 await Task.Delay(100);
             }
 
@@ -69,56 +68,55 @@ namespace Pocket.Tests
         [Fact]
         public void Discovered_loggers_can_be_inspected_via_the_returned_LoggerSubscription()
         {
-            using (var subscription = Subscribe(e =>
-            {
-            }))
-            {
-                foreach (var type in subscription.DiscoveredLoggerTypes)
-                {
-                    Logger.Log.Info(type.Assembly.ToString());
-                }
+            using var subscription = Subscribe(e => { }, typeof(Class1).Assembly, GetType().Assembly);
 
-                subscription
-                    .DiscoveredLoggerTypes
-                    .Select(t => t.Assembly)
-                    .Should()
-                    .BeEquivalentTo(
-                        typeof(Class1).Assembly,
-                        GetType().Assembly);
+            foreach (var type in subscription.DiscoveredLoggerTypes)
+            {
+                Logger.Log.Info(type.Assembly.ToString());
             }
+
+            subscription
+                .DiscoveredLoggerTypes
+                .Select(t => t.Assembly)
+                .Should()
+                .BeEquivalentTo(
+                    new[]
+                    {
+                        typeof(Class1).Assembly,
+                        GetType().Assembly
+                    });
         }
 
         [Fact]
         public void Logger_discovery_can_specify_assemblies_to_search()
         {
-            using (var subscription = Subscribe(e =>
-            {
-            }, new[] { typeof(Class1).Assembly }))
-            {
-                subscription
-                    .DiscoveredLoggerTypes
-                    .Select(t => t.Assembly)
-                    .Should()
-                    .BeEquivalentTo(
-                        typeof(Class1).Assembly);
-            }
+            using var subscription = Subscribe(_ => { }, typeof(Class1).Assembly);
+
+            subscription
+                .DiscoveredLoggerTypes
+                .Select(t => t.Assembly)
+                .Should()
+                .BeEquivalentTo(
+                    new[]
+                    {
+                        typeof(Class1).Assembly
+                    });
         }
 
         [Fact]
         public void When_logger_discovery_specifies_assemblies_to_search_it_can_include_the_current_assembly()
         {
-            using (var subscription = Subscribe(e =>
-            {
-            }, new[] { typeof(Class1).Assembly, GetType().Assembly }))
-            {
-                subscription
-                    .DiscoveredLoggerTypes
-                    .Select(t => t.Assembly)
-                    .Should()
-                    .BeEquivalentTo(
+            using var subscription = Subscribe(_ => { }, typeof(Class1).Assembly, GetType().Assembly);
+            subscription
+                .DiscoveredLoggerTypes
+                .Select(t => t.Assembly)
+                .Should()
+                .BeEquivalentTo(
+                    new[]
+                    {
                         typeof(Class1).Assembly,
-                        GetType().Assembly);
-            }
+                        GetType().Assembly
+                    });
         }
 
         [Fact]
@@ -126,9 +124,7 @@ namespace Pocket.Tests
         {
             var log = new LogEntryList();
 
-            using (Subscribe(
-                log.Add,
-                new[] { typeof(Class1).Assembly, typeof(Class1).Assembly }))
+            using (Subscribe(log.Add, typeof(Class1).Assembly, typeof(Class1).Assembly))
             {
                 Class1.EmitSomeLogEvents();
             }
