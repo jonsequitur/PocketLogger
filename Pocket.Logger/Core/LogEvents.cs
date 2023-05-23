@@ -1,31 +1,30 @@
+#nullable disable
+
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-
-#nullable disable
 
 namespace Pocket
 {
 #if !SourceProject
-    [System.Diagnostics.DebuggerStepThrough]
+    [DebuggerStepThrough]
 #endif
     internal static partial class LogEvents
     {
-        private static readonly Lazy<Type[]> loggerTypes = new Lazy<Type[]>(
-            () => Discover.ConcreteTypes()
-                          .PocketLoggers()
-                          .ToArray());
-
         public static IDisposable Enrich(
             Action<Action<(string Name, object Value)>> onEnrich,
-            IReadOnlyCollection<Assembly> onlySearchAssemblies = null)
+            params Assembly[] searchInAssemblies)
         {
             var subscription = new LoggerSubscription();
 
-            foreach (var loggerType in onlySearchAssemblies?.Types().PocketLoggers()
-                                       ??
-                                       loggerTypes.Value)
+            if (searchInAssemblies.Length == 0)
+            {
+                searchInAssemblies = new[] { typeof(LogEvents).Assembly };
+            }
+
+            foreach (var loggerType in searchInAssemblies.Types().PocketLoggers())
             {
                 var enrich = loggerType.GetMember(nameof(Logger.Enrich)).OfType<EventInfo>().Single();
 
@@ -60,18 +59,21 @@ namespace Pocket
                     bool? IsSuccessful,
                     TimeSpan? Duration) Operation)>
                 onEntryPosted,
-            IReadOnlyCollection<Assembly> onlySearchAssemblies = null)
+            params Assembly[] searchInAssemblies)
         {
             if (onEntryPosted == null)
             {
                 throw new ArgumentNullException(nameof(onEntryPosted));
             }
-         
+
+            if (searchInAssemblies.Length == 0)
+            {
+                searchInAssemblies = new[] { typeof(LogEvents).Assembly };
+            }
+
             var subscription = new LoggerSubscription();
 
-            SubscribeLoggers(onlySearchAssemblies?.Types().PocketLoggers() 
-                             ??
-                             loggerTypes.Value,
+            SubscribeLoggers(searchInAssemblies.Types().PocketLoggers(),
                              subscription,
                              onEntryPosted);
 
@@ -87,7 +89,7 @@ namespace Pocket
             {
                 if (onEntryPosted != null)
                 {
-                    var posted = (EventInfo) loggerType.GetMember(nameof(Logger.Posted))[0];
+                    var posted = (EventInfo)loggerType.GetMember(nameof(Logger.Posted))[0];
 
                     var subscriber = onEntryPosted.Catch();
 
@@ -126,7 +128,7 @@ namespace Pocket
 
     internal class LoggerSubscription : IDisposable
     {
-        private readonly CompositeDisposable disposables = new CompositeDisposable();
+        private readonly CompositeDisposable disposables = new();
 
         public void Add(Type pocketLoggerType, IDisposable unsubscribe)
         {
@@ -134,7 +136,7 @@ namespace Pocket
             disposables.Add(unsubscribe);
         }
 
-        public List<Type> DiscoveredLoggerTypes { get; } = new List<Type>();
+        public List<Type> DiscoveredLoggerTypes { get; } = new();
 
         public void Dispose() => disposables.Dispose();
     }

@@ -36,9 +36,9 @@ namespace Pocket
 
         private readonly string template;
 
-        private readonly List<Action<StringBuilder, object>> argumentFormatters = new List<Action<StringBuilder, object>>();
+        private readonly List<Action<StringBuilder, object>> argumentFormatters = new();
 
-        private readonly List<string> tokens = new List<string>();
+        private readonly List<string> tokens = new();
 
         public Formatter(string template)
         {

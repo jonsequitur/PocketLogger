@@ -79,7 +79,7 @@ namespace Pocket.For.ApplicationInsights.Tests
             actual.Properties.Should().BeEquivalentTo(expected.Properties);
             actual.ResultCode.Should().Be(expected.ResultCode);
             actual.Success.Should().Be(expected.Success);
-            actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
+            actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500.Milliseconds());
 
             Log.Info(JsonConvert.SerializeObject(actual));
         }
@@ -112,7 +112,7 @@ namespace Pocket.For.ApplicationInsights.Tests
             actual.Name.Should().Be(expected.Name);
             actual.Metrics.Should().BeEquivalentTo(expected.Metrics);
             actual.Properties.Should().BeEquivalentTo(expected.Properties);
-            actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
+            actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500.Milliseconds());
         }
 
 
@@ -145,7 +145,7 @@ namespace Pocket.For.ApplicationInsights.Tests
             actual.Name.Should().Be(expected.Name);
             actual.Metrics.Should().BeEquivalentTo(expected.Metrics);
             actual.Properties.Should().BeEquivalentTo(expected.Properties);
-            actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
+            actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500.Milliseconds());
         }
 
         [Fact]
@@ -162,7 +162,7 @@ namespace Pocket.For.ApplicationInsights.Tests
             @event.Properties
                   .Should()
                   .ContainKey("Duration")
-                  .WhichValue
+                  .WhoseValue
                   .Should()
                   .MatchRegex(@"\d+", "it should be an int");
         }
@@ -202,7 +202,7 @@ namespace Pocket.For.ApplicationInsights.Tests
             actual.Message.Should().Be(expected.Message);
             actual.Properties.Should().BeEquivalentTo(expected.Properties);
             actual.SeverityLevel.Should().Be(expected.SeverityLevel);
-            actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
+            actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500.Milliseconds());
         }
 
         [Fact]
@@ -281,7 +281,7 @@ namespace Pocket.For.ApplicationInsights.Tests
             exceptionTelemetry.Properties
                               .Should()
                               .ContainKey("Duration")
-                              .WhichValue
+                              .WhoseValue
                               .Should()
                               .MatchRegex(@"\d+", "it should be an int");
         }
@@ -312,7 +312,7 @@ namespace Pocket.For.ApplicationInsights.Tests
             actual.Message.Should().Be(expected.Message);
             actual.Properties.Should().BeEquivalentTo(expected.Properties);
             actual.SeverityLevel.Should().Be(expected.SeverityLevel);
-            actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500);
+            actual.Timestamp.Should().BeCloseTo(expected.Timestamp, precision: 1500.Milliseconds());
         }
 
         [Fact]
@@ -329,7 +329,7 @@ namespace Pocket.For.ApplicationInsights.Tests
             trace.Properties
                  .Should()
                  .ContainKey("Duration")
-                 .WhichValue
+                 .WhoseValue
                  .Should()
                  .MatchRegex(@"\d+", "it should be an int");
         }

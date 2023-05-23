@@ -30,3 +30,4 @@ Artifacts
 *.log
 *.binlog
 *.nupkg
+.NCrunch*
