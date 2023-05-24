@@ -61,7 +61,7 @@ namespace Pocket
                 onEntryPosted,
             params Assembly[] searchInAssemblies)
         {
-            if (onEntryPosted == null)
+            if (onEntryPosted is null)
             {
                 throw new ArgumentNullException(nameof(onEntryPosted));
             }
@@ -83,11 +83,11 @@ namespace Pocket
         private static void SubscribeLoggers<T>(
             IEnumerable<Type> pocketLoggerTypes,
             LoggerSubscription subscription,
-            Action<T> onEntryPosted = null)
+            Action<T> onEntryPosted)
         {
             foreach (var loggerType in pocketLoggerTypes.Distinct())
             {
-                if (onEntryPosted != null)
+                if (onEntryPosted is not null)
                 {
                     var posted = (EventInfo)loggerType.GetMember(nameof(Logger.Posted))[0];
 
@@ -105,8 +105,7 @@ namespace Pocket
             }
         }
 
-        private static Action<T> Catch<T>(
-            this Action<T> publish)
+        private static Action<T> Catch<T>(this Action<T> publish)
         {
             return Invoke;
 
@@ -137,6 +136,8 @@ namespace Pocket
         }
 
         public List<Type> DiscoveredLoggerTypes { get; } = new();
+
+        public Action<string,  bool> OnFormatLogEntry { get; set; }
 
         public void Dispose() => disposables.Dispose();
     }

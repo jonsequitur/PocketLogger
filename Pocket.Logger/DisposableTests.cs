@@ -11,7 +11,7 @@ namespace Pocket
     public class DisposableTests
     {
         [Fact]
-        public void When_an_anoymous_disposable_is_disposed_then_the_constructor_delegate_is_invoked()
+        public void When_an_anonymous_disposable_is_disposed_then_the_constructor_delegate_is_invoked()
         {
             var wasDisposed = false;
 

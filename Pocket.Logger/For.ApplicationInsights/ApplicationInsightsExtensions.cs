@@ -20,7 +20,7 @@ namespace Pocket.For.ApplicationInsights
             this TelemetryClient telemetryClient,
             params Assembly[] onlySearchAssemblies)
         {
-            if (telemetryClient == null)
+            if (telemetryClient is null)
             {
                 throw new ArgumentNullException(nameof(telemetryClient));
             }
@@ -71,7 +71,7 @@ namespace Pocket.For.ApplicationInsights
             {
                 var (name, value) = properties[i];
 
-                if (!(value is Metric))
+                if (value is not Metric)
                 {
                     telemetry.Properties.Add(
                         name,
@@ -84,7 +84,7 @@ namespace Pocket.For.ApplicationInsights
         {
             var activity = Activity.Current;
 
-            if (activity != null)
+            if (activity is not null)
             {
                 telemetry.Context.Operation.Name = activity.OperationName;
                 telemetry.Context.Operation.Id = activity.Id;
