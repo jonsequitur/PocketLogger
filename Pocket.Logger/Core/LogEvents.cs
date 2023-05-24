@@ -87,21 +87,18 @@ namespace Pocket
         {
             foreach (var loggerType in pocketLoggerTypes.Distinct())
             {
-                if (onEntryPosted is not null)
-                {
-                    var posted = (EventInfo)loggerType.GetMember(nameof(Logger.Posted))[0];
+                var posted = (EventInfo)loggerType.GetMember(nameof(Logger.Posted))[0];
 
-                    var subscriber = onEntryPosted.Catch();
+                var subscriber = onEntryPosted.Catch();
 
-                    posted.AddEventHandler(
-                        null,
-                        subscriber);
+                posted.AddEventHandler(
+                    null,
+                    subscriber);
 
-                    subscription.Add(loggerType,
-                                     Disposable.Create(() => posted.RemoveEventHandler(
-                                                           null,
-                                                           subscriber)));
-                }
+                subscription.Add(loggerType,
+                                 Disposable.Create(() => posted.RemoveEventHandler(
+                                                       null,
+                                                       subscriber)));
             }
         }
 
