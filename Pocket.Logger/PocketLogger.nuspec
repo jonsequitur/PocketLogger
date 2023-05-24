@@ -17,6 +17,9 @@ An embeddable logging and telemetry library for concise, multi-purpose instrumen
     <tags>logging telemetry</tags>
     <license type="expression">MIT</license>
     <developmentDependency>true</developmentDependency>
+    <dependencies>
+      <dependency id="System.Diagnostics.DiagnosticSource" version="[4.4.0,)" />
+    </dependencies>
   </metadata>
   <files>
     <file src="Core/Formatter.cs" 
