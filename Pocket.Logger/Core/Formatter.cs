@@ -125,7 +125,7 @@ internal class Formatter
                 {
                     var property = knownProperties[i];
                     TryAppendComma();
-                    stringBuilder.Append(property.ToLogString());
+                    stringBuilder.Append($"({property.Name}, {property.Value.ToLogString()})");
                 }
             }
 

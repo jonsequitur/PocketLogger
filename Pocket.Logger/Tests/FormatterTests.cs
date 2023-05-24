@@ -223,4 +223,18 @@ public class FormatterTests
 
         entries.Should().Contain(e => e.Contains("parameter1 = 123 (custom)"));
     }
+
+    [Fact]
+    public void Customized_Formatter_can_choose_to_write_empty_string()
+    {
+        var entries = new List<string>();
+
+        using var subscription = LogEvents.Subscribe(
+            e => entries.Add(e.ToLogString()),
+            typeof(Class1).Assembly);
+
+        Class1.EmitSomeLogEvents("replace me with empty string");
+
+        entries[1].Should().EndWith("parameter1 =  ");
+    }
 }
