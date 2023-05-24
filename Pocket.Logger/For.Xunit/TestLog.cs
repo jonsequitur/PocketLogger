@@ -22,7 +22,7 @@ namespace Pocket.For.Xunit
             bool writeToFile = false,
             string filename = null)
         {
-            if (testMethod == null)
+            if (testMethod is null)
             {
                 throw new ArgumentNullException(nameof(testMethod));
             }
@@ -99,7 +99,7 @@ namespace Pocket.For.Xunit
 
         public void LogTo(ITestOutputHelper output)
         {
-            if (output == null)
+            if (output is null)
             {
                 throw new ArgumentNullException(nameof(output));
             }

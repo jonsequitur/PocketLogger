@@ -47,7 +47,7 @@ namespace Pocket
 
         public void Add(IDisposable disposable)
         {
-            if (disposable == null)
+            if (disposable is null)
             {
                 throw new ArgumentNullException(nameof(disposable));
             }

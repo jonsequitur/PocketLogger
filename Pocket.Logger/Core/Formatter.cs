@@ -1,193 +1,312 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 
 #nullable disable
 
-namespace Pocket
-{
+namespace Pocket;
 #if !SourceProject
-    [System.Diagnostics.DebuggerStepThrough]
+[System.Diagnostics.DebuggerStepThrough]
 #endif
-    internal class Formatter
+internal class Formatter
+{
+    private static readonly ConcurrentDictionary<string, Formatter> cache;
+    private static bool stopCaching;
+    private static int cacheCount;
+
+    private static readonly Regex tokenRegex;
+
+    static Formatter()
     {
-        private static readonly ConcurrentDictionary<string, Formatter> cache;
-        private static bool stopCaching;
-        private static int cacheCount;
+        cache = new ConcurrentDictionary<string, Formatter>();
+        tokenRegex = new Regex(
+            @"{(?<key>[^{}:]*)(?:\:(?<format>.+))?}",
+            RegexOptions.IgnoreCase |
+            RegexOptions.Multiline |
+            RegexOptions.CultureInvariant |
+            RegexOptions.Compiled
+        );
+    }
 
-        private static readonly Regex tokenRegex;
+    private readonly string template;
 
-        static Formatter()
+    private readonly List<Action<StringBuilder, object>> argumentFormatters = new();
+
+    private readonly List<string> tokens = new();
+
+    public Formatter(string template)
+    {
+        this.template = template;
+        var matches = tokenRegex.Matches(template);
+
+        for (var index = 0; index < matches.Count; index++)
         {
-            cache = new ConcurrentDictionary<string, Formatter>();
-            tokenRegex = new Regex(
-                @"{(?<key>[^{}:]*)(?:\:(?<format>.+))?}",
-                RegexOptions.IgnoreCase |
-                RegexOptions.Multiline |
-                RegexOptions.CultureInvariant |
-                RegexOptions.Compiled
-            );
-        }
+            var match = matches[index];
+            var argName = match.Groups["key"].Captures[0].Value;
+            tokens.Add(argName);
 
-        private readonly string template;
+            var replacementTarget = match.Value;
 
-        private readonly List<Action<StringBuilder, object>> argumentFormatters = new();
+            var formatStr = match.Groups["format"].Success
+                                ? match.Groups["format"].Captures[0].Value
+                                : null;
 
-        private readonly List<string> tokens = new();
-
-        public Formatter(string template)
-        {
-            this.template = template;
-            var matches = tokenRegex.Matches(template);
-
-            for (var index = 0; index < matches.Count; index++)
+            void Format(StringBuilder sb, object value)
             {
-                var match = matches[index];
-                var argName = match.Groups["key"].Captures[0].Value;
-                tokens.Add(argName);
+                string formattedParam = null;
 
-                var replacementTarget = match.Value;
-
-                var formatStr = match.Groups["format"].Success
-                                    ? match.Groups["format"].Captures[0].Value
-                                    : null;
-
-                void Format(StringBuilder sb, object value)
+                if (!string.IsNullOrEmpty(formatStr))
                 {
-                    string formattedParam = null;
-
-                    if (!string.IsNullOrEmpty(formatStr))
+                    if (value is IFormattable formattableParamValue)
                     {
-                        if (value is IFormattable formattableParamValue)
-                        {
-                            formattedParam = formattableParamValue.ToString(formatStr, CultureInfo.CurrentCulture);
-                        }
-                    }
-
-                    if (formattedParam == null)
-                    {
-                        formattedParam = value.ToLogString();
-                    }
-
-                    sb.Replace(replacementTarget, formattedParam);
-                }
-
-                argumentFormatters.Add(Format);
-            }
-        }
-
-        public IReadOnlyList<string> Tokens => tokens;
-
-        public FormatterResult Format(
-            IReadOnlyList<object> args,
-            IList<(string Name, object Value)> knownProperties)
-        {
-            if (args == null)
-            {
-                args = new object[argumentFormatters.Count];
-            }
-
-            var stringBuilder = new StringBuilder(template);
-            var result = new FormatterResult(stringBuilder);
-
-            for (var i = 0; i < Math.Min(argumentFormatters.Count, args.Count); i++)
-            {
-                var argument = args[i];
-                argumentFormatters[i](stringBuilder, argument);
-                result.Add(Tokens[i], argument);
-            }
-
-            if (args.Count > argumentFormatters.Count || knownProperties?.Count > 0)
-            {
-                stringBuilder.Append(" +[ ");
-                var first = true;
-
-                if (args.Count > 0)
-                {
-                    for (var i = argumentFormatters.Count; i < args.Count; i++)
-                    {
-                        var argument = args[i];
-                        TryAppendComma();
-                        stringBuilder.Append(argument.ToLogString());
-                        result.Add($"arg{i}", argument);
+                        formattedParam = formattableParamValue.ToString(formatStr, CultureInfo.CurrentCulture);
                     }
                 }
 
-                if (knownProperties?.Count > 0)
+                if (formattedParam is null)
                 {
-                    for (var i = 0; i < knownProperties.Count; i++)
-                    {
-                        var property = knownProperties[i];
-                        TryAppendComma();
-                        stringBuilder.Append(property.ToLogString());
-                    }
+                    formattedParam = value.ToLogString();
                 }
 
-                stringBuilder.Append(" ]");
-
-                void TryAppendComma()
-                {
-                    if (!first)
-                    {
-                        stringBuilder.Append(", ");
-                    }
-                    first = false;
-                }
+                sb.Replace(replacementTarget, formattedParam);
             }
 
-            return result;
+            argumentFormatters.Add(Format);
         }
+    }
 
-        public FormatterResult Format(params object[] args) => Format(args, null);
+    public IReadOnlyList<string> Tokens => tokens;
 
-        public static int CacheCount => cacheCount;
-
-        public static int CacheLimit { get; set; } = 300;
-
-        public static Formatter Parse(string template)
+    public FormatterResult Format(
+        IReadOnlyList<object> args,
+        IList<(string Name, object Value)> knownProperties)
+    {
+        if (args is null)
         {
-            return stopCaching
-                       ? new Formatter(template)
-                       : cache.GetOrAdd(template, CreateFormatter);
+            args = new object[argumentFormatters.Count];
+        }
 
-            Formatter CreateFormatter(string t)
+        var stringBuilder = new StringBuilder(template);
+        var result = new FormatterResult(stringBuilder);
+
+        for (var i = 0; i < Math.Min(argumentFormatters.Count, args.Count); i++)
+        {
+            var argument = args[i];
+            argumentFormatters[i](stringBuilder, argument);
+            result.Add(Tokens[i], argument);
+        }
+
+        if (args.Count > argumentFormatters.Count || knownProperties?.Count > 0)
+        {
+            stringBuilder.Append(" +[ ");
+            var first = true;
+
+            if (args.Count > 0)
             {
-                if (Interlocked.Increment(ref cacheCount) >= CacheLimit)
+                for (var i = argumentFormatters.Count; i < args.Count; i++)
                 {
-                    stopCaching = true;
+                    var argument = args[i];
+                    TryAppendComma();
+
+                    stringBuilder.Append(argument.ToLogString());
+                    result.Add($"arg{i}", argument);
+                }
+            }
+
+            if (knownProperties?.Count > 0)
+            {
+                for (var i = 0; i < knownProperties.Count; i++)
+                {
+                    var property = knownProperties[i];
+                    TryAppendComma();
+                    stringBuilder.Append(property.ToLogString());
+                }
+            }
+
+            stringBuilder.Append(" ]");
+
+            void TryAppendComma()
+            {
+                if (!first)
+                {
+                    stringBuilder.Append(", ");
+                }
+                first = false;
+            }
+        }
+
+        return result;
+    }
+
+    public FormatterResult Format(params object[] args) => Format(args, null);
+
+    public static int CacheCount => cacheCount;
+
+    public static int CacheLimit { get; set; } = 300;
+
+    public static Formatter Parse(string template)
+    {
+        return stopCaching
+                   ? new Formatter(template)
+                   : cache.GetOrAdd(template, CreateFormatter);
+
+        Formatter CreateFormatter(string t)
+        {
+            if (Interlocked.Increment(ref cacheCount) >= CacheLimit)
+            {
+                stopCaching = true;
+            }
+
+            return new Formatter(t);
+        }
+    }
+
+    internal class FormatterResult : IReadOnlyList<(string Name, object Value)>
+    {
+        private readonly StringBuilder formattedMessage;
+
+        public FormatterResult(StringBuilder formattedMessage)
+        {
+            this.formattedMessage = formattedMessage;
+        }
+
+        private readonly List<(string Name, object Value)> properties = new();
+
+        public void Add(string key, object value) => properties.Add((key, value));
+
+        public IEnumerator<(string Name, object Value)> GetEnumerator() => properties.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        public int Count => properties.Count;
+
+        public (string Name, object Value) this[int index] => properties[index];
+
+        public override string ToString() => formattedMessage?.ToString() ?? "";
+    }
+}
+
+internal static partial class Format
+{
+    public static string ToLogString(
+       this in (
+           byte LogLevel,
+           DateTime TimestampUtc,
+           Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
+           Exception Exception,
+           string OperationName,
+           string Category,
+           (string Id,
+           bool IsStart,
+           bool IsEnd,
+           bool? IsSuccessful,
+           TimeSpan? Duration) Operation) e)
+    {
+        var (message, _) = e.Evaluate();
+
+        var logLevelString =
+            LogLevelString((LogLevel)e.LogLevel,
+                           e.Operation.IsStart,
+                           e.Operation.IsEnd,
+                           e.Operation.IsSuccessful,
+                           e.Operation.Duration);
+
+        return
+            $"{e.TimestampUtc:o} {e.Operation.Id.IfNotEmpty()}{e.Category.IfNotEmpty()}{e.OperationName.IfNotEmpty()} {logLevelString} {message} {e.Exception}";
+    }
+
+    static partial void CustomizeLogString(object value, ref string output);
+
+    internal static string ToLogString(this object value)
+    {
+        string output = null;
+
+        CustomizeLogString(value, ref output);
+
+        if (output is not null)
+        {
+            return output;
+        }
+
+        if (value is IEnumerable enumerable and not string)
+        {
+            return $"[ {string.Join(", ", enumerable.Cast<object>())} ]";
+        }
+
+        if (value is null)
+        {
+            return "[null]";
+        }
+
+        return value.ToString();
+    }
+
+    private static string IfNotEmpty(
+        this string value,
+        string prefix = "[",
+        string suffix = "] ") =>
+        string.IsNullOrEmpty(value)
+            ? ""
+            : $"{prefix}{value}{suffix}";
+
+    private static string LogLevelString(
+        LogLevel logLevel,
+        bool isStartOfOperation,
+        bool isEndOfOperation,
+        bool? isOperationSuccessful,
+        TimeSpan? duration)
+    {
+        string symbol()
+        {
+            if (isStartOfOperation)
+            {
+                return "▶";
+            }
+
+            if (isEndOfOperation)
+            {
+                if (isOperationSuccessful == true)
+                {
+                    return "⏹ -> ✔";
                 }
 
-                return new Formatter(t);
+                if (isOperationSuccessful == false)
+                {
+                    return "⏹ -> ❌";
+                }
+
+                return "⏹";
             }
-        }
 
-        internal class FormatterResult : IReadOnlyList<(string Name, object Value)>
-        {
-            private readonly StringBuilder formattedMessage;
-
-            public FormatterResult(StringBuilder formattedMessage)
+            switch (logLevel)
             {
-                this.formattedMessage = formattedMessage;
+                case LogLevel.Telemetry:
+                    return "📊";
+                case LogLevel.Trace:
+                case LogLevel.Debug:
+                    return "⏱";
+                case LogLevel.Information:
+                    return "ℹ";
+                case LogLevel.Warning:
+                    return "⚠";
+                case LogLevel.Error:
+                    return "❌";
+                case LogLevel.Critical:
+                    return "💩";
+                default:
+                    return "ℹ";
             }
-
-            private readonly List<(string Name, object Value)> properties = new List<(string, object )>();
-
-            public void Add(string key, object value) => properties.Add((key, value));
-
-            public IEnumerator<(string Name, object Value)> GetEnumerator() => properties.GetEnumerator();
-
-            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-            public int Count => properties.Count;
-
-            public (string Name, object Value) this[int index] => properties[index];
-
-            public override string ToString() => formattedMessage?.ToString() ?? "";
         }
+
+        return duration is null ||
+               isStartOfOperation
+                   ? symbol()
+                   : $"{symbol()} ({duration?.TotalMilliseconds}ms)";
     }
 }
