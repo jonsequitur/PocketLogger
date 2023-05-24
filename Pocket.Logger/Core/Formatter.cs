@@ -234,7 +234,7 @@ internal static partial class Format
             return output;
         }
 
-        if (value is IEnumerable enumerable and not string)
+        if (value is ICollection enumerable)
         {
             return $"[ {string.Join(", ", enumerable.Cast<object>())} ]";
         }

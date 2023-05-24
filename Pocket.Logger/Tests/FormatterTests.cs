@@ -186,7 +186,7 @@ public class FormatterTests
     }
 
     [Fact]
-    public void IEnumerable_types_are_expanded()
+    public void ICollection_is_expanded()
     {
         var formatter = Formatter.Parse("The values in the array are: {values}");
 
