@@ -47,7 +47,7 @@ namespace Pocket.For.MicrosoftExtensionsLogging
 
                 var logEntry = new LogEntry(
                     logLevel: logLevel.ToPocketLoggerLogLevel(),
-                    message: state.ToString(),
+                    messageTemplate: state.ToString(),
                     exception: exception,
                     category: category);
 
