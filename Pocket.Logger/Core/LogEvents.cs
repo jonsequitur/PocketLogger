@@ -47,9 +47,11 @@ namespace Pocket
 
         public static LoggerSubscription Subscribe(
             Action<(
+                    string MessageTemplate,
+                    object[] Args,
+                    List<(string Name, object Value)> Properties,
                     byte LogLevel,
                     DateTime TimestampUtc,
-                    Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                     Exception Exception,
                     string OperationName,
                     string Category,

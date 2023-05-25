@@ -194,11 +194,50 @@ internal class Formatter
 
 internal static partial class Format
 {
+    public static (string Message, (string Name, object Value)[] Properties) Evaluate(
+        this in (
+            string MessageTemplate,
+            object[] Args,
+            List<(string Name, object Value)> Properties,
+            byte LogLevel,
+            DateTime TimestampUtc,
+            Exception Exception,
+            string OperationName,
+            string Category,
+            (string Id,
+            bool IsStart,
+            bool IsEnd,
+            bool? IsSuccessful,
+            TimeSpan? Duration) Operation) e)
+    {
+        (string message, (string Name, object Value)[] Properties)? evaluated = null;
+
+        var message = e.MessageTemplate;
+        var properties = new List<(string Name, object Value)>();
+
+        if (e.Args?.Length != 0 || e.Properties.Count > 0)
+        {
+            var formatter = Formatter.Parse(e.MessageTemplate);
+
+            var formatterResult = formatter.Format(args: e.Args, knownProperties: e.Properties);
+
+            message = formatterResult.ToString();
+
+            properties.AddRange(formatterResult);
+        }
+
+        evaluated = (message, properties.Concat(e.Properties).ToArray());
+
+        return evaluated.Value;
+    }
+
     public static string ToLogString(
        this in (
+           string MessageTemplate,
+           object[] Args,
+           List<(string Name, object Value)> Properties,
            byte LogLevel,
            DateTime TimestampUtc,
-           Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
            Exception Exception,
            string OperationName,
            string Category,

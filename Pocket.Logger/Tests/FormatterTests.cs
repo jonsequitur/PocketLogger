@@ -219,7 +219,7 @@ public class FormatterTests
             e => entries.Add(e.ToLogString()),
             typeof(Class1).Assembly);
 
-        Class1.EmitSomeLogEvents(123);
+        Class1.EmitSomeLogEvents("customize me:123");
 
         entries.Should().Contain(e => e.Contains("parameter1 = 123 (custom)"));
     }
@@ -233,7 +233,7 @@ public class FormatterTests
             e => entries.Add(e.ToLogString()),
             typeof(Class1).Assembly);
 
-        Class1.EmitSomeLogEvents("replace me with empty string");
+        Class1.EmitSomeLogEvents("customize me:replace me with empty string");
 
         entries[1].Should().EndWith("parameter1 =  ");
     }

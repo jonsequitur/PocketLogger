@@ -157,9 +157,11 @@ namespace Pocket.Tests
                 operation.Fail(message: "Oops! {0}", args: "bye!");
             }
 
-            log.Last()
-               .Evaluate()
-               .Properties
+            var properties = log.Last()
+                                 .Evaluate()
+                                 .Properties;
+
+            properties
                .Select(_ => _.Value)
                .Should()
                .ContainSingle(arg => arg.Equals("bye!"));

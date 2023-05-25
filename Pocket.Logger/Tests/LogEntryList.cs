@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Pocket.Tests
 {
     public class LogEntryList : ConcurrentQueue<(
+        string MessageTemplate,
+        object[] Args,
+        List<(string Name, object Value)> Properties,
         byte LogLevel,
         DateTime TimestampUtc,
-        Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
         Exception Exception,
         string OperationName,
         string Category,
@@ -19,9 +22,11 @@ namespace Pocket.Tests
     {
         public void Add(
             (
+                string MessageTemplate,
+                object[] Args,
+                List<(string Name, object Value)> Properties,
                 byte LogLevel,
                 DateTime TimestampUtc,
-                Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
                 Exception Exception,
                 string OperationName,
                 string Category,
@@ -33,9 +38,11 @@ namespace Pocket.Tests
             Enqueue(e);
 
         public (
+            string MessageTemplate,
+            object[] Args,
+            List<(string Name, object Value)> Properties,
             byte LogLevel,
             DateTime TimestampUtc,
-            Func<(string Message, (string Name, object Value)[] Properties)> Evaluate,
             Exception Exception,
             string OperationName,
             string Category,
