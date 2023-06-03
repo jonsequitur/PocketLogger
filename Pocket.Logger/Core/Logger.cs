@@ -135,6 +135,12 @@ internal static class LoggerExtensions
         return logger;
     }
 
+    public static TLogger Trace<TLogger>(
+            this TLogger logger,
+            params object[] args)
+            where TLogger : Logger =>
+        logger.Trace(message: null, args);
+
     public static TLogger Info<TLogger>(
         this TLogger logger,
         string message,
@@ -149,6 +155,12 @@ internal static class LoggerExtensions
 
         return logger;
     }
+
+    public static TLogger Info<TLogger>(
+            this TLogger logger,
+            params object[] args)
+            where TLogger : Logger =>
+        logger.Info(message: null, args);
 
     public static TLogger Warning<TLogger>(
         this TLogger logger,
@@ -170,7 +182,13 @@ internal static class LoggerExtensions
         this TLogger logger,
         Exception exception)
         where TLogger : Logger =>
-        logger.Warning(message: null, exception);
+            logger.Warning(message: null, exception);
+
+    public static TLogger Warning<TLogger>(
+            this TLogger logger,
+            params object[] args)
+            where TLogger : Logger =>
+        logger.Warning(message: null, exception: null, args);
 
     public static TLogger Error<TLogger>(
         this TLogger logger,
@@ -192,7 +210,13 @@ internal static class LoggerExtensions
         this TLogger logger,
         Exception exception)
         where TLogger : Logger =>
-        logger.Error(message: null, exception);
+            logger.Error(message: null, exception);
+
+    public static TLogger Error<TLogger>(
+            this TLogger logger,
+            params object[] args)
+            where TLogger : Logger =>
+        logger.Error(message: null, exception: null, args);
 
     public static OperationLogger OnEnterAndExit(
         this Logger logger,
