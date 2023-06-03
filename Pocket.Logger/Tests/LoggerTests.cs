@@ -147,7 +147,7 @@ namespace Pocket.Tests
                 Log.Info("hello");
             }
 
-            log.Single().LogLevel.Should().Be((int) LogLevel.Information);
+            log.Single().LogLevel.Should().Be((int)LogLevel.Information);
         }
 
         [Fact]
@@ -160,7 +160,7 @@ namespace Pocket.Tests
                 Log.Warning("hello", new Exception("oops"));
             }
 
-            log.Single().LogLevel.Should().Be((int) LogLevel.Warning);
+            log.Single().LogLevel.Should().Be((int)LogLevel.Warning);
             log.Single().Exception.Should().NotBeNull();
         }
 
@@ -174,7 +174,7 @@ namespace Pocket.Tests
                 Log.Warning(new Exception("oops"));
             }
 
-            log.Single().LogLevel.Should().Be((int) LogLevel.Warning);
+            log.Single().LogLevel.Should().Be((int)LogLevel.Warning);
             log.Single().Exception.Should().NotBeNull();
         }
 
@@ -188,7 +188,7 @@ namespace Pocket.Tests
                 Log.Error("oops!", new Exception("something went wrong..."));
             }
 
-            log.Single().LogLevel.Should().Be((int) LogLevel.Error);
+            log.Single().LogLevel.Should().Be((int)LogLevel.Error);
             log.Single().Exception.Should().NotBeNull();
         }
 
@@ -202,7 +202,7 @@ namespace Pocket.Tests
                 Log.Error(new Exception("oops"));
             }
 
-            log.Single().LogLevel.Should().Be((int) LogLevel.Error);
+            log.Single().LogLevel.Should().Be((int)LogLevel.Error);
             log.Single().Exception.Should().NotBeNull();
         }
 
@@ -270,12 +270,83 @@ namespace Pocket.Tests
 
             using (Subscribe(e => log.Add(e.ToLogString())))
             {
-               // Log.Info("this", "some-property", "hi!");
+                // Log.Info("this", "some-property", "hi!");
                 Log.Event("some-event", properties: ("some-property", "hi!"));
             }
 
             log[0].Should().Contain("some-property");
             log[0].Should().Contain("hi!");
+        }
+
+        private class MyObject
+        {
+            private int value;
+
+            public MyObject(int value)
+                => this.value = value;
+
+            public override string ToString()
+                => $"my object {this.value}";
+        }
+
+        [Fact]
+        public void Objects_can_be_written_at_Info_Level()
+        {
+            var log = new LogEntryList();
+
+            using (Subscribe(log.Add))
+            {
+                Log.Info(new MyObject(1), new MyObject(2));
+            }
+
+            log.Single().LogLevel.Should().Be((int)LogLevel.Information);
+            log.Single().ToLogString().Should().Contain("my object 1");
+            log.Single().ToLogString().Should().Contain("my object 2");
+        }
+
+        [Fact]
+        public void Objects_can_be_written_at_Trace_Level()
+        {
+            var log = new LogEntryList();
+
+            using (Subscribe(log.Add))
+            {
+                Log.Trace(new MyObject(1), new MyObject(2));
+            }
+
+            log.Single().LogLevel.Should().Be((int)LogLevel.Trace);
+            log.Single().ToLogString().Should().Contain("my object 1");
+            log.Single().ToLogString().Should().Contain("my object 2");
+        }
+
+        [Fact]
+        public void Objects_can_be_written_at_Warning_Level()
+        {
+            var log = new LogEntryList();
+
+            using (Subscribe(log.Add))
+            {
+                Log.Warning(new MyObject(1), new MyObject(2));
+            }
+
+            log.Single().LogLevel.Should().Be((int)LogLevel.Warning);
+            log.Single().ToLogString().Should().Contain("my object 1");
+            log.Single().ToLogString().Should().Contain("my object 2");
+        }
+
+        [Fact]
+        public void Objects_can_be_written_at_Error_Level()
+        {
+            var log = new LogEntryList();
+
+            using (Subscribe(log.Add))
+            {
+                Log.Error(new MyObject(1), new MyObject(2));
+            }
+
+            log.Single().LogLevel.Should().Be((int)LogLevel.Error);
+            log.Single().ToLogString().Should().Contain("my object 1");
+            log.Single().ToLogString().Should().Contain("my object 2");
         }
     }
 }
