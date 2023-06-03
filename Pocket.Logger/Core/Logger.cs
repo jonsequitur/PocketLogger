@@ -9,7 +9,7 @@ using System.Runtime.CompilerServices;
 namespace Pocket;
 
 #if !SourceProject
-    [System.Diagnostics.DebuggerStepThrough]
+[DebuggerStepThrough]
 #endif
 internal class Logger
 {
@@ -170,7 +170,7 @@ internal static class LoggerExtensions
         this TLogger logger,
         Exception exception)
         where TLogger : Logger =>
-        logger.Warning(null, exception);
+        logger.Warning(message: null, exception);
 
     public static TLogger Error<TLogger>(
         this TLogger logger,
@@ -192,48 +192,97 @@ internal static class LoggerExtensions
         this TLogger logger,
         Exception exception)
         where TLogger : Logger =>
-        logger.Error(null, exception);
+        logger.Error(message: null, exception);
 
     public static OperationLogger OnEnterAndExit(
         this Logger logger,
         [CallerMemberName] string name = null,
-        Func<(string name, object value)[]> exitArgs = null) => new(
-        name,
-        logger.Category,
-        null,
-        exitArgs,
-        true);
+        Func<(string name, object value)[]> exitArgs = null,
+        object arg = null) =>
+            logger.OnEnterAndExit(
+                name,
+                exitArgs,
+                arg is null ? null : new[] { arg });
+
+    public static OperationLogger OnEnterAndExit(
+        this Logger logger,
+        [CallerMemberName] string name = null,
+        Func<(string name, object value)[]> exitArgs = null,
+        params object[] args) =>
+        new(
+            name,
+            logger.Category,
+            message: null,
+            exitArgs,
+            logOnStart: true,
+            args);
 
     public static OperationLogger OnExit(
         this Logger logger,
         [CallerMemberName] string name = null,
-        Func<(string name, object value)[]> exitArgs = null) =>
+        Func<(string name, object value)[]> exitArgs = null,
+        object arg = null) =>
+            logger.OnExit(
+                name,
+                exitArgs,
+                arg is null ? null : new[] { arg });
+
+    public static OperationLogger OnExit(
+        this Logger logger,
+        [CallerMemberName] string name = null,
+        Func<(string name, object value)[]> exitArgs = null,
+        params object[] args) =>
         new(
             name,
             logger.Category,
-            null,
-            exitArgs);
+            message: null,
+            exitArgs,
+            args: args);
 
     public static ConfirmationLogger ConfirmOnExit(
         this Logger logger,
         [CallerMemberName] string name = null,
-        Func<(string name, object value)[]> exitArgs = null) =>
+        Func<(string name, object value)[]> exitArgs = null,
+        object arg = null) =>
+            logger.ConfirmOnExit(
+                name,
+                exitArgs,
+                arg is null ? null : new[] { arg });
+
+    public static ConfirmationLogger ConfirmOnExit(
+        this Logger logger,
+        [CallerMemberName] string name = null,
+        Func<(string name, object value)[]> exitArgs = null,
+        params object[] args) =>
         new(
             name,
             logger.Category,
-            null,
-            exitArgs);
+            message: null,
+            exitArgs,
+            args: args);
 
     public static ConfirmationLogger OnEnterAndConfirmOnExit(
         this Logger logger,
         [CallerMemberName] string name = null,
-        Func<(string name, object value)[]> exitArgs = null) =>
+        Func<(string name, object value)[]> exitArgs = null,
+        object arg = null) =>
+            logger.OnEnterAndConfirmOnExit(
+                name,
+                exitArgs,
+                arg is null ? null : new[] { arg });
+
+    public static ConfirmationLogger OnEnterAndConfirmOnExit(
+        this Logger logger,
+        [CallerMemberName] string name = null,
+        Func<(string name, object value)[]> exitArgs = null,
+        params object[] args) =>
         new(
             name,
             logger.Category,
-            null,
+            message: null,
             exitArgs,
-            true);
+            logOnStart: true,
+            args);
 
     public static void Event(
         this Logger logger,
@@ -288,7 +337,7 @@ internal class LogEntry
     {
         LogLevel = logLevel;
         Exception = exception;
-        MessageTemplate  = messageTemplate ?? exception?.ToString() ?? "";
+        MessageTemplate = messageTemplate ?? exception?.ToString() ?? "";
         Category = category;
         Operation = operation;
         Args = args;
@@ -334,7 +383,7 @@ internal class LogEntry
     public string MessageTemplate { get; set; }
 
     public List<(string Name, object Value)> Properties { get; set; } = new();
-    
+
     public object[] Args { get; set; }
 
     public void AddProperty((string name, object value) property) =>
