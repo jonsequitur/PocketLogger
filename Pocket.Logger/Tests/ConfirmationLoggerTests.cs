@@ -299,7 +299,7 @@ namespace Pocket.Tests
             using var parent = Log.ConfirmOnExit();
             using var child = parent.ConfirmOnExit();
             using var grandchild = child.ConfirmOnExit();
-            
+
             child.Id.Should().StartWith(parent.Id);
             grandchild.Id.Should().StartWith(parent.Id);
         }
@@ -315,7 +315,7 @@ namespace Pocket.Tests
                 for (var index = 0; index < 3; index++)
                 {
                     using var child = parent.ConfirmOnExit();
-                    
+
                     child.Fail();
                 }
 
@@ -334,7 +334,7 @@ namespace Pocket.Tests
             var log = new List<string>();
 
             using (Subscribe(e => log.Add(e.ToLogString())))
-            using (new ConfirmationLogger(message: "hello!", logOnStart: true))
+            using (new ConfirmationLogger(operationName: "Test", message: "hello!", logOnStart: true))
             {
             }
 
@@ -347,7 +347,7 @@ namespace Pocket.Tests
             var log = new List<string>();
 
             using (Subscribe(e => log.Add(e.ToLogString())))
-            using (new ConfirmationLogger(message: "{one} and {two} and {three}", logOnStart: true, args: new object[] {1, 2, 3}))
+            using (new ConfirmationLogger(operationName: "Test", message: "{one} and {two} and {three}", logOnStart: true, args: new object[] { 1, 2, 3 }))
             {
             }
 
