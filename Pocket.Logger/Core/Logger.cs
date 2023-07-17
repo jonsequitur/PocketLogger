@@ -420,7 +420,7 @@ internal class LogEntry
 internal class ConfirmationLogger : OperationLogger
 {
     public ConfirmationLogger(
-        string operationName = null,
+        string operationName,
         string category = null,
         string message = null,
         Func<(string name, object value)[]> exitArgs = null,
@@ -471,7 +471,7 @@ internal class OperationLogger : Logger, IDisposable
     private readonly Activity activity;
 
     public OperationLogger(
-        string operationName = null,
+        string operationName,
         string category = null,
         string message = null,
         Func<(string name, object value)[]> exitArgs = null,

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using FluentAssertions;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 using static Pocket.LogEvents;
@@ -320,7 +320,7 @@ namespace Pocket.Tests
             var log = new LogEntryList();
 
             using (Subscribe(log.Add))
-            using (Log.OnEnterAndExit(exitArgs: () => new(string, object)[]
+            using (Log.OnEnterAndExit(exitArgs: () => new (string, object)[]
             {
                 ("hello", 123)
             }))
@@ -340,7 +340,7 @@ namespace Pocket.Tests
             var log = new LogEntryList();
 
             using (Subscribe(log.Add))
-            using (Log.OnExit(exitArgs: () => new(string, object)[]
+            using (Log.OnExit(exitArgs: () => new (string, object)[]
             {
                 ("hello", 123)
             }))
@@ -360,7 +360,7 @@ namespace Pocket.Tests
             var log = new List<string>();
 
             using (Subscribe(e => log.Add(e.ToLogString())))
-            using (Log.OnExit(exitArgs: () => new(string, object)[]
+            using (Log.OnExit(exitArgs: () => new (string, object)[]
             {
                 ("hello", 12345)
             }))
@@ -381,7 +381,7 @@ namespace Pocket.Tests
             var log = new List<string>();
 
             using (Subscribe(e => log.Add(e.ToLogString())))
-            using (new OperationLogger(message: "hello!", logOnStart: true))
+            using (new OperationLogger(operationName: "Test", message: "hello!", logOnStart: true))
             {
             }
 
@@ -394,7 +394,7 @@ namespace Pocket.Tests
             var log = new List<string>();
 
             using (Subscribe(e => log.Add(e.ToLogString())))
-            using (new OperationLogger(message: "{one} and {two} and {three}", logOnStart: true, args: new object[] { 1, 2, 3 }))
+            using (new OperationLogger(operationName: "Test", message: "{one} and {two} and {three}", logOnStart: true, args: new object[] { 1, 2, 3 }))
             {
             }
 
