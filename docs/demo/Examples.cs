@@ -198,11 +198,13 @@ namespace Demo
             operation.Succeed();
         }
 
-        private static async Task Method2(ConfirmationLogger operation)
+        private static Task Method2(ConfirmationLogger operation)
         {
             using var childOperation = operation.OnEnterAndConfirmOnExit();
 
             childOperation.Succeed();
+
+            return Task.CompletedTask;
         }
 
         #endregion
