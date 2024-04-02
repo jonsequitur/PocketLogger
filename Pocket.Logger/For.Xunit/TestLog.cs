@@ -7,104 +7,103 @@ using Xunit.Abstractions;
 
 #nullable disable
 
-namespace Pocket.For.Xunit
+namespace Pocket.For.Xunit;
+
+internal class TestLog : IDisposable
 {
-    internal class TestLog : IDisposable
+    private static readonly AsyncLocal<TestLog> _current = new();
+
+    private readonly CompositeDisposable _disposables;
+
+    private static readonly object _lockObj = new();
+
+    public TestLog(
+        MethodInfo testMethod,
+        bool writeToFile = false,
+        string filename = null)
     {
-        private static readonly AsyncLocal<TestLog> _current = new();
-
-        private readonly CompositeDisposable _disposables;
-
-        private static readonly object _lockObj = new();
-
-        public TestLog(
-            MethodInfo testMethod,
-            bool writeToFile = false,
-            string filename = null)
+        if (testMethod is null)
         {
-            if (testMethod is null)
-            {
-                throw new ArgumentNullException(nameof(testMethod));
-            }
-
-            var testName = $"{testMethod.DeclaringType.Name}.{testMethod.Name}";
-
-            _disposables = new()
-            {
-                () => Log.Dispose()
-            };
-
-            if (writeToFile)
-            {
-                filename ??= $"{testName}-{DateTime.Now:yyyy-MM-dd-hh-mm-ss}.log";
-                LogFile = new FileInfo(filename);
-
-                LogToFile();
-            }
-
-            TestName = testName;
-
-            Log = new OperationLogger($"🧪:{TestName}", logOnStart: true);
+            throw new ArgumentNullException(nameof(testMethod));
         }
 
-        private void LogToFile()
-        {
-            _disposables.Add(
-                LogEvents.Subscribe(e =>
-                {
-                    var entry = e.ToLogString() + Environment.NewLine;
+        var testName = $"{testMethod.DeclaringType.Name}.{testMethod.Name}";
 
-                    lock (_lockObj)
-                    {
-                        File.AppendAllText(LogFile.FullName, entry);
-                    }
-                }));
+        _disposables = new()
+        {
+            () => Log.Dispose()
+        };
+
+        if (writeToFile)
+        {
+            filename ??= $"{testName}-{DateTime.Now:yyyy-MM-dd-hh-mm-ss}.log";
+            LogFile = new FileInfo(filename);
+
+            LogToFile();
         }
 
-        public OperationLogger Log { get; }
+        TestName = testName;
 
-        public FileInfo LogFile { get; }
+        Log = new OperationLogger($"🧪:{TestName}", logOnStart: true);
+    }
 
-        public string TestName { get; }
-
-        public IEnumerable<string> Lines
-        {
-            get
+    private void LogToFile()
+    {
+        _disposables.Add(
+            LogEvents.Subscribe(e =>
             {
-                if (LogFile is { })
+                var entry = e.ToLogString() + Environment.NewLine;
+
+                lock (_lockObj)
                 {
-                    lock (_lockObj)
-                    {
-                        using var streamReader = new StreamReader(LogFile.OpenRead());
-                        return streamReader.ReadToEnd().Trim().Split(new[] { '\n', '\r' });
-                    }
+                    File.AppendAllText(LogFile.FullName, entry);
                 }
-                else
+            }));
+    }
+
+    public OperationLogger Log { get; }
+
+    public FileInfo LogFile { get; }
+
+    public string TestName { get; }
+
+    public IEnumerable<string> Lines
+    {
+        get
+        {
+            if (LogFile is { })
+            {
+                lock (_lockObj)
                 {
-                    throw new InvalidOperationException("Logging to file must be enabled in order to read back log content using this method.");
+                    using var streamReader = new StreamReader(LogFile.OpenRead());
+                    return streamReader.ReadToEnd().Trim().Split(new[] { '\n', '\r' });
                 }
             }
-        }
-
-        public static TestLog Current
-        {
-            get => _current.Value;
-            set => _current.Value = value;
-        }
-
-        public void Dispose()
-        {
-            _disposables.Dispose();
-        }
-
-        public void LogTo(ITestOutputHelper output)
-        {
-            if (output is null)
+            else
             {
-                throw new ArgumentNullException(nameof(output));
+                throw new InvalidOperationException("Logging to file must be enabled in order to read back log content using this method.");
             }
-
-            _disposables.Add(LogEvents.Subscribe(e => output.WriteLine(e.ToLogString())));
         }
+    }
+
+    public static TestLog Current
+    {
+        get => _current.Value;
+        set => _current.Value = value;
+    }
+
+    public void Dispose()
+    {
+        _disposables.Dispose();
+    }
+
+    public void LogTo(ITestOutputHelper output)
+    {
+        if (output is null)
+        {
+            throw new ArgumentNullException(nameof(output));
+        }
+
+        _disposables.Add(LogEvents.Subscribe(e => output.WriteLine(e.ToLogString())));
     }
 }

@@ -2,83 +2,82 @@
 using System.Threading.Tasks;
 using Pocket;
 
-namespace Demo
+namespace Demo;
+
+static class Program
 {
-    static class Program
+    static async Task<int> Main(
+        string session = null,
+        string region = null,
+        string project = null,
+        string package = null,
+        string[] args = null)
     {
-        static async Task<int> Main(
-            string session = null,
-            string region = null,
-            string project = null,
-            string package = null,
-            string[] args = null)
-        {
-            ConsoleSubscription =
+        ConsoleSubscription =
             #region LoggingToTheConsole
-                LogEvents.Subscribe(e => Console.WriteLine(e.ToLogString()));
-            #endregion
+            LogEvents.Subscribe(e => Console.WriteLine(e.ToLogString()));
+        #endregion
 
-            return region switch
-            {
-                "HelloPocketLogger" => Call(Examples.HelloPocketLogger),
+        return region switch
+        {
+            "HelloPocketLogger" => Call(Examples.HelloPocketLogger),
 
-                "LogInfo" => Call(Examples.LogInfo),
+            "LogInfo" => Call(Examples.LogInfo),
 
-                "LogInfoWithNamedTemplateParams" => Call(Examples.LogInfoWithNamedTemplateParams),
+            "LogInfoWithNamedTemplateParams" => Call(Examples.LogInfoWithNamedTemplateParams),
 
-                "LogEvent" => Call(Examples.LogEvent),
+            "LogEvent" => Call(Examples.LogEvent),
 
-                "LogWarning" => Call(Examples.LogWarning),
+            "LogWarning" => Call(Examples.LogWarning),
 
-                "LogError" => Call(Examples.LogError),
+            "LogError" => Call(Examples.LogError),
 
-                "LogOnExit" => Call(Examples.LogOnExit),
+            "LogOnExit" => Call(Examples.LogOnExit),
 
-                "LogOnEnterAndExit" => Call(Examples.LogOnEnterAndExit),
+            "LogOnEnterAndExit" => Call(Examples.LogOnEnterAndExit),
 
-                "LogConfirmOnExit" => Call(Examples.LogConfirmOnExit),
+            "LogConfirmOnExit" => Call(Examples.LogConfirmOnExit),
 
-                "LogConfirmOnExitSucceed" => Call(Examples.LogConfirmOnExitSucceed),
+            "LogConfirmOnExitSucceed" => Call(Examples.LogConfirmOnExitSucceed),
 
-                "LogConfirmOnExitFail" => Call(Examples.LogConfirmOnExitFail),
+            "LogConfirmOnExitFail" => Call(Examples.LogConfirmOnExitFail),
 
-                "LogOnEnterAndConfirmOnExit" => Call(Examples.LogOnEnterAndConfirmOnExit),
+            "LogOnEnterAndConfirmOnExit" => Call(Examples.LogOnEnterAndConfirmOnExit),
 
-                "LogApiStaticClass" => Call(StaticClassExample.Hello),
+            "LogApiStaticClass" => Call(StaticClassExample.Hello),
 
-                "Checkpoints" => await Call(Examples.Checkpoints),
+            "Checkpoints" => await Call(Examples.Checkpoints),
 
-                "ExitArgs" => Call(Examples.ExitArgs),
+            "ExitArgs" => Call(Examples.ExitArgs),
 
-                "ChildOperations" => await Call(Examples.Method1),
+            "ChildOperations" => await Call(Examples.Method1),
 
-                "Enrich" => Call(Examples.Enrich),
+            "Enrich" => Call(Examples.Enrich),
 
-                "SubscribeAndSendToConsole" => Call(Examples.SubscribeAndSendToConsole),
+            "SubscribeAndSendToConsole" => Call(Examples.SubscribeAndSendToConsole),
 
-                "LogEventStructure" => Call(Examples.LogEventStructure),
+            "LogEventStructure" => Call(Examples.LogEventStructure),
                 
-                "Evaluate" => Call(Examples.Evaluate),
+            "Evaluate" => Call(Examples.Evaluate),
 
-                "SubscribeAndSendToSerilog" => Call(Examples.SubscribeAndSendToSerilog),
+            "SubscribeAndSendToSerilog" => Call(Examples.SubscribeAndSendToSerilog),
 
-                _ =>
+            _ =>
                 throw new ArgumentException($"There's no case in Program.Main for {nameof(region)} '{region}'")
-            };
-        }
+        };
+    }
 
-        public static LoggerSubscription ConsoleSubscription { get; private set; }
+    public static LoggerSubscription ConsoleSubscription { get; private set; }
 
-        private static int Call(Action action)
-        {
-            action();
-            return 0;
-        }
+    private static int Call(Action action)
+    {
+        action();
+        return 0;
+    }
 
-        private static async Task<int> Call(Func<Task> action)
-        {
-            await action();
-            return 0;
-        }
+    private static async Task<int> Call(Func<Task> action)
+    {
+        await action();
+        return 0;
     }
 }

@@ -2,45 +2,44 @@
 using System.Linq;
 using Xunit;
 
-namespace Pocket.For.Xunit.Tests
+namespace Pocket.For.Xunit.Tests;
+
+public class WhatIsLogged
 {
-    public class WhatIsLogged
+    [Fact]
+    public void Start_events_are_logged_for_each_test()
     {
-        [Fact]
-        public void Start_events_are_logged_for_each_test()
-        {
-            var attribute = new LogToPocketLoggerAttribute(true);
+        var attribute = new LogToPocketLoggerAttribute(true);
 
-            var methodInfo = GetType().GetMethod(nameof(Start_events_are_logged_for_each_test));
+        var methodInfo = GetType().GetMethod(nameof(Start_events_are_logged_for_each_test));
 
-            attribute.Before(methodInfo);
+        attribute.Before(methodInfo);
 
-            var log = TestLog.Current.Lines;
+        var log = TestLog.Current.Lines;
 
-            attribute.After(methodInfo);
+        attribute.After(methodInfo);
 
-            log.First()
-               .Should()
-               .Contain($"[🧪:{GetType().Name}.{nameof(Start_events_are_logged_for_each_test)}]  ▶");
-        }
+        log.First()
+           .Should()
+           .Contain($"[🧪:{GetType().Name}.{nameof(Start_events_are_logged_for_each_test)}]  ▶");
+    }
 
-        [Fact]
-        public void Stop_events_are_logged_for_each_test()
-        {
-            var attribute = new LogToPocketLoggerAttribute(true);
+    [Fact]
+    public void Stop_events_are_logged_for_each_test()
+    {
+        var attribute = new LogToPocketLoggerAttribute(true);
 
-            var methodInfo = GetType().GetMethod(nameof(Stop_events_are_logged_for_each_test));
+        var methodInfo = GetType().GetMethod(nameof(Stop_events_are_logged_for_each_test));
 
-            attribute.Before(methodInfo);
+        attribute.Before(methodInfo);
 
-            var log = TestLog.Current;
+        var log = TestLog.Current;
 
-            attribute.After(methodInfo);
+        attribute.After(methodInfo);
 
-            log.Lines
-               .Last()
-               .Should()
-               .Match($"*[🧪:{GetType().Name}.{nameof(Stop_events_are_logged_for_each_test)}]  ⏹ (*ms)*");
-        }
+        log.Lines
+           .Last()
+           .Should()
+           .Match($"*[🧪:{GetType().Name}.{nameof(Stop_events_are_logged_for_each_test)}]  ⏹ (*ms)*");
     }
 }
