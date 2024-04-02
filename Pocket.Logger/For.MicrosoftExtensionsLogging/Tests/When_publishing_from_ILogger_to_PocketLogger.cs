@@ -6,161 +6,160 @@ using Pocket.Tests;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Pocket.For.MicrosoftExtensionsLogging.Tests
+namespace Pocket.For.MicrosoftExtensionsLogging.Tests;
+
+public class When_publishing_from_ILogger_to_PocketLogger : IDisposable
 {
-    public class When_publishing_from_ILogger_to_PocketLogger : IDisposable
+    private readonly CompositeDisposable disposables = new CompositeDisposable();
+    private readonly LogEntryList log = new LogEntryList();
+    private readonly ILoggerFactory loggerFactory;
+
+    public When_publishing_from_ILogger_to_PocketLogger(ITestOutputHelper output)
     {
-        private readonly CompositeDisposable disposables = new CompositeDisposable();
-        private readonly LogEntryList log = new LogEntryList();
-        private readonly ILoggerFactory loggerFactory;
+        loggerFactory = LoggerFactory.Create(builder => builder.AddConsole())
+                                     .AddPocketLogger();
 
-        public When_publishing_from_ILogger_to_PocketLogger(ITestOutputHelper output)
+        disposables.Add(LogEvents.Subscribe(e => output.WriteLine(e.ToLogString())));
+        disposables.Add(LogEvents.Subscribe(e => log.Add(e)));
+    }
+
+    public void Dispose() => disposables.Dispose();
+
+    [Fact]
+    public void The_message_is_not_included_in_properties()
+    {
+        loggerFactory.CreateLogger("the-category").LogInformation("hi!");
+
+        var (message, properties) = log.Single().Evaluate();
+
+        message.Should()
+               .Be("hi!");
+
+        properties
+            .Should()
+            .HaveCount(0);
+    }
+
+    [Fact]
+    public void LogInformation_logs_at_the_correct_log_level()
+    {
+        var logger = loggerFactory.CreateLogger("the-category");
+
+        logger.LogInformation("This is info with no args");
+
+        log.Single()
+           .LogLevel
+           .Should().Be((int) LogLevel.Information);
+    }
+
+    [Fact]
+    public void LogWarning_logs_at_the_correct_log_level()
+    {
+        var logger = loggerFactory.CreateLogger("the-category");
+
+        logger.LogWarning("uh oh...");
+
+        log.Single()
+           .LogLevel
+           .Should()
+           .Be((int) LogLevel.Warning);
+    }
+
+    [Fact]
+    public void LogError_logs_at_the_correct_log_level()
+    {
+        var logger = loggerFactory.CreateLogger("the-category");
+
+        logger.LogError("uh oh...");
+
+        log.Single()
+           .LogLevel
+           .Should()
+           .Be((int) LogLevel.Error);
+    }
+
+    [Fact]
+    public void The_category_is_set_correctly_when_specified_using_a_string()
+    {
+        var logger = loggerFactory.CreateLogger("the-category");
+
+        logger.LogInformation("This is info with no args");
+
+        log.Single()
+           .Category
+           .Should()
+           .Be("the-category");
+    }
+
+    [Fact]
+    public void The_category_is_set_correctly_when_specified_using_a_Type()
+    {
+        var logger = loggerFactory.CreateLogger<When_publishing_from_ILogger_to_PocketLogger>();
+
+        logger.LogInformation("This is info with no args");
+
+        log.Single()
+           .Category
+           .Should()
+           .Be(typeof(When_publishing_from_ILogger_to_PocketLogger).ToString());
+    }
+
+    [Fact]
+    public void Args_are_available()
+    {
+        var logger = loggerFactory.CreateLogger("the-category");
+
+        logger.LogInformation("This is info with some args: {an-int} and {a-string}", 123, "hello");
+
+        var properties = log.Single().Evaluate().Properties;
+
+        properties
+            .Should()
+            .Contain(("an-int", 123));
+        properties
+            .Should()
+            .Contain(("a-string", "hello"));
+    }
+
+    [Fact]
+    public void Scopes_are_treated_as_operations()
+    {
+        var logger = loggerFactory.CreateLogger("the-category");
+
+        using (logger.BeginScope("the-scope"))
         {
-            loggerFactory = LoggerFactory.Create(builder => builder.AddConsole())
-                .AddPocketLogger();
-
-            disposables.Add(LogEvents.Subscribe(e => output.WriteLine(e.ToLogString())));
-            disposables.Add(LogEvents.Subscribe(e => log.Add(e)));
+            logger.LogInformation("This is info in a scope");
         }
 
-        public void Dispose() => disposables.Dispose();
+        log[0].ToLogString().Should().Contain("▶");
+        log[0].ToLogString().Should().Contain("[the-scope]");
 
-        [Fact]
-        public void The_message_is_not_included_in_properties()
+        log[1].ToLogString().Should().Contain("This is info in a scope");
+
+        log[2].ToLogString().Should().Contain("⏹");
+        log[2].ToLogString().Should().Contain("the-scope");
+    }
+
+    [Fact]
+    public void Verbosity_can_be_specified()
+    {
+        var factory = new LoggerFactory()
+            .AddPocketLogger((category, logLevel) =>
+                                 category == "awesome" ||
+                                 logLevel == Microsoft.Extensions.Logging.LogLevel.Critical);
+
+        var log = new LogEntryList();
+
+        using (LogEvents.Subscribe(e => log.Add(e)))
         {
-            loggerFactory.CreateLogger("the-category").LogInformation("hi!");
+            factory.CreateLogger("awesome").LogInformation("this should absolutely be in the log!");
 
-            var (message, properties) = log.Single().Evaluate();
+            factory.CreateLogger<string>().LogCritical("this should also be in the log");
 
-            message.Should()
-                   .Be("hi!");
-
-            properties
-                .Should()
-                .HaveCount(0);
+            factory.CreateLogger<string>().LogError("this should NOT be in the log");
         }
 
-        [Fact]
-        public void LogInformation_logs_at_the_correct_log_level()
-        {
-            var logger = loggerFactory.CreateLogger("the-category");
-
-            logger.LogInformation("This is info with no args");
-
-            log.Single()
-               .LogLevel
-               .Should().Be((int) LogLevel.Information);
-        }
-
-        [Fact]
-        public void LogWarning_logs_at_the_correct_log_level()
-        {
-            var logger = loggerFactory.CreateLogger("the-category");
-
-            logger.LogWarning("uh oh...");
-
-            log.Single()
-               .LogLevel
-               .Should()
-               .Be((int) LogLevel.Warning);
-        }
-
-        [Fact]
-        public void LogError_logs_at_the_correct_log_level()
-        {
-            var logger = loggerFactory.CreateLogger("the-category");
-
-            logger.LogError("uh oh...");
-
-            log.Single()
-               .LogLevel
-               .Should()
-               .Be((int) LogLevel.Error);
-        }
-
-        [Fact]
-        public void The_category_is_set_correctly_when_specified_using_a_string()
-        {
-            var logger = loggerFactory.CreateLogger("the-category");
-
-            logger.LogInformation("This is info with no args");
-
-            log.Single()
-               .Category
-               .Should()
-               .Be("the-category");
-        }
-
-        [Fact]
-        public void The_category_is_set_correctly_when_specified_using_a_Type()
-        {
-            var logger = loggerFactory.CreateLogger<When_publishing_from_ILogger_to_PocketLogger>();
-
-            logger.LogInformation("This is info with no args");
-
-            log.Single()
-                .Category
-               .Should()
-               .Be(typeof(When_publishing_from_ILogger_to_PocketLogger).ToString());
-        }
-
-        [Fact]
-        public void Args_are_available()
-        {
-            var logger = loggerFactory.CreateLogger("the-category");
-
-            logger.LogInformation("This is info with some args: {an-int} and {a-string}", 123, "hello");
-
-            var properties = log.Single().Evaluate().Properties;
-
-            properties
-                .Should()
-                .Contain(("an-int", 123));
-            properties
-                .Should()
-                .Contain(("a-string", "hello"));
-        }
-
-        [Fact]
-        public void Scopes_are_treated_as_operations()
-        {
-            var logger = loggerFactory.CreateLogger("the-category");
-
-            using (logger.BeginScope("the-scope"))
-            {
-                logger.LogInformation("This is info in a scope");
-            }
-
-            log[0].ToLogString().Should().Contain("▶");
-            log[0].ToLogString().Should().Contain("[the-scope]");
-
-            log[1].ToLogString().Should().Contain("This is info in a scope");
-
-            log[2].ToLogString().Should().Contain("⏹");
-            log[2].ToLogString().Should().Contain("the-scope");
-        }
-
-        [Fact]
-        public void Verbosity_can_be_specified()
-        {
-            var factory = new LoggerFactory()
-                .AddPocketLogger((category, logLevel) =>
-                                     category == "awesome" ||
-                                     logLevel == Microsoft.Extensions.Logging.LogLevel.Critical);
-
-            var log = new LogEntryList();
-
-            using (LogEvents.Subscribe(e => log.Add(e)))
-            {
-                factory.CreateLogger("awesome").LogInformation("this should absolutely be in the log!");
-
-                factory.CreateLogger<string>().LogCritical("this should also be in the log");
-
-                factory.CreateLogger<string>().LogError("this should NOT be in the log");
-            }
-
-            log.Should().HaveCount(2);
-            log.Should().NotContain(e => e.LogLevel ==(int) LogLevel.Error);
-        }
+        log.Should().HaveCount(2);
+        log.Should().NotContain(e => e.LogLevel ==(int) LogLevel.Error);
     }
 }

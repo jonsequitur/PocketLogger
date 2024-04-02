@@ -1,18 +1,17 @@
 using Pocket;
 
-namespace Demo
+namespace Demo;
+
+#region LogApiStaticClass
+
+public static class StaticClassExample
 {
-    #region LogApiStaticClass
+    private static readonly Logger Log = new Logger(nameof(StaticClassExample));
 
-    public static class StaticClassExample
+    public static void Hello()
     {
-        private static readonly Logger Log = new Logger(nameof(StaticClassExample));
-
-        public static void Hello()
-        {
-            Log.Info("Hello!");
-        }
+        Log.Info("Hello!");
     }
-
-    #endregion
 }
+
+#endregion

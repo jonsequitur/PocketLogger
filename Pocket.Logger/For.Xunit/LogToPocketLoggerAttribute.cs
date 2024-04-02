@@ -5,93 +5,92 @@ using Xunit.Sdk;
 
 #nullable disable
 
-namespace Pocket.For.Xunit
+namespace Pocket.For.Xunit;
+
+internal class LogToPocketLoggerAttribute : BeforeAfterTestAttribute
 {
-    internal class LogToPocketLoggerAttribute : BeforeAfterTestAttribute
+    private bool _writeToFile;
+    private string _fileName;
+    private string _fileNameEnvironmentVariable;
+
+    private static readonly ConcurrentDictionary<MethodInfo, TestLog> _operations = new();
+
+    public LogToPocketLoggerAttribute(bool writeToFile = false)
     {
-        private bool _writeToFile;
-        private string _fileName;
-        private string _fileNameEnvironmentVariable;
+        _writeToFile = writeToFile;
+    }
 
-        private static readonly ConcurrentDictionary<MethodInfo, TestLog> _operations = new();
-
-        public LogToPocketLoggerAttribute(bool writeToFile = false)
+    public LogToPocketLoggerAttribute(string filename)
+    {
+        if (string.IsNullOrWhiteSpace(filename))
         {
-            _writeToFile = writeToFile;
+            throw new ArgumentException("Value cannot be null or whitespace.", nameof(filename));
         }
 
-        public LogToPocketLoggerAttribute(string filename)
-        {
-            if (string.IsNullOrWhiteSpace(filename))
-            {
-                throw new ArgumentException("Value cannot be null or whitespace.", nameof(filename));
-            }
+        FileName = filename;
+        _writeToFile = true;
+    }
 
-            FileName = filename;
+    public string FileName
+    {
+        get => _fileName;
+        set
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                throw new ArgumentException("Value cannot be null or consist entirely of whitespace");
+            }
+            _fileName = value;
             _writeToFile = true;
         }
+    }
 
-        public string FileName
+    public string FileNameEnvironmentVariable
+    {
+        get => _fileNameEnvironmentVariable;
+        set
         {
-            get => _fileName;
-            set
+            if (string.IsNullOrWhiteSpace(value))
             {
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    throw new ArgumentException("Value cannot be null or consist entirely of whitespace");
-                }
-                _fileName = value;
-                _writeToFile = true;
+                throw new ArgumentException("Value cannot be null or consist entirely of whitespace");
+            }
+
+            _fileNameEnvironmentVariable = value;
+
+            if (Environment.GetEnvironmentVariable(value) is { } variableValue && 
+                !string.IsNullOrWhiteSpace(variableValue))
+            {
+                FileName = variableValue;
+            }
+        }
+    }
+
+    public override void Before(MethodInfo methodUnderTest)
+    {
+        var testLog = new TestLog(
+            methodUnderTest,
+            _writeToFile,
+            FileName);
+
+        TestLog.Current = testLog;
+
+        _operations.TryAdd(
+            methodUnderTest,
+            testLog);
+    }
+
+    public override void After(MethodInfo methodUnderTest)
+    {
+        if (_operations.TryRemove(methodUnderTest, out var testLog))
+        {
+            testLog.Dispose();
+
+            if (TestLog.Current == testLog)
+            {
+                TestLog.Current = default;
             }
         }
 
-        public string FileNameEnvironmentVariable
-        {
-            get => _fileNameEnvironmentVariable;
-            set
-            {
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    throw new ArgumentException("Value cannot be null or consist entirely of whitespace");
-                }
-
-                _fileNameEnvironmentVariable = value;
-
-                if (Environment.GetEnvironmentVariable(value) is { } variableValue && 
-                    !string.IsNullOrWhiteSpace(variableValue))
-                {
-                    FileName = variableValue;
-                }
-            }
-        }
-
-        public override void Before(MethodInfo methodUnderTest)
-        {
-            var testLog = new TestLog(
-                methodUnderTest,
-                _writeToFile,
-                FileName);
-
-            TestLog.Current = testLog;
-
-            _operations.TryAdd(
-                methodUnderTest,
-                testLog);
-        }
-
-        public override void After(MethodInfo methodUnderTest)
-        {
-            if (_operations.TryRemove(methodUnderTest, out var testLog))
-            {
-                testLog.Dispose();
-
-                if (TestLog.Current == testLog)
-                {
-                    TestLog.Current = default;
-                }
-            }
-
-            base.After(methodUnderTest);
-        }
+        base.After(methodUnderTest);
     }
 }
