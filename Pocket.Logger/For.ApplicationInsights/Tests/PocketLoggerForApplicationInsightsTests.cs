@@ -34,10 +34,11 @@ namespace Pocket.For.ApplicationInsights.Tests
                 Subscribe(e =>
                               this.output.WriteLine(e.ToLogString()));
 
-            client = new TelemetryClient(
-                new TelemetryConfiguration(
-                    "<instrumentation key>",
-                    new FakeTelemetryChannel(telemetrySent.Add)));
+            var telemetryConfiguration = new TelemetryConfiguration();
+
+            telemetryConfiguration.TelemetryChannel = new FakeTelemetryChannel(telemetrySent.Add);
+
+            client = new TelemetryClient(telemetryConfiguration);
         }
 
         public void Dispose() => disposables.Dispose();
