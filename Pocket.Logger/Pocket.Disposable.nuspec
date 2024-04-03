@@ -3,12 +3,12 @@
   <metadata>
     <id>Pocket.Disposable</id>
     <title>Pocket.Disposable</title>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
     <authors>jonsequitur</authors>
     <owners>jonsequitur</owners>
     <projectUrl>https://github.com/jonsequitur/pocketlogger</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Embeddable implementations of IDisposable, for all your disposing needs.</description>
+    <description>Embeddable implementations CompositeDisposable and AnonymousDisposable, for all your disposing needs.</description>
     <tags>IDisposable</tags>
     <license type="expression">MIT</license>
     <developmentDependency>true</developmentDependency>
