@@ -3,17 +3,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 
-#nullable disable
+#nullable enable
 
 namespace Pocket;
+
 #if !SourceProject
 [System.Diagnostics.DebuggerStepThrough]
 #endif
 internal static class Disposable
 {
-    private static readonly IDisposable empty = Create(() =>
+    private static readonly IDisposable empty = Create(EmptyDispose);
+
+    private static void EmptyDispose()
     {
-    });
+    }
 
     public static IDisposable Create(Action dispose) =>
         new AnonymousDisposable(dispose);
@@ -22,7 +25,7 @@ internal static class Disposable
 
     private class AnonymousDisposable : IDisposable
     {
-        private Action dispose;
+        private Action? dispose;
 
         public AnonymousDisposable(Action dispose) =>
             this.dispose = dispose ??
