@@ -1,11 +1,11 @@
-﻿using System;
+﻿#nullable enable
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Threading;
 using Xunit.Abstractions;
-
-#nullable disable
 
 namespace Pocket.For.Xunit;
 
@@ -20,50 +20,49 @@ internal class TestLog : IDisposable
     public TestLog(
         MethodInfo testMethod,
         bool writeToFile = false,
-        string filename = null)
+        string? filename = null)
     {
         if (testMethod is null)
         {
             throw new ArgumentNullException(nameof(testMethod));
         }
 
-        var testName = $"{testMethod.DeclaringType.Name}.{testMethod.Name}";
+        var testName = $"{testMethod.DeclaringType?.Name}.{testMethod.Name}";
 
         _disposables = new()
         {
-            () => Log.Dispose()
+            () => Log!.Dispose()
         };
 
         if (writeToFile)
         {
             filename ??= $"{testName}-{DateTime.Now:yyyy-MM-dd-hh-mm-ss}.log";
             LogFile = new FileInfo(filename);
-
             LogToFile();
         }
 
         TestName = testName;
 
         Log = new OperationLogger($"🧪:{TestName}", logOnStart: true);
-    }
 
-    private void LogToFile()
-    {
-        _disposables.Add(
-            LogEvents.Subscribe(e =>
-            {
-                var entry = e.ToLogString() + Environment.NewLine;
-
-                lock (_lockObj)
+        void LogToFile()
+        {
+            _disposables.Add(
+                LogEvents.Subscribe(e =>
                 {
-                    File.AppendAllText(LogFile.FullName, entry);
-                }
-            }));
+                    var entry = e.ToLogString() + Environment.NewLine;
+
+                    lock (_lockObj)
+                    {
+                        File.AppendAllText(LogFile!.FullName, entry);
+                    }
+                }));
+        }
     }
 
     public OperationLogger Log { get; }
 
-    public FileInfo LogFile { get; }
+    public FileInfo? LogFile { get; }
 
     public string TestName { get; }
 
@@ -71,7 +70,7 @@ internal class TestLog : IDisposable
     {
         get
         {
-            if (LogFile is { })
+            if (LogFile is not null)
             {
                 lock (_lockObj)
                 {
@@ -86,16 +85,13 @@ internal class TestLog : IDisposable
         }
     }
 
-    public static TestLog Current
+    public static TestLog? Current
     {
         get => _current.Value;
-        set => _current.Value = value;
+        set => _current.Value = value!;
     }
 
-    public void Dispose()
-    {
-        _disposables.Dispose();
-    }
+    public void Dispose() => _disposables.Dispose();
 
     public void LogTo(ITestOutputHelper output)
     {

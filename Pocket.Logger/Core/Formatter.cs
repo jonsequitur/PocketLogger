@@ -8,7 +8,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 
-#nullable disable
+#nullable enable
 
 namespace Pocket;
 #if !SourceProject
@@ -59,7 +59,7 @@ internal class Formatter
 
             void Format(StringBuilder sb, object value)
             {
-                string formattedParam = null;
+                string? formattedParam = null;
 
                 if (!string.IsNullOrEmpty(formatStr))
                 {
@@ -84,8 +84,8 @@ internal class Formatter
     public IReadOnlyList<string> Tokens => tokens;
 
     public FormatterResult Format(
-        IReadOnlyList<object> args,
-        IList<(string Name, object Value)> knownProperties)
+        IReadOnlyList<object>? args,
+        IList<(string Name, object Value)>? knownProperties)
     {
         if (args is null)
         {
@@ -260,11 +260,11 @@ internal static partial class Format
             $"{e.TimestampUtc:o} {e.Operation.Id.IfNotEmpty()}{e.Category.IfNotEmpty()}{e.OperationName.IfNotEmpty()} {logLevelString} {message} {e.Exception}";
     }
 
-    static partial void CustomizeLogString(object value, ref string output);
+    static partial void CustomizeLogString(object? value, ref string? output);
 
-    internal static string ToLogString(this object value)
+    internal static string ToLogString(this object? value)
     {
-        string output = null;
+        string? output = null;
 
         CustomizeLogString(value, ref output);
 
@@ -278,12 +278,11 @@ internal static partial class Format
             return $"[ {string.Join(", ", enumerable.Cast<object>())} ]";
         }
 
-        if (value is null)
+        return value switch
         {
-            return "[null]";
-        }
-
-        return value.ToString();
+            null => "[null]",
+            _ => value.ToString() ?? string.Empty
+        };
     }
 
     private static string IfNotEmpty(

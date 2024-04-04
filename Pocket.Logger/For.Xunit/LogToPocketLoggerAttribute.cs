@@ -1,17 +1,17 @@
-﻿using System;
+﻿#nullable enable
+
+using System;
 using System.Collections.Concurrent;
 using System.Reflection;
 using Xunit.Sdk;
-
-#nullable disable
 
 namespace Pocket.For.Xunit;
 
 internal class LogToPocketLoggerAttribute : BeforeAfterTestAttribute
 {
     private bool _writeToFile;
-    private string _fileName;
-    private string _fileNameEnvironmentVariable;
+    private string? _fileName;
+    private string? _fileNameEnvironmentVariable;
 
     private static readonly ConcurrentDictionary<MethodInfo, TestLog> _operations = new();
 
@@ -31,7 +31,7 @@ internal class LogToPocketLoggerAttribute : BeforeAfterTestAttribute
         _writeToFile = true;
     }
 
-    public string FileName
+    public string? FileName
     {
         get => _fileName;
         set
@@ -45,7 +45,7 @@ internal class LogToPocketLoggerAttribute : BeforeAfterTestAttribute
         }
     }
 
-    public string FileNameEnvironmentVariable
+    public string? FileNameEnvironmentVariable
     {
         get => _fileNameEnvironmentVariable;
         set

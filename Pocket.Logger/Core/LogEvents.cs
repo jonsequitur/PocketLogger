@@ -1,4 +1,4 @@
-#nullable disable
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -135,7 +135,7 @@ internal class LoggerSubscription : IDisposable
 
     public List<Type> DiscoveredLoggerTypes { get; } = new();
 
-    public Action<string,  bool> OnFormatLogEntry { get; set; }
+    public Action<string,  bool>? OnFormatLogEntry { get; set; }
 
     public void Dispose() => disposables.Dispose();
 }
