@@ -1,8 +1,10 @@
-﻿namespace Pocket;
+﻿#nullable enable
+
+namespace Pocket;
 
 internal partial class Format
 {
-    static partial void CustomizeLogString(object value, ref string output)
+    static partial void CustomizeLogString(object? value, ref string? output)
     {
         if (value is string stringValue &&
             stringValue.StartsWith("customize me:"))

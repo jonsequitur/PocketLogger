@@ -1,9 +1,9 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using static Microsoft.Extensions.Logging.LogLevel;
-
-#nullable disable
 
 namespace Pocket.For.MicrosoftExtensionsLogging;
 
@@ -11,7 +11,7 @@ internal static class LoggerFactoryExtensions
 {
     public static ILoggerFactory AddPocketLogger(
         this ILoggerFactory factory,
-        Func<string, Microsoft.Extensions.Logging.LogLevel, bool> filter =null)
+        Func<string, Microsoft.Extensions.Logging.LogLevel, bool>? filter = null)
     {
         factory.AddProvider(
             new LoggerProvider(category => new Logger(category, filter)));
@@ -23,11 +23,11 @@ internal static class LoggerFactoryExtensions
     {
         private readonly string category;
 
-        private readonly Func<string, Microsoft.Extensions.Logging.LogLevel, bool> filter;
+        private readonly Func<string, Microsoft.Extensions.Logging.LogLevel, bool>? filter;
 
         public Logger(
             string category,
-            Func<string, Microsoft.Extensions.Logging.LogLevel, bool> filter = null)
+            Func<string, Microsoft.Extensions.Logging.LogLevel, bool>? filter = null)
         {
             this.category = category;
             this.filter = filter;
@@ -37,8 +37,8 @@ internal static class LoggerFactoryExtensions
             Microsoft.Extensions.Logging.LogLevel logLevel,
             EventId eventId,
             TState state,
-            Exception exception,
-            Func<TState, Exception, string> formatter)
+            Exception? exception = null,
+            Func<TState, Exception, string>? formatter = null)
         {
             if (!IsEnabled(logLevel))
             {
@@ -47,7 +47,7 @@ internal static class LoggerFactoryExtensions
 
             var logEntry = new LogEntry(
                 logLevel: logLevel.ToPocketLoggerLogLevel(),
-                messageTemplate: state.ToString(),
+                messageTemplate: state?.ToString(),
                 exception: exception,
                 category: category);
 
@@ -69,7 +69,7 @@ internal static class LoggerFactoryExtensions
         public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel) =>
             filter == null || filter(category, logLevel);
 
-        public IDisposable BeginScope<TState>(TState state) =>
+        public IDisposable BeginScope<TState>(TState state) where TState : notnull =>
             new OperationLogger(
                 operationName: state.ToLogString(),
                 category: category,

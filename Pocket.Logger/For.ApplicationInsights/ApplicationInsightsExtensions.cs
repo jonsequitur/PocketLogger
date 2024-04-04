@@ -1,4 +1,6 @@
-﻿using System;
+#nullable enable
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -10,6 +12,7 @@ using Microsoft.ApplicationInsights.DataContracts;
 using Metric = System.ValueTuple<string, double>;
 
 namespace Pocket.For.ApplicationInsights;
+
 #if !SourceProject
 [System.Diagnostics.DebuggerStepThrough]
 #endif
@@ -55,7 +58,7 @@ internal static class ApplicationInsightsExtensions
         {
             telemetryClient.TrackDependency(e.ToDependencyTelemetry());
         }
-        else if (e.Exception != null ||
+        else if (e.Exception is not null ||
                  e.LogLevel >= (byte) LogLevel.Warning)
         {
             telemetryClient.TrackException(e.ToExceptionTelemetry());
@@ -116,13 +119,17 @@ internal static class ApplicationInsightsExtensions
         var telemetry = new DependencyTelemetry
         {
             Id = e.Operation.Id,
-            Data = properties.FirstOrDefault(p => p.Name == "RequestUri").Value?.ToString(),
-            Duration = e.Operation.Duration.Value,
+            Data = properties.FirstOrDefault(p => p.Name is "RequestUri").Value?.ToString(),
             Name = e.OperationName,
-            ResultCode = properties.FirstOrDefault(p => p.Name == "ResultCode").Value?.ToString(),
+            ResultCode = properties.FirstOrDefault(p => p.Name is "ResultCode").Value?.ToString(),
             Success = e.Operation.IsSuccessful,
             Timestamp = DateTimeOffset.UtcNow
         };
+
+        if (e.Operation.Duration is { } value)
+        {
+            telemetry.Duration = value;
+        }
 
         telemetry.AddProperties(properties);
         telemetry.AddCategory(e.Category);

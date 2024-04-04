@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-#nullable disable
+#nullable enable
 
 namespace Pocket;
 
@@ -13,27 +13,27 @@ namespace Pocket;
 #endif
 internal class Logger
 {
-    public Logger(string category = "")
+    public Logger(string? category = "")
     {
         Category = category ?? "";
     }
 
-    public static event Action<Action<(string Name, object Value)>> Enrich;
+    public static event Action<Action<(string Name, object Value)>>? Enrich;
 
     public static event Action<(
         string MessageTemplate,
-        object[] Args,
+        object[]? Args,
         List<(string Name, object Value)> Properties,
         byte LogLevel,
         DateTime TimestampUtc,
-        Exception Exception,
-        string OperationName,
-        string Category,
-        (string Id,
+        Exception? Exception,
+        string? OperationName,
+        string? Category,
+        (string? Id,
         bool IsStart,
         bool IsEnd,
         bool? IsSuccessful,
-        TimeSpan? Duration) Operation)> Posted;
+        TimeSpan? Duration) Operation)>? Posted;
 
     public virtual void Post(LogEntry entry)
     {
@@ -48,7 +48,8 @@ internal class Logger
                         entry.Exception,
                         entry.OperationName,
                         entry.Category ?? Category,
-                        (entry.OperationId,
+                        (
+                            entry.OperationId,
                             entry.IsStartOfOperation,
                             entry.IsEndOfOperation,
                             entry.IsOperationSuccessful,
@@ -60,12 +61,12 @@ internal class Logger
     }
 
     protected internal void Post(
-        string message,
+        string? message,
         LogLevel logLevel,
-        string operationName = null,
-        Exception exception = null,
-        object[] args = null,
-        in (string Name, object Value)[] properties = null)
+        string? operationName = null,
+        Exception? exception = null,
+        object[]? args = null,
+        in (string Name, object Value)[]? properties = null)
     {
         var logEntry = new LogEntry(
             messageTemplate: message,
@@ -122,12 +123,12 @@ internal static class LoggerExtensions
 {
     public static TLogger Trace<TLogger>(
         this TLogger logger,
-        string message,
-        params object[] args)
+        string? message = null,
+        params object[]? args)
         where TLogger : Logger
     {
         logger.Post(
-            message,
+            message ?? "",
             LogLevel.Trace,
             exception: null,
             args: args);
@@ -160,13 +161,13 @@ internal static class LoggerExtensions
             this TLogger logger,
             params object[] args)
             where TLogger : Logger =>
-        logger.Info(message: null, args);
+        logger.Info(message: "", args);
 
     public static TLogger Warning<TLogger>(
         this TLogger logger,
-        string message,
-        Exception exception = null,
-        params object[] args)
+        string? message = null,
+        Exception? exception = null,
+        params object[]? args)
         where TLogger : Logger
     {
         logger.Post(
@@ -182,19 +183,19 @@ internal static class LoggerExtensions
         this TLogger logger,
         Exception exception)
         where TLogger : Logger =>
-            logger.Warning(message: null, exception);
+            logger.Warning(message: "", exception);
 
     public static TLogger Warning<TLogger>(
             this TLogger logger,
-            params object[] args)
+            params object[]? args)
             where TLogger : Logger =>
         logger.Warning(message: null, exception: null, args);
 
     public static TLogger Error<TLogger>(
         this TLogger logger,
-        string message,
-        Exception exception = null,
-        params object[] args)
+        string? message = null,
+        Exception? exception = null,
+        params object[]? args)
         where TLogger : Logger
     {
         logger.Post(
@@ -216,13 +217,13 @@ internal static class LoggerExtensions
             this TLogger logger,
             params object[] args)
             where TLogger : Logger =>
-        logger.Error(message: null, exception: null, args);
+        logger.Error(message: "", exception: null, args);
 
     public static OperationLogger OnEnterAndExit(
         this Logger logger,
-        [CallerMemberName] string name = null,
-        Func<(string name, object value)[]> exitArgs = null,
-        object arg = null) =>
+        [CallerMemberName] string? name = null,
+        Func<(string name, object value)[]>? exitArgs = null,
+        object? arg = null) =>
             logger.OnEnterAndExit(
                 name,
                 exitArgs,
@@ -230,11 +231,11 @@ internal static class LoggerExtensions
 
     public static OperationLogger OnEnterAndExit(
         this Logger logger,
-        [CallerMemberName] string name = null,
-        Func<(string name, object value)[]> exitArgs = null,
-        params object[] args) =>
+        [CallerMemberName] string? name = null,
+        Func<(string name, object value)[]>? exitArgs = null,
+        params object[]? args) =>
         new(
-            name,
+            name ?? "",
             logger.Category,
             message: null,
             exitArgs,
@@ -243,9 +244,9 @@ internal static class LoggerExtensions
 
     public static OperationLogger OnExit(
         this Logger logger,
-        [CallerMemberName] string name = null,
-        Func<(string name, object value)[]> exitArgs = null,
-        object arg = null) =>
+        [CallerMemberName] string? name = null,
+        Func<(string name, object value)[]>? exitArgs = null,
+        object? arg = null) =>
             logger.OnExit(
                 name,
                 exitArgs,
@@ -253,11 +254,11 @@ internal static class LoggerExtensions
 
     public static OperationLogger OnExit(
         this Logger logger,
-        [CallerMemberName] string name = null,
-        Func<(string name, object value)[]> exitArgs = null,
-        params object[] args) =>
+        [CallerMemberName] string? name = null,
+        Func<(string name, object value)[]>? exitArgs = null,
+        params object[]? args) =>
         new(
-            name,
+            name ?? "",
             logger.Category,
             message: null,
             exitArgs,
@@ -265,9 +266,9 @@ internal static class LoggerExtensions
 
     public static ConfirmationLogger ConfirmOnExit(
         this Logger logger,
-        [CallerMemberName] string name = null,
-        Func<(string name, object value)[]> exitArgs = null,
-        object arg = null) =>
+        [CallerMemberName] string? name = null,
+        Func<(string name, object value)[]>? exitArgs = null,
+        object? arg = null) =>
             logger.ConfirmOnExit(
                 name,
                 exitArgs,
@@ -275,11 +276,11 @@ internal static class LoggerExtensions
 
     public static ConfirmationLogger ConfirmOnExit(
         this Logger logger,
-        [CallerMemberName] string name = null,
-        Func<(string name, object value)[]> exitArgs = null,
-        params object[] args) =>
+        [CallerMemberName] string? name = null,
+        Func<(string name, object value)[]>? exitArgs = null,
+        params object[]? args) =>
         new(
-            name,
+            name ?? "",
             logger.Category,
             message: null,
             exitArgs,
@@ -287,9 +288,9 @@ internal static class LoggerExtensions
 
     public static ConfirmationLogger OnEnterAndConfirmOnExit(
         this Logger logger,
-        [CallerMemberName] string name = null,
-        Func<(string name, object value)[]> exitArgs = null,
-        object arg = null) =>
+        [CallerMemberName] string? name = null,
+        Func<(string name, object value)[]>? exitArgs = null,
+        object? arg = null) =>
             logger.OnEnterAndConfirmOnExit(
                 name,
                 exitArgs,
@@ -297,11 +298,11 @@ internal static class LoggerExtensions
 
     public static ConfirmationLogger OnEnterAndConfirmOnExit(
         this Logger logger,
-        [CallerMemberName] string name = null,
-        Func<(string name, object value)[]> exitArgs = null,
-        params object[] args) =>
+        [CallerMemberName] string? name = null,
+        Func<(string name, object value)[]>? exitArgs = null,
+        params object[]? args) =>
         new(
-            name,
+            name ?? "",
             logger.Category,
             message: null,
             exitArgs,
@@ -310,23 +311,23 @@ internal static class LoggerExtensions
 
     public static void Event(
         this Logger logger,
-        [CallerMemberName] string name = null) =>
-        logger.Post(null,
+        [CallerMemberName] string? name = null) =>
+        logger.Post("",
                     LogLevel.Telemetry,
                     operationName: name);
 
     public static void Event(
         this Logger logger,
-        [CallerMemberName] string name = null,
+        [CallerMemberName] string? name = null,
         params (string, double)[] metrics) =>
-        logger.Post(null,
+        logger.Post("",
                     LogLevel.Telemetry,
                     operationName: name,
                     args: metrics.Cast<object>().ToArray());
 
     public static void Event(
         this Logger logger,
-        [CallerMemberName] string name = null,
+        [CallerMemberName] string? name = null,
         params (string name, object value)[] properties) =>
         logger.Post(null,
                     LogLevel.Telemetry,
@@ -336,9 +337,9 @@ internal static class LoggerExtensions
     public static void Event(
         this Logger logger,
         in (string, double)[] metrics,
-        in (string name, object value)[] properties,
-        [CallerMemberName] string name = null) =>
-        logger.Post(null,
+        in (string name, object value)[]? properties,
+        [CallerMemberName] string? name = null) =>
+        logger.Post("",
                     LogLevel.Telemetry,
                     operationName: name,
                     args: metrics?.Cast<object>().ToArray(),
@@ -352,16 +353,16 @@ internal class LogEntry
 {
     public LogEntry(
         LogLevel logLevel,
-        string messageTemplate,
-        Exception exception = null,
-        string category = null,
-        string operationName = null,
-        OperationLogger operation = null,
-        object[] args = null)
+        string? messageTemplate = null,
+        Exception? exception = null,
+        string? category = null,
+        string? operationName = null,
+        OperationLogger? operation = null,
+        object[]? args = null)
     {
         LogLevel = logLevel;
         Exception = exception;
-        MessageTemplate = messageTemplate ?? exception?.ToString() ?? "";
+        MessageTemplate = string.IsNullOrEmpty(messageTemplate) ? exception?.ToString() ?? "" : messageTemplate;
         Category = category;
         Operation = operation;
         Args = args;
@@ -390,25 +391,25 @@ internal class LogEntry
 
     public TimeSpan? OperationDuration { get; }
 
-    public string OperationName { get; }
+    public string? OperationName { get; }
 
-    public string Category { get; }
+    public string? Category { get; }
 
-    public OperationLogger Operation { get; }
+    public OperationLogger? Operation { get; }
 
     public DateTime TimestampUtc { get; } = DateTime.UtcNow;
 
     public LogLevel LogLevel { get; }
 
-    public Exception Exception { get; }
+    public Exception? Exception { get; }
 
-    public string OperationId { get; }
+    public string? OperationId { get; }
 
     public string MessageTemplate { get; set; }
 
     public List<(string Name, object Value)> Properties { get; set; } = new();
 
-    public object[] Args { get; set; }
+    public object[]? Args { get; set; }
 
     public void AddProperty((string name, object value) property) =>
         Properties.Add(property);
@@ -421,19 +422,19 @@ internal class ConfirmationLogger : OperationLogger
 {
     public ConfirmationLogger(
         string operationName,
-        string category = null,
-        string message = null,
-        Func<(string name, object value)[]> exitArgs = null,
+        string? category = null,
+        string? message = null,
+        Func<(string name, object value)[]>? exitArgs = null,
         bool logOnStart = false,
-        object[] args = null) :
+        object[]? args = null) :
         base(operationName, category, message, exitArgs, logOnStart, args)
     {
     }
 
     public void Fail(
-        Exception exception = null,
-        string message = null,
-        params object[] args)
+        Exception? exception = null,
+        string? message = null,
+        params object[]? args)
     {
         IsSuccessful = false;
         Complete(message, exception, args);
@@ -465,18 +466,18 @@ internal class ConfirmationLogger : OperationLogger
 #endif
 internal class OperationLogger : Logger, IDisposable
 {
-    private readonly Func<(string name, object value)[]> exitArgs;
+    private readonly Func<(string name, object value)[]>? exitArgs;
     private readonly LogEntry initialEntry;
     private bool disposed;
     private readonly Activity activity;
 
     public OperationLogger(
         string operationName,
-        string category = null,
-        string message = null,
-        Func<(string name, object value)[]> exitArgs = null,
+        string? category = null,
+        string? message = null,
+        Func<(string name, object value)[]>? exitArgs = null,
         bool logOnStart = false,
-        object[] args = null) : base(category)
+        object[]? args = null) : base(category)
     {
         this.exitArgs = exitArgs;
 
@@ -501,7 +502,7 @@ internal class OperationLogger : Logger, IDisposable
         }
     }
 
-    public string Id => activity.Id;
+    public string? Id => activity.Id;
 
     public string Name => activity.OperationName;
 
@@ -524,9 +525,9 @@ internal class OperationLogger : Logger, IDisposable
     }
 
     protected void Complete(
-        string message = null,
-        Exception exception = null,
-        params object[] args)
+        string? message = null,
+        Exception? exception = null,
+        params object[]? args)
     {
         if (IsComplete)
         {
@@ -535,9 +536,9 @@ internal class OperationLogger : Logger, IDisposable
 
         IsComplete = true;
 
-        (string name, object value)[] evaluatedExitArgs = null;
+        (string name, object value)[]? evaluatedExitArgs = null;
 
-        if (exitArgs != null)
+        if (exitArgs is not null)
         {
             try
             {
