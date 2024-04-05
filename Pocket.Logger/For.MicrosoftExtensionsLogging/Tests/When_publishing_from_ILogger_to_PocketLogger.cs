@@ -10,8 +10,8 @@ namespace Pocket.For.MicrosoftExtensionsLogging.Tests;
 
 public class When_publishing_from_ILogger_to_PocketLogger : IDisposable
 {
-    private readonly CompositeDisposable disposables = new CompositeDisposable();
-    private readonly LogEntryList log = new LogEntryList();
+    private readonly CompositeDisposable disposables = new();
+    private readonly LogEntryList log = new();
     private readonly ILoggerFactory loggerFactory;
 
     public When_publishing_from_ILogger_to_PocketLogger(ITestOutputHelper output)

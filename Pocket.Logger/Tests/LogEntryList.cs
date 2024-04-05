@@ -1,55 +1,26 @@
-using System;
+#nullable enable
+
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
-
-namespace Pocket.Tests;
-
-public class LogEntryList : ConcurrentQueue<(
+using LogEvent = (
     string MessageTemplate,
-    object[] Args,
-    List<(string Name, object Value)> Properties,
+    object[]? Args, System.Collections.Generic.List<(string Name, object Value)> Properties,
     byte LogLevel,
-    DateTime TimestampUtc,
-    Exception Exception,
-    string OperationName,
-    string Category,
-    (string Id,
+    System.DateTime TimestampUtc,
+    System.Exception? Exception,
+    string? OperationName,
+    string? Category,
+    (string? Id,
     bool IsStart,
     bool IsEnd,
     bool? IsSuccessful,
-    TimeSpan? Duration) Operation)>
-{
-    public void Add(
-        (
-            string MessageTemplate,
-            object[] Args,
-            List<(string Name, object Value)> Properties,
-            byte LogLevel,
-            DateTime TimestampUtc,
-            Exception Exception,
-            string OperationName,
-            string Category,
-            (string Id,
-            bool IsStart,
-            bool IsEnd,
-            bool? IsSuccessful,
-            TimeSpan? Duration) Operation) e) =>
-        Enqueue(e);
+    System.TimeSpan? Duration) Operation);
 
-    public (
-        string MessageTemplate,
-        object[] Args,
-        List<(string Name, object Value)> Properties,
-        byte LogLevel,
-        DateTime TimestampUtc,
-        Exception Exception,
-        string OperationName,
-        string Category,
-        (string Id,
-        bool IsStart,
-        bool IsEnd,
-        bool? IsSuccessful,
-        TimeSpan? Duration) Operation) this[int index] =>
-        this.ElementAt(index);
+namespace Pocket.Tests;
+
+public class LogEntryList : ConcurrentQueue<LogEvent>
+{
+    public void Add(LogEvent e) => Enqueue(e);
+
+    public LogEvent this[int index] => this.ElementAt(index);
 }

@@ -15,7 +15,7 @@ public class WhatIsLogged
 
         attribute.Before(methodInfo);
 
-        var log = TestLog.Current.Lines;
+        var log = LogToPocketLoggerAttribute.CurrentFileLog.Lines;
 
         attribute.After(methodInfo);
 
@@ -33,7 +33,7 @@ public class WhatIsLogged
 
         attribute.Before(methodInfo);
 
-        var log = TestLog.Current;
+        var log = LogToPocketLoggerAttribute.CurrentFileLog;
 
         attribute.After(methodInfo);
 

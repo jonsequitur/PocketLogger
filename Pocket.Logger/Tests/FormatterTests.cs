@@ -229,8 +229,10 @@ public class FormatterTests
     {
         var entries = new List<string>();
 
+        Action<(string MessageTemplate, object[] Args, List<(string Name, object Value)> Properties, byte LogLevel, DateTime TimestampUtc, Exception Exception, string OperationName, string Category, (string Id, bool IsStart, bool IsEnd, bool? IsSuccessful, TimeSpan? Duration) Operation)> onEntryPosted = e => entries.Add(e.ToLogString());
+
         using var subscription = LogEvents.Subscribe(
-            e => entries.Add(e.ToLogString()),
+            onEntryPosted,
             typeof(Class1).Assembly);
 
         Class1.EmitSomeLogEvents("customize me:replace me with empty string");

@@ -11,7 +11,7 @@ namespace Pocket.Tests;
 
 public class LogEnrichmentTests : IDisposable
 {
-    private readonly CompositeDisposable disposables = new CompositeDisposable();
+    private readonly CompositeDisposable disposables = [];
 
     public LogEnrichmentTests(ITestOutputHelper output)
     {
@@ -47,8 +47,7 @@ public class LogEnrichmentTests : IDisposable
     {
         var log = new LogEntryList();
 
-        using (Subscribe(log.Add,
-                         new[] { typeof(Class1).Assembly, GetType().Assembly }))
+        using (Subscribe(log.Add, [typeof(Class1).Assembly, GetType().Assembly]))
         using (Enrich(add =>
                {
                    add(("enriched", "with extra stuff"));

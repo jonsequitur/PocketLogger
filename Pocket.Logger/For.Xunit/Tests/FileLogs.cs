@@ -21,11 +21,9 @@ public class FileLogs
 
         Log.Info("hello from {method}", methodInfo.Name);
 
-        var file = TestLog.Current.LogFile;
+        LogToPocketLoggerAttribute.CurrentFileLog.Should().BeNull();
 
         attribute.After(methodInfo);
-
-        file.Should().BeNull();
     }
 
     [Fact]
@@ -37,7 +35,7 @@ public class FileLogs
 
         attribute.Before(methodInfo);
 
-        var file = TestLog.Current.LogFile;
+        var file = LogToPocketLoggerAttribute.CurrentFileLog.File;
         var message = "hello from " + methodInfo.Name + $" ({Guid.NewGuid()})";
 
         Log.Info(message);
@@ -62,7 +60,7 @@ public class FileLogs
 
         attribute.Before(methodInfo);
 
-        var file = TestLog.Current.LogFile;
+        var file = LogToPocketLoggerAttribute.CurrentFileLog.File;
         var message = "hello from " + methodInfo.Name + $" ({Guid.NewGuid()})";
 
         Log.Info(message);
@@ -94,7 +92,7 @@ public class FileLogs
 
         attribute.Before(methodInfo);
 
-        var file = TestLog.Current.LogFile;
+        var file = LogToPocketLoggerAttribute.CurrentFileLog.File;
         var message = "hello from " + methodInfo.Name + $" ({Guid.NewGuid()})";
 
         Log.Info(message);

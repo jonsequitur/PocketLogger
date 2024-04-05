@@ -9,7 +9,20 @@ using System.Reflection;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
-using Metric = System.ValueTuple<string, double>;
+using Metric = (string Name, double Value);
+using LogEvent = (
+    string MessageTemplate,
+    object[]? Args, System.Collections.Generic.List<(string Name, object Value)> Properties,
+    byte LogLevel,
+    System.DateTime TimestampUtc,
+    System.Exception? Exception,
+    string? OperationName,
+    string? Category,
+    (string? Id,
+    bool IsStart,
+    bool IsEnd,
+    bool? IsSuccessful,
+    System.TimeSpan? Duration) Operation);
 
 namespace Pocket.For.ApplicationInsights;
 
@@ -35,20 +48,7 @@ internal static class ApplicationInsightsExtensions
 
     private static void WriteTelemetry(
         TelemetryClient telemetryClient,
-        in (
-            string MessageTemplate,
-            object[] Args,
-            List<(string Name, object Value)> Properties,
-            byte LogLevel,
-            DateTime TimestampUtc,
-            Exception Exception,
-            string OperationName,
-            string Category,
-            (string Id,
-            bool IsStart,
-            bool IsEnd,
-            bool? IsSuccessful,
-            TimeSpan? Duration) Operation) e)
+        in LogEvent e)
     {
         if (e.LogLevel == (byte) LogLevel.Telemetry)
         {
@@ -75,7 +75,7 @@ internal static class ApplicationInsightsExtensions
         {
             var (name, value) = properties[i];
 
-            if (value is not Metric)
+            if (value is not Metric _)
             {
                 telemetry.Properties.Add(
                     name,
@@ -98,21 +98,7 @@ internal static class ApplicationInsightsExtensions
         return telemetry;
     }
 
-    internal static DependencyTelemetry ToDependencyTelemetry(
-        this in (
-            string MessageTemplate,
-            object[] Args,
-            List<(string Name, object Value)> Properties,
-            byte LogLevel,
-            DateTime TimestampUtc,
-            Exception Exception,
-            string OperationName,
-            string Category,
-            (string Id,
-            bool IsStart,
-            bool IsEnd,
-            bool? IsSuccessful,
-            TimeSpan? Duration) Operation) e)
+    internal static DependencyTelemetry ToDependencyTelemetry(this in LogEvent e)
     {
         var properties = e.Evaluate().Properties;
 
@@ -132,26 +118,15 @@ internal static class ApplicationInsightsExtensions
         }
 
         telemetry.AddProperties(properties);
-        telemetry.AddCategory(e.Category);
+        if (e.Category is not null)
+        {
+            telemetry.AddCategory(e.Category);
+        }
 
         return telemetry.AttachActivity();
     }
 
-    internal static EventTelemetry ToEventTelemetry(
-        this in (
-            string MessageTemplate,
-            object[] Args,
-            List<(string Name, object Value)> Properties,
-            byte LogLevel,
-            DateTime TimestampUtc,
-            Exception Exception,
-            string OperationName,
-            string Category,
-            (string Id,
-            bool IsStart,
-            bool IsEnd,
-            bool? IsSuccessful,
-            TimeSpan? Duration) Operation) e)
+    internal static EventTelemetry ToEventTelemetry(this in LogEvent e)
     {
         var properties = e.Evaluate().Properties;
 
@@ -167,8 +142,8 @@ internal static class ApplicationInsightsExtensions
             if (value is Metric m)
             {
                 telemetry.Metrics.Add(
-                    m.Item1,
-                    m.Item2);
+                    m.Name,
+                    m.Value);
             }
             else
             {
@@ -178,27 +153,16 @@ internal static class ApplicationInsightsExtensions
             }
         }
 
-        telemetry.AddCategory(e.Category);
+        if (e.Category is not null)
+        {
+            telemetry.AddCategory(e.Category);
+        }
         telemetry.AddDuration(e.Operation.Duration);
 
         return telemetry.AttachActivity();
     }
 
-    internal static ExceptionTelemetry ToExceptionTelemetry(
-        this in (
-            string MessageTemplate,
-            object[] Args,
-            List<(string Name, object Value)> Properties,
-            byte LogLevel,
-            DateTime TimestampUtc,
-            Exception Exception,
-            string OperationName,
-            string Category,
-            (string Id,
-            bool IsStart,
-            bool IsEnd,
-            bool? IsSuccessful,
-            TimeSpan? Duration) Operation) e)
+    internal static ExceptionTelemetry ToExceptionTelemetry(this in LogEvent e)
     {
         var telemetry = new ExceptionTelemetry
         {
@@ -208,27 +172,16 @@ internal static class ApplicationInsightsExtensions
         };
 
         telemetry.AddProperties(e.Evaluate().Properties);
-        telemetry.AddCategory(e.Category);
+        if (e.Category is not null)
+        {
+            telemetry.AddCategory(e.Category);
+        }
         telemetry.AddDuration(e.Operation.Duration);
 
         return telemetry.AttachActivity();
     }
 
-    internal static TraceTelemetry ToTraceTelemetry(
-        this in (
-            string MessageTemplate,
-            object[] Args,
-            List<(string Name, object Value)> Properties,
-            byte LogLevel,
-            DateTime TimestampUtc,
-            Exception Exception,
-            string OperationName,
-            string Category,
-            (string Id,
-            bool IsStart,
-            bool IsEnd,
-            bool? IsSuccessful,
-            TimeSpan? Duration) Operation) e)
+    internal static TraceTelemetry ToTraceTelemetry(this in LogEvent e)
     {
         var telemetry = new TraceTelemetry
         {
@@ -237,7 +190,10 @@ internal static class ApplicationInsightsExtensions
         };
 
         telemetry.AddProperties(e.Evaluate().Properties);
-        telemetry.AddCategory(e.Category);
+        if (e.Category is not null)
+        {
+            telemetry.AddCategory(e.Category);
+        }
         telemetry.AddDuration(e.Operation.Duration);
 
         return telemetry.AttachActivity();
