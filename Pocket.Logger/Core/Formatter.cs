@@ -1,4 +1,6 @@
-﻿using System;
+﻿#nullable enable
+
+using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -7,8 +9,20 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using LogEvent = (
+    string MessageTemplate,
+    object[]? Args, System.Collections.Generic.List<(string Name, object Value)> Properties,
+    byte LogLevel,
+    System.DateTime TimestampUtc,
+    System.Exception? Exception,
+    string? OperationName,
+    string? Category,
+    (string? Id,
+    bool IsStart,
+    bool IsEnd,
+    bool? IsSuccessful,
+    System.TimeSpan? Duration) Operation);
 
-#nullable enable
 
 namespace Pocket;
 #if !SourceProject
@@ -36,9 +50,9 @@ internal class Formatter
 
     private readonly string template;
 
-    private readonly List<Action<StringBuilder, object>> argumentFormatters = new();
+    private readonly List<Action<StringBuilder, object>> argumentFormatters = [];
 
-    private readonly List<string> tokens = new();
+    private readonly List<string> tokens = [];
 
     public Formatter(string template)
     {
@@ -176,7 +190,7 @@ internal class Formatter
             this.formattedMessage = formattedMessage;
         }
 
-        private readonly List<(string Name, object Value)> properties = new();
+        private readonly List<(string Name, object Value)> properties = [];
 
         public void Add(string key, object value) => properties.Add((key, value));
 
@@ -194,21 +208,7 @@ internal class Formatter
 
 internal static partial class Format
 {
-    public static (string Message, (string Name, object Value)[] Properties) Evaluate(
-        this in (
-            string MessageTemplate,
-            object[] Args,
-            List<(string Name, object Value)> Properties,
-            byte LogLevel,
-            DateTime TimestampUtc,
-            Exception Exception,
-            string OperationName,
-            string Category,
-            (string Id,
-            bool IsStart,
-            bool IsEnd,
-            bool? IsSuccessful,
-            TimeSpan? Duration) Operation) e)
+    public static (string Message, (string Name, object Value)[] Properties) Evaluate(this in LogEvent e)
     {
         (string message, (string Name, object Value)[] Properties)? evaluated = null;
 
@@ -231,21 +231,7 @@ internal static partial class Format
         return evaluated.Value;
     }
 
-    public static string ToLogString(
-       this in (
-           string MessageTemplate,
-           object[] Args,
-           List<(string Name, object Value)> Properties,
-           byte LogLevel,
-           DateTime TimestampUtc,
-           Exception Exception,
-           string OperationName,
-           string Category,
-           (string Id,
-           bool IsStart,
-           bool IsEnd,
-           bool? IsSuccessful,
-           TimeSpan? Duration) Operation) e)
+    public static string ToLogString(this in LogEvent e)
     {
         var (message, _) = e.Evaluate();
 
@@ -256,8 +242,7 @@ internal static partial class Format
                            e.Operation.IsSuccessful,
                            e.Operation.Duration);
 
-        return
-            $"{e.TimestampUtc:o} {e.Operation.Id.IfNotEmpty()}{e.Category.IfNotEmpty()}{e.OperationName.IfNotEmpty()} {logLevelString} {message} {e.Exception}";
+        return $"{e.TimestampUtc:o} {e.Operation.Id?.IfNotEmpty()}{e.Category?.IfNotEmpty()}{e.OperationName?.IfNotEmpty()} {logLevelString} {message} {e.Exception}";
     }
 
     static partial void CustomizeLogString(object? value, ref string? output);

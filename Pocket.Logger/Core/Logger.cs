@@ -1,10 +1,23 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
-
-#nullable enable
+using LogEvent = (
+    string MessageTemplate,
+    object[]? Args, System.Collections.Generic.List<(string Name, object Value)> Properties,
+    byte LogLevel,
+    System.DateTime TimestampUtc,
+    System.Exception? Exception,
+    string? OperationName,
+    string? Category,
+    (string? Id,
+    bool IsStart,
+    bool IsEnd,
+    bool? IsSuccessful,
+    System.TimeSpan? Duration) Operation);
 
 namespace Pocket;
 
@@ -20,20 +33,7 @@ internal class Logger
 
     public static event Action<Action<(string Name, object Value)>>? Enrich;
 
-    public static event Action<(
-        string MessageTemplate,
-        object[]? Args,
-        List<(string Name, object Value)> Properties,
-        byte LogLevel,
-        DateTime TimestampUtc,
-        Exception? Exception,
-        string? OperationName,
-        string? Category,
-        (string? Id,
-        bool IsStart,
-        bool IsEnd,
-        bool? IsSuccessful,
-        TimeSpan? Duration) Operation)>? Posted;
+    public static event Action<LogEvent>? Posted;
 
     public virtual void Post(LogEntry entry)
     {
@@ -227,7 +227,7 @@ internal static class LoggerExtensions
             logger.OnEnterAndExit(
                 name,
                 exitArgs,
-                arg is null ? null : new[] { arg });
+                arg is null ? null : [arg]);
 
     public static OperationLogger OnEnterAndExit(
         this Logger logger,
@@ -250,7 +250,7 @@ internal static class LoggerExtensions
             logger.OnExit(
                 name,
                 exitArgs,
-                arg is null ? null : new[] { arg });
+                arg is null ? null : [arg]);
 
     public static OperationLogger OnExit(
         this Logger logger,
@@ -272,7 +272,7 @@ internal static class LoggerExtensions
             logger.ConfirmOnExit(
                 name,
                 exitArgs,
-                arg is null ? null : new[] { arg });
+                arg is null ? null : [arg]);
 
     public static ConfirmationLogger ConfirmOnExit(
         this Logger logger,
@@ -294,7 +294,7 @@ internal static class LoggerExtensions
             logger.OnEnterAndConfirmOnExit(
                 name,
                 exitArgs,
-                arg is null ? null : new[] { arg });
+                arg is null ? null : [arg]);
 
     public static ConfirmationLogger OnEnterAndConfirmOnExit(
         this Logger logger,
@@ -407,7 +407,7 @@ internal class LogEntry
 
     public string MessageTemplate { get; set; }
 
-    public List<(string Name, object Value)> Properties { get; set; } = new();
+    public List<(string Name, object Value)> Properties { get; set; } = [];
 
     public object[]? Args { get; set; }
 

@@ -5,10 +5,23 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using LogEvent = (
+    string MessageTemplate,
+    object[]? Args, System.Collections.Generic.List<(string Name, object Value)> Properties,
+    byte LogLevel,
+    System.DateTime TimestampUtc,
+    System.Exception? Exception,
+    string? OperationName,
+    string? Category,
+    (string? Id,
+    bool IsStart,
+    bool IsEnd,
+    bool? IsSuccessful,
+    System.TimeSpan? Duration) Operation);
 
 namespace Pocket;
 #if !SourceProject
-[DebuggerStepThrough]
+// [DebuggerStepThrough]
 #endif
 internal static partial class LogEvents
 {
@@ -20,7 +33,7 @@ internal static partial class LogEvents
 
         if (searchInAssemblies.Length == 0)
         {
-            searchInAssemblies = new[] { typeof(LogEvents).Assembly };
+            searchInAssemblies = [typeof(LogEvents).Assembly];
         }
 
         foreach (var loggerType in searchInAssemblies.Types().PocketLoggers())
@@ -45,21 +58,7 @@ internal static partial class LogEvents
     }
 
     public static LoggerSubscription Subscribe(
-        Action<(
-                string MessageTemplate,
-                object[] Args,
-                List<(string Name, object Value)> Properties,
-                byte LogLevel,
-                DateTime TimestampUtc,
-                Exception Exception,
-                string OperationName,
-                string Category,
-                (string Id,
-                bool IsStart,
-                bool IsEnd,
-                bool? IsSuccessful,
-                TimeSpan? Duration) Operation)>
-            onEntryPosted,
+        Action<LogEvent> onEntryPosted,
         params Assembly[] searchInAssemblies)
     {
         if (onEntryPosted is null)
@@ -69,7 +68,7 @@ internal static partial class LogEvents
 
         if (searchInAssemblies.Length == 0)
         {
-            searchInAssemblies = new[] { typeof(LogEvents).Assembly };
+            searchInAssemblies = [typeof(LogEvents).Assembly];
         }
 
         var subscription = new LoggerSubscription();
@@ -81,10 +80,10 @@ internal static partial class LogEvents
         return subscription;
     }
 
-    private static void SubscribeLoggers<T>(
+    private static void SubscribeLoggers(
         IEnumerable<Type> pocketLoggerTypes,
         LoggerSubscription subscription,
-        Action<T> onEntryPosted)
+        Action<LogEvent> onEntryPosted)
     {
         foreach (var loggerType in pocketLoggerTypes.Distinct())
         {
@@ -125,7 +124,7 @@ internal static partial class LogEvents
 
 internal class LoggerSubscription : IDisposable
 {
-    private readonly CompositeDisposable disposables = new();
+    private readonly CompositeDisposable disposables = [];
 
     public void Add(Type pocketLoggerType, IDisposable unsubscribe)
     {
@@ -134,8 +133,6 @@ internal class LoggerSubscription : IDisposable
     }
 
     public List<Type> DiscoveredLoggerTypes { get; } = new();
-
-    public Action<string,  bool>? OnFormatLogEntry { get; set; }
 
     public void Dispose() => disposables.Dispose();
 }

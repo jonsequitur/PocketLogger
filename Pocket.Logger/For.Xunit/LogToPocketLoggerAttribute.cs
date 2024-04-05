@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Reflection;
+using System.Threading;
 using Xunit.Sdk;
 
 namespace Pocket.For.Xunit;
@@ -13,7 +14,9 @@ internal class LogToPocketLoggerAttribute : BeforeAfterTestAttribute
     private string? _fileName;
     private string? _fileNameEnvironmentVariable;
 
-    private static readonly ConcurrentDictionary<MethodInfo, TestLog> _operations = new();
+    private static readonly ConcurrentDictionary<MethodInfo, OperationLogger> _operations = new();
+    private static readonly AsyncLocal<FileLog> _currentFileLog = new();
+    private static readonly AsyncLocal<OperationLogger> _currentOperation = new();
 
     public LogToPocketLoggerAttribute(bool writeToFile = false)
     {
@@ -40,6 +43,7 @@ internal class LogToPocketLoggerAttribute : BeforeAfterTestAttribute
             {
                 throw new ArgumentException("Value cannot be null or consist entirely of whitespace");
             }
+
             _fileName = value;
             _writeToFile = true;
         }
@@ -57,7 +61,7 @@ internal class LogToPocketLoggerAttribute : BeforeAfterTestAttribute
 
             _fileNameEnvironmentVariable = value;
 
-            if (Environment.GetEnvironmentVariable(value) is { } variableValue && 
+            if (Environment.GetEnvironmentVariable(value) is { } variableValue &&
                 !string.IsNullOrWhiteSpace(variableValue))
             {
                 FileName = variableValue;
@@ -67,30 +71,46 @@ internal class LogToPocketLoggerAttribute : BeforeAfterTestAttribute
 
     public override void Before(MethodInfo methodUnderTest)
     {
-        var testLog = new TestLog(
-            methodUnderTest,
-            _writeToFile,
-            FileName);
+        var operationName = $"{methodUnderTest.DeclaringType?.Name}.{methodUnderTest.Name}";
 
-        TestLog.Current = testLog;
+        if (_writeToFile)
+        {
+            var testLog = new FileLog(FileName ?? $"{operationName}-{DateTime.Now:yyyy-MM-dd-hh-mm-ss}.log");
+            CurrentFileLog = testLog;
+        }
+
+        var operation = new OperationLogger($"🧪:{operationName}", logOnStart: true);
 
         _operations.TryAdd(
             methodUnderTest,
-            testLog);
+            operation);
     }
 
     public override void After(MethodInfo methodUnderTest)
     {
-        if (_operations.TryRemove(methodUnderTest, out var testLog))
+        if (_operations.TryRemove(methodUnderTest, out var operation))
         {
-            testLog.Dispose();
+            operation.Dispose();
 
-            if (TestLog.Current == testLog)
+            if (CurrentOperation == operation)
             {
-                TestLog.Current = default;
+                CurrentFileLog = default;
+                CurrentOperation = default;
             }
         }
 
         base.After(methodUnderTest);
+    }
+
+    public static FileLog? CurrentFileLog
+    {
+        get => _currentFileLog.Value;
+        set => _currentFileLog.Value = value!;
+    }
+
+    public static OperationLogger? CurrentOperation
+    {
+        get => _currentOperation.Value;
+        set => _currentOperation.Value = value!;
     }
 }
