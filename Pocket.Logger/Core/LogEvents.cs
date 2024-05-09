@@ -21,7 +21,7 @@ using LogEvent = (
 
 namespace Pocket;
 #if !SourceProject
-// [DebuggerStepThrough]
+[DebuggerStepThrough]
 #endif
 internal static partial class LogEvents
 {
