@@ -362,7 +362,16 @@ internal class LogEntry
     {
         LogLevel = logLevel;
         Exception = exception;
-        MessageTemplate = string.IsNullOrEmpty(messageTemplate) ? exception?.ToString() ?? "" : messageTemplate;
+
+        if (string.IsNullOrEmpty(messageTemplate))
+        {
+            MessageTemplate = exception?.ToString() ?? "";
+        }
+        else
+        {
+            MessageTemplate = messageTemplate ?? "";
+        }
+
         Category = category;
         Operation = operation;
         Args = args;
@@ -405,7 +414,7 @@ internal class LogEntry
 
     public string? OperationId { get; }
 
-    public string MessageTemplate { get; set; }
+    public string MessageTemplate { get; }
 
     public List<(string Name, object Value)> Properties { get; set; } = [];
 
