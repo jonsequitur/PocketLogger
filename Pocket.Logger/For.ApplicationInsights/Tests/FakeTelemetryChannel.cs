@@ -1,6 +1,8 @@
 using System;
 using Microsoft.ApplicationInsights.Channel;
 
+#nullable enable
+
 namespace Pocket.For.ApplicationInsights.Tests;
 
 public class FakeTelemetryChannel : ITelemetryChannel
@@ -21,5 +23,5 @@ public class FakeTelemetryChannel : ITelemetryChannel
 
     public bool? DeveloperMode { get; set; }
 
-    public string EndpointAddress { get; set; }
+    public string? EndpointAddress { get; set; }
 }

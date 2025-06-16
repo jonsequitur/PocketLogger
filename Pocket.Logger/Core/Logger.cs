@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+
 using LogEvent = (
     string MessageTemplate,
     object[]? Args, System.Collections.Generic.List<(string Name, object Value)> Properties,
@@ -187,9 +188,10 @@ internal static class LoggerExtensions
 
     public static TLogger Warning<TLogger>(
             this TLogger logger,
+            string message,
             params object[]? args)
             where TLogger : Logger =>
-        logger.Warning(message: null, exception: null, args);
+        logger.Warning(message: message, exception: null, args);
 
     public static TLogger Error<TLogger>(
         this TLogger logger,
@@ -215,9 +217,10 @@ internal static class LoggerExtensions
 
     public static TLogger Error<TLogger>(
             this TLogger logger,
+            string message,
             params object[] args)
             where TLogger : Logger =>
-        logger.Error(message: "", exception: null, args);
+        logger.Error(message: message, exception: null, args);
 
     public static OperationLogger OnEnterAndExit(
         this Logger logger,
@@ -225,19 +228,21 @@ internal static class LoggerExtensions
         Func<(string name, object value)[]>? exitArgs = null,
         object? arg = null) =>
             logger.OnEnterAndExit(
-                name,
-                exitArgs,
-                arg is null ? null : [arg]);
+                message: null,
+                name: name,
+                exitArgs: exitArgs,
+                args: arg is null ? null : [arg]);
 
     public static OperationLogger OnEnterAndExit(
         this Logger logger,
+        string? message = null,
         [CallerMemberName] string? name = null,
         Func<(string name, object value)[]>? exitArgs = null,
         params object[]? args) =>
         new(
             name ?? "",
             logger.Category,
-            message: null,
+            message: message,
             exitArgs,
             logOnStart: true,
             args);
@@ -248,19 +253,21 @@ internal static class LoggerExtensions
         Func<(string name, object value)[]>? exitArgs = null,
         object? arg = null) =>
             logger.OnExit(
-                name,
-                exitArgs,
-                arg is null ? null : [arg]);
+                message: null,
+                name: name,
+                exitArgs: exitArgs,
+                args: arg is null ? null : [arg]);
 
     public static OperationLogger OnExit(
         this Logger logger,
+        string? message = null,
         [CallerMemberName] string? name = null,
         Func<(string name, object value)[]>? exitArgs = null,
         params object[]? args) =>
         new(
             name ?? "",
             logger.Category,
-            message: null,
+            message: message,
             exitArgs,
             args: args);
 
@@ -270,19 +277,21 @@ internal static class LoggerExtensions
         Func<(string name, object value)[]>? exitArgs = null,
         object? arg = null) =>
             logger.ConfirmOnExit(
-                name,
-                exitArgs,
-                arg is null ? null : [arg]);
+                message: null,
+                name: name,
+                exitArgs: exitArgs,
+                args: arg is null ? null : [arg]);
 
     public static ConfirmationLogger ConfirmOnExit(
         this Logger logger,
+        string? message = null,
         [CallerMemberName] string? name = null,
         Func<(string name, object value)[]>? exitArgs = null,
         params object[]? args) =>
         new(
             name ?? "",
             logger.Category,
-            message: null,
+            message: message,
             exitArgs,
             args: args);
 
@@ -292,19 +301,21 @@ internal static class LoggerExtensions
         Func<(string name, object value)[]>? exitArgs = null,
         object? arg = null) =>
             logger.OnEnterAndConfirmOnExit(
+                message: null, 
                 name,
                 exitArgs,
                 arg is null ? null : [arg]);
 
     public static ConfirmationLogger OnEnterAndConfirmOnExit(
         this Logger logger,
+        string? message = null,
         [CallerMemberName] string? name = null,
         Func<(string name, object value)[]>? exitArgs = null,
         params object[]? args) =>
         new(
             name ?? "",
             logger.Category,
-            message: null,
+            message: message,
             exitArgs,
             logOnStart: true,
             args);
