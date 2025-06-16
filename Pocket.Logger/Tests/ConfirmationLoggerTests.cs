@@ -347,10 +347,40 @@ public class ConfirmationLoggerTests : IDisposable
         var log = new List<string>();
 
         using (Subscribe(e => log.Add(e.ToLogString())))
-        using (new ConfirmationLogger(operationName: "Test", message: "{one} and {two} and {three}", logOnStart: true, args: new object[] { 1, 2, 3 }))
+        using (new ConfirmationLogger(operationName: "Test", message: "{one} and {two} and {three}", logOnStart: true, args: [1, 2, 3]))
         {
         }
 
         log.First().Should().Contain("1 and 2 and 3");
+    }
+
+    [Theory]
+    [InlineData(nameof(LoggerExtensions.OnEnterAndExit))]
+    [InlineData(nameof(LoggerExtensions.OnEnterAndConfirmOnExit))]
+    public void Using_custom_message_arg_still_provides_expected_context(string method)
+    {
+        var log = new LogEntryList();
+
+        using (Subscribe(log.Add))
+        {
+            switch (method)
+            {
+                case nameof(LoggerExtensions.OnEnterAndExit):
+                    Log.OnEnterAndExit("Hello {world}!", args: ["world"]).Dispose();
+                    break;
+                case nameof(LoggerExtensions.OnEnterAndConfirmOnExit):
+                    Log.OnEnterAndConfirmOnExit("Hello {world}!", args: ["world"]).Dispose();
+                    break;
+            }
+        }
+
+        var firstMessage = log.First().ToLogString();
+
+        firstMessage
+            .Should()
+            .Contain(nameof(Using_custom_message_arg_still_provides_expected_context));
+        firstMessage
+            .Should()
+            .Contain("▶ Hello world!");
     }
 }

@@ -65,16 +65,37 @@ public class LoggerTests : IDisposable
            .BeEmpty();
     }
 
-    [Fact]
-    public void When_args_are_logged_then_they_are_templated_into_the_message()
+    [Theory]
+    [InlineData(nameof(LoggerExtensions.Info))]
+    [InlineData(nameof(LoggerExtensions.Trace))]
+    [InlineData(nameof(LoggerExtensions.Warning))]
+    [InlineData(nameof(LoggerExtensions.Error))]
+    public void When_args_are_logged_then_they_are_templated_into_the_message(string level)
     {
         var log = new LogEntryList();
 
         using (Subscribe(log.Add))
         {
-            Log.Info("It's {time} and all is {how}",
-                     DateTimeOffset.Parse("12/12/2012 12:00am"),
-                     "well");
+            switch (level)
+            {
+                case nameof(LoggerExtensions.Info):
+                    Log.Info(message: "It's {time} and all is {how}",
+                             args: [DateTimeOffset.Parse("12/12/2012 12:00am"), "well"]);
+
+                    break;
+                case nameof(LoggerExtensions.Trace):
+                    Log.Trace(message: "It's {time} and all is {how}",
+                              args: [DateTimeOffset.Parse("12/12/2012 12:00am"), "well"]);
+                    break;
+                case nameof(LoggerExtensions.Warning):
+                    Log.Warning(message: "It's {time} and all is {how}",
+                                args: [DateTimeOffset.Parse("12/12/2012 12:00am"), "well"]);
+                    break;
+                case nameof(LoggerExtensions.Error):
+                    Log.Error(message: "It's {time} and all is {how}",
+                              args: [DateTimeOffset.Parse("12/12/2012 12:00am"), "well"]);
+                    break;
+            }
         }
 
         log.Single()
@@ -82,6 +103,41 @@ public class LoggerTests : IDisposable
            .Message
            .Should()
            .Match("*It's 12/12/*12 12:00:00 AM * and all is well*");
+    }
+
+    [Theory]
+    [InlineData(nameof(LoggerExtensions.Info))]
+    [InlineData(nameof(LoggerExtensions.Trace))]
+    [InlineData(nameof(LoggerExtensions.Warning))]
+    [InlineData(nameof(LoggerExtensions.Error))]
+    public void When_string_template_and_one_arg_are_passed_then_correct_overload_is_chosen(string level)
+    {
+        var log = new LogEntryList();
+
+        using (Subscribe(log.Add))
+        {
+            switch (level)
+            {
+                case nameof(LoggerExtensions.Info):
+                    Log.Info("Hello {what}!", "world");
+                    break;
+                case nameof(LoggerExtensions.Trace):
+                    Log.Trace("Hello {what}!", "world");
+                    break;
+                case nameof(LoggerExtensions.Warning):
+                    Log.Warning("Hello {what}!", "world");
+                    break;
+                case nameof(LoggerExtensions.Error):
+                    Log.Error("Hello {what}!", "world");
+                    break;
+            }
+        }
+
+        log.Single()
+           .Evaluate()
+           .Message
+           .Should()
+           .Match("Hello world!");
     }
 
     [Fact]
@@ -326,7 +382,7 @@ public class LoggerTests : IDisposable
 
         using (Subscribe(log.Add))
         {
-            Log.Warning(new MyObject(1), new MyObject(2));
+            Log.Warning(args: new[] { new MyObject(1), new MyObject(2) });
         }
 
         log.Single().LogLevel.Should().Be((int)LogLevel.Warning);
@@ -341,7 +397,7 @@ public class LoggerTests : IDisposable
 
         using (Subscribe(log.Add))
         {
-            Log.Error(new MyObject(1), new MyObject(2));
+            Log.Error(args: [new MyObject(1), new MyObject(2)]);
         }
 
         log.Single().LogLevel.Should().Be((int)LogLevel.Error);
