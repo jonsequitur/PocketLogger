@@ -11,11 +11,11 @@ public class WhatIsLogged
     {
         var attribute = new LogToPocketLoggerAttribute(true);
 
-        var methodInfo = GetType().GetMethod(nameof(Start_events_are_logged_for_each_test));
+        var methodInfo = GetType().GetMethod(nameof(Start_events_are_logged_for_each_test))!;
 
         attribute.Before(methodInfo);
 
-        var log = LogToPocketLoggerAttribute.CurrentFileLog.Lines;
+        var log = LogToPocketLoggerAttribute.CurrentFileLog!.Lines;
 
         attribute.After(methodInfo);
 
@@ -29,11 +29,11 @@ public class WhatIsLogged
     {
         var attribute = new LogToPocketLoggerAttribute(true);
 
-        var methodInfo = GetType().GetMethod(nameof(Stop_events_are_logged_for_each_test));
+        var methodInfo = GetType().GetMethod(nameof(Stop_events_are_logged_for_each_test))!;
 
         attribute.Before(methodInfo);
 
-        var log = LogToPocketLoggerAttribute.CurrentFileLog;
+        var log = LogToPocketLoggerAttribute.CurrentFileLog!;
 
         attribute.After(methodInfo);
 

@@ -7,11 +7,11 @@ namespace Demo;
 static class Program
 {
     static async Task<int> Main(
-        string session = null,
-        string region = null,
-        string project = null,
-        string package = null,
-        string[] args = null)
+        string? session = null,
+        string? region = null,
+        string? project = null,
+        string? package = null,
+        string[]? args = null)
     {
         ConsoleSubscription =
             #region LoggingToTheConsole
@@ -67,7 +67,7 @@ static class Program
         };
     }
 
-    public static LoggerSubscription ConsoleSubscription { get; private set; }
+    public static LoggerSubscription? ConsoleSubscription { get; private set; }
 
     private static int Call(Action action)
     {

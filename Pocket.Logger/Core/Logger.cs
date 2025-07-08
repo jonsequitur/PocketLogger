@@ -8,7 +8,8 @@ using System.Runtime.CompilerServices;
 
 using LogEvent = (
     string MessageTemplate,
-    object[]? Args, System.Collections.Generic.List<(string Name, object Value)> Properties,
+    object?[]? Args, 
+    System.Collections.Generic.List<(string Name, object? Value)> Properties,
     byte LogLevel,
     System.DateTime TimestampUtc,
     System.Exception? Exception,
@@ -32,7 +33,7 @@ internal class Logger
         Category = category ?? "";
     }
 
-    public static event Action<Action<(string Name, object Value)>>? Enrich;
+    public static event Action<Action<(string Name, object? Value)>>? Enrich;
 
     public static event Action<LogEvent>? Posted;
 
@@ -66,7 +67,7 @@ internal class Logger
         LogLevel logLevel,
         string? operationName = null,
         Exception? exception = null,
-        object[]? args = null,
+        object?[]? args = null,
         in (string Name, object Value)[]? properties = null)
     {
         var logEntry = new LogEntry(
@@ -146,7 +147,7 @@ internal static class LoggerExtensions
     public static TLogger Info<TLogger>(
         this TLogger logger,
         string message,
-        params object[] args)
+        params object?[]? args)
         where TLogger : Logger
     {
         logger.Post(
@@ -369,7 +370,7 @@ internal class LogEntry
         string? category = null,
         string? operationName = null,
         OperationLogger? operation = null,
-        object[]? args = null)
+        object?[]? args = null)
     {
         LogLevel = logLevel;
         Exception = exception;
@@ -427,11 +428,11 @@ internal class LogEntry
 
     public string MessageTemplate { get; }
 
-    public List<(string Name, object Value)> Properties { get; set; } = [];
+    public List<(string Name, object? Value)> Properties { get; set; } = [];
 
-    public object[]? Args { get; set; }
+    public object?[]? Args { get; set; }
 
-    public void AddProperty((string name, object value) property) =>
+    public void AddProperty((string name, object? value) property) =>
         Properties.Add(property);
 }
 

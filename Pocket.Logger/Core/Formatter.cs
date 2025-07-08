@@ -11,7 +11,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using LogEvent = (
     string MessageTemplate,
-    object[]? Args, System.Collections.Generic.List<(string Name, object Value)> Properties,
+    object[]? Args, System.Collections.Generic.List<(string Name, object? Value)> Properties,
     byte LogLevel,
     System.DateTime TimestampUtc,
     System.Exception? Exception,
@@ -50,7 +50,7 @@ internal class Formatter
 
     private readonly string template;
 
-    private readonly List<Action<StringBuilder, object>> argumentFormatters = [];
+    private readonly List<Action<StringBuilder, object?>> argumentFormatters = [];
 
     private readonly List<string> tokens = [];
 
@@ -71,7 +71,7 @@ internal class Formatter
                                 ? match.Groups["format"].Captures[0].Value
                                 : null;
 
-            void Format(StringBuilder sb, object value)
+            void Format(StringBuilder sb, object? value)
             {
                 string? formattedParam = null;
 
@@ -98,8 +98,8 @@ internal class Formatter
     public IReadOnlyList<string> Tokens => tokens;
 
     public FormatterResult Format(
-        IReadOnlyList<object>? args,
-        IList<(string Name, object Value)>? knownProperties)
+        IReadOnlyList<object?>? args,
+        IList<(string Name, object? Value)>? knownProperties)
     {
         if (args is null)
         {
@@ -158,7 +158,7 @@ internal class Formatter
         return result;
     }
 
-    public FormatterResult Format(params object[] args) => Format(args, null);
+    public FormatterResult Format(params object?[]? args) => Format(args, null);
 
     public static int CacheCount => cacheCount;
 
@@ -181,7 +181,7 @@ internal class Formatter
         }
     }
 
-    internal class FormatterResult : IReadOnlyList<(string Name, object Value)>
+    internal class FormatterResult : IReadOnlyList<(string Name, object? Value)>
     {
         private readonly StringBuilder formattedMessage;
 
@@ -190,30 +190,30 @@ internal class Formatter
             this.formattedMessage = formattedMessage;
         }
 
-        private readonly List<(string Name, object Value)> properties = [];
+        private readonly List<(string Name, object? Value)> properties = [];
 
-        public void Add(string key, object value) => properties.Add((key, value));
+        public void Add(string key, object? value) => properties.Add((key, value));
 
-        public IEnumerator<(string Name, object Value)> GetEnumerator() => properties.GetEnumerator();
+        public IEnumerator<(string Name, object? Value)> GetEnumerator() => properties.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         public int Count => properties.Count;
 
-        public (string Name, object Value) this[int index] => properties[index];
+        public (string Name, object? Value) this[int index] => properties[index];
 
-        public override string ToString() => formattedMessage?.ToString() ?? "";
+        public override string ToString() => formattedMessage.ToString();
     }
 }
 
 internal static partial class Format
 {
-    public static (string Message, (string Name, object Value)[] Properties) Evaluate(this in LogEvent e)
+    public static (string Message, (string Name, object? Value)[] Properties) Evaluate(this in LogEvent e)
     {
-        (string message, (string Name, object Value)[] Properties)? evaluated = null;
+        (string message, (string Name, object? Value)[] Properties)? evaluated = null;
 
         var message = e.MessageTemplate;
-        var properties = new List<(string Name, object Value)>();
+        var properties = new List<(string Name, object? Value)>();
 
         if (e.Args?.Length != 0 || e.Properties.Count > 0)
         {

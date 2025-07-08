@@ -143,7 +143,7 @@ public class ConfirmationLoggerTests : IDisposable
            .Properties
            .Select(_ => _.Value)
            .Should()
-           .ContainSingle(arg => arg.Equals("bye!"));
+           .ContainSingle(arg => arg!.Equals("bye!"));
     }
 
     [Fact]
@@ -162,9 +162,9 @@ public class ConfirmationLoggerTests : IDisposable
                             .Properties;
 
         properties
-            .Select(_ => _.Value)
+            .Select(p => p.Value)
             .Should()
-            .ContainSingle(arg => arg.Equals("bye!"));
+            .ContainSingle(arg => arg!.Equals("bye!"));
     }
 
     [Fact]
@@ -198,7 +198,7 @@ public class ConfirmationLoggerTests : IDisposable
         var infoEvent = log
                         .Single(e => e.Evaluate().Message == "hello")
                         .Operation
-                        .Duration
+                        .Duration!
                         .Value;
 
         infoEvent.Should()
@@ -237,7 +237,7 @@ public class ConfirmationLoggerTests : IDisposable
            .Evaluate()
            .Properties
            .Should()
-           .Contain(p => p.Name == "hello" && p.Value.Equals(123));
+           .Contain(p => p.Name == "hello" && p.Value!.Equals(123));
     }
 
     [Fact]
@@ -325,7 +325,7 @@ public class ConfirmationLoggerTests : IDisposable
         var results = log.Select(l => l.Operation.IsSuccessful);
 
         results.Should().BeEquivalentTo(
-            new object[] { null, false, false, false, true });
+            new object?[] { null, false, false, false, true });
     }
 
     [Fact]

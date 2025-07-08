@@ -39,7 +39,7 @@ public class LogEnrichmentTests : IDisposable
                             e.Evaluate()
                              .Properties
                              .Any(p => p.Name == "enriched" &&
-                                       p.Value.Equals("hello!")));
+                                       p.Value!.Equals("hello!")));
     }
 
     [Fact]
@@ -119,12 +119,12 @@ public class LogEnrichmentTests : IDisposable
               .Properties
               .Should()
               .Contain(p => p.Name == "one" &&
-                            p.Value.Equals(1));
+                            p.Value!.Equals(1));
         log[2].Evaluate()
               .Properties
               .Should()
               .Contain(p => p.Name == "two" &&
-                            p.Value.Equals("two"));
+                            p.Value!.Equals("two"));
         log[3].Evaluate()
               .Properties
               .Select(p => p.Value)

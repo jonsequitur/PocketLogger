@@ -141,7 +141,7 @@ public class LoggerTests : IDisposable
     }
 
     [Fact]
-    public void When_args_are_logged_they_are_accessble_on_the_LogEntry()
+    public void When_args_are_logged_they_are_accessible_on_the_LogEntry()
     {
         var log = new LogEntryList();
 
@@ -156,7 +156,7 @@ public class LoggerTests : IDisposable
            .Should()
            .ContainSingle(p =>
                               p.Name.Equals("how") &&
-                              p.Value.Equals("well"));
+                              p.Value!.Equals("well"));
     }
 
     [Fact]
@@ -336,13 +336,13 @@ public class LoggerTests : IDisposable
 
     private class MyObject
     {
-        private int value;
+        private readonly int value;
 
         public MyObject(int value)
             => this.value = value;
 
         public override string ToString()
-            => $"my object {this.value}";
+            => $"my object {value}";
     }
 
     [Fact]

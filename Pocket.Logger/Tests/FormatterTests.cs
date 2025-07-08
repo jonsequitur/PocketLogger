@@ -50,7 +50,7 @@ public class FormatterTests
     {
         var formatter = Formatter.Parse("The value is {value}");
 
-        var result = formatter.Format(new object[] { null });
+        var result = formatter.Format([null]);
 
         result.Single(v => v.Name == "value").Value.Should().BeNull();
     }
@@ -74,7 +74,7 @@ public class FormatterTests
     {
         var formatter = Formatter.Parse("The value is {value}");
 
-        var result = formatter.Format(new object[] { null });
+        var result = formatter.Format([null]);
 
         result.ToString()
               .Should()
@@ -147,7 +147,7 @@ public class FormatterTests
 
         var result = formatter.Format(
             args: null,
-            knownProperties: new List<(string, object)>
+            knownProperties: new List<(string, object?)>
             {
                 ("also", "this")
             });
@@ -163,8 +163,8 @@ public class FormatterTests
         var formatter = Formatter.Parse("{one} and {two}");
 
         var result = formatter.Format(
-            args: new object[] { 1, 2, 3, 4 },
-            knownProperties: new List<(string, object)>
+            args: [1, 2, 3, 4],
+            knownProperties: new List<(string, object?)>
             {
                 ("also", "this")
             });
@@ -229,10 +229,8 @@ public class FormatterTests
     {
         var entries = new List<string>();
 
-        Action<(string MessageTemplate, object[] Args, List<(string Name, object Value)> Properties, byte LogLevel, DateTime TimestampUtc, Exception Exception, string OperationName, string Category, (string Id, bool IsStart, bool IsEnd, bool? IsSuccessful, TimeSpan? Duration) Operation)> onEntryPosted = e => entries.Add(e.ToLogString());
-
         using var subscription = LogEvents.Subscribe(
-            onEntryPosted,
+            e => entries.Add(e.ToLogString()),
             typeof(Class1).Assembly);
 
         Class1.EmitSomeLogEvents("customize me:replace me with empty string");

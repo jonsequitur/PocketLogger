@@ -7,7 +7,7 @@ using System.Linq;
 using System.Reflection;
 using LogEvent = (
     string MessageTemplate,
-    object[]? Args, System.Collections.Generic.List<(string Name, object Value)> Properties,
+    object[]? Args, System.Collections.Generic.List<(string Name, object? Value)> Properties,
     byte LogLevel,
     System.DateTime TimestampUtc,
     System.Exception? Exception,
@@ -26,7 +26,7 @@ namespace Pocket;
 internal static partial class LogEvents
 {
     public static IDisposable Enrich(
-        Action<Action<(string Name, object Value)>> onEnrich,
+        Action<Action<(string Name, object? Value)>> onEnrich,
         params Assembly[] searchInAssemblies)
     {
         var subscription = new LoggerSubscription();
