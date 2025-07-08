@@ -6,6 +6,8 @@ using FluentAssertions;
 using Xunit;
 using static Pocket.Logger<Pocket.For.Xunit.Tests.FileLogs>;
 
+#nullable disable
+
 namespace Pocket.For.Xunit.Tests;
 
 public class FileLogs
@@ -35,7 +37,7 @@ public class FileLogs
 
         attribute.Before(methodInfo);
 
-        var file = LogToPocketLoggerAttribute.CurrentFileLog.File;
+        var file = LogToPocketLoggerAttribute.CurrentFileLog!.File;
         var message = "hello from " + methodInfo.Name + $" ({Guid.NewGuid()})";
 
         Log.Info(message);

@@ -5,7 +5,7 @@ namespace Example.Instrumented.Library;
 
 public class Class1
 {
-    public static void EmitSomeLogEvents(object parameter1 = null)
+    public static void EmitSomeLogEvents(object? parameter1 = null)
     {
         using var operation = Log.OnEnterAndExit();
 

@@ -4,7 +4,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using LogEvent = (
     string MessageTemplate,
-    object[]? Args, System.Collections.Generic.List<(string Name, object Value)> Properties,
+    object[]? Args, System.Collections.Generic.List<(string Name, object? Value)> Properties,
     byte LogLevel,
     System.DateTime TimestampUtc,
     System.Exception? Exception,

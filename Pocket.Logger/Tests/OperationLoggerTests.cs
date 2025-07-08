@@ -216,7 +216,7 @@ public class OperationLoggerTests : IDisposable
         using (Subscribe(log.Add))
         using (var operation = Log.OnEnterAndExit())
         {
-            operationId = operation.Id;
+            operationId = operation.Id!;
 
             operation.Info("hello");
         }
@@ -237,7 +237,7 @@ public class OperationLoggerTests : IDisposable
 
         log.Last()
            .Operation
-           .Duration
+           .Duration!
            .Value
            .TotalMilliseconds
            .Should()
@@ -299,7 +299,7 @@ public class OperationLoggerTests : IDisposable
     }
 
     [Fact]
-    public void By_befault_an_operation_has_no_category()
+    public void By_default_an_operation_has_no_category()
     {
         var log = new LogEntryList();
 
@@ -331,7 +331,7 @@ public class OperationLoggerTests : IDisposable
            .Evaluate()
            .Properties
            .Should()
-           .Contain(p => p.Name == "hello" && p.Value.Equals(123));
+           .Contain(p => p.Name == "hello" && p.Value!.Equals(123));
     }
 
     [Fact]
@@ -351,7 +351,7 @@ public class OperationLoggerTests : IDisposable
            .Evaluate()
            .Properties
            .Should()
-           .Contain(p => p.Name == "hello" && p.Value.Equals(123));
+           .Contain(p => p.Name == "hello" && p.Value!.Equals(123));
     }
 
     [Fact]

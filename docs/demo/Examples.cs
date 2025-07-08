@@ -211,7 +211,7 @@ public class Examples
 
     public static void SubscribeAndSendToConsole()
     {
-        Program.ConsoleSubscription.Dispose();
+        Program.ConsoleSubscription?.Dispose();
 
         #region SubscribeAndSendToConsole
 
@@ -231,7 +231,7 @@ public class Examples
 
     public static void LogEventStructure()
     {
-        Program.ConsoleSubscription.Dispose();
+        Program.ConsoleSubscription?.Dispose();
 
         #region LogEventStructure
 
@@ -263,7 +263,7 @@ public class Examples
 
     public static void Evaluate()
     {
-        Program.ConsoleSubscription.Dispose();
+        Program.ConsoleSubscription?.Dispose();
 
         #region Evaluate
 
@@ -289,7 +289,7 @@ public class Examples
 
     public static void SubscribeAndSendToSerilog()
     {
-        Program.ConsoleSubscription.Dispose();
+        Program.ConsoleSubscription?.Dispose();
 
         #region SubscribeAndSendToSerilog
             
@@ -320,7 +320,7 @@ public class Examples
 
         LogEvents.Enrich(add =>
         {
-            add(("app_version", Assembly.GetExecutingAssembly().GetName().Version));
+            add(("app_version", Assembly.GetExecutingAssembly().GetName().Version!));
             add(("machine_name", Environment.MachineName));
         });
 

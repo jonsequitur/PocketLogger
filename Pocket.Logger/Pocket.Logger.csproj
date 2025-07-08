@@ -3,6 +3,8 @@
     <TargetFramework>net9.0</TargetFramework>
     <RootNamespace>Pocket</RootNamespace>
     <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+	<Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="TestResults\**" />

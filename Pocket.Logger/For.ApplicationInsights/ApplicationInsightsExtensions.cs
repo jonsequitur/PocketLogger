@@ -1,7 +1,6 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -12,7 +11,7 @@ using Microsoft.ApplicationInsights.DataContracts;
 using Metric = (string Name, double Value);
 using LogEvent = (
     string MessageTemplate,
-    object[]? Args, System.Collections.Generic.List<(string Name, object Value)> Properties,
+    object[]? Args, System.Collections.Generic.List<(string Name, object? Value)> Properties,
     byte LogLevel,
     System.DateTime TimestampUtc,
     System.Exception? Exception,
@@ -69,7 +68,7 @@ internal static class ApplicationInsightsExtensions
         }
     }
 
-    private static void AddProperties(this ISupportProperties telemetry, in (string Name, object Value)[] properties)
+    private static void AddProperties(this ISupportProperties telemetry, in (string Name, object? Value)[] properties)
     {
         for (var i = 0; i < properties.Length; i++)
         {

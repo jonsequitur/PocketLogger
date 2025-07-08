@@ -11,7 +11,7 @@ public class HowAreLogsAccessed
     {
         Logger.Log.Info("hi!");
 
-        LogToPocketLoggerAttribute.CurrentFileLog
+        LogToPocketLoggerAttribute.CurrentFileLog?
                .Lines
                .Should()
                .Contain(line => line.Contains("hi!"));
