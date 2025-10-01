@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Xunit.Sdk;
@@ -13,8 +14,10 @@ internal class LogToPocketLoggerAttribute : BeforeAfterTestAttribute
     private bool _writeToFile;
     private string? _fileName;
     private string? _fileNameEnvironmentVariable;
+    private Type[]? _subscribeAssembliesContainingTypes;
+    private Assembly[]? _subscribeAssemblies;
 
-    private static readonly ConcurrentDictionary<MethodInfo, OperationLogger> _operations = new();
+    private static readonly ConcurrentDictionary<MethodInfo, (OperationLogger operation, FileLog? fileLog)> _operations = new();
     private static readonly AsyncLocal<FileLog> _currentFileLog = new();
     private static readonly AsyncLocal<OperationLogger> _currentOperation = new();
 
@@ -49,6 +52,20 @@ internal class LogToPocketLoggerAttribute : BeforeAfterTestAttribute
         }
     }
 
+    public Type[]? SubscribeAssembliesContainingTypes
+    {
+        get => _subscribeAssembliesContainingTypes;
+        set
+        {
+            _subscribeAssembliesContainingTypes = value;
+
+            if (value is not null)
+            {
+                _subscribeAssemblies = [..value.Select(t => t.Assembly).Distinct()];
+            }
+        }
+    }
+
     public string? FileNameEnvironmentVariable
     {
         get => _fileNameEnvironmentVariable;
@@ -76,6 +93,12 @@ internal class LogToPocketLoggerAttribute : BeforeAfterTestAttribute
         if (_writeToFile)
         {
             var testLog = new FileLog(FileName ?? $"{operationName}-{DateTime.Now:yyyy-MM-dd-hh-mm-ss}.log");
+
+            if (_subscribeAssemblies is {} assemblies)
+            {
+                testLog.Subscribe(assemblies);
+            }
+
             CurrentFileLog = testLog;
         }
 
@@ -83,19 +106,21 @@ internal class LogToPocketLoggerAttribute : BeforeAfterTestAttribute
 
         _operations.TryAdd(
             methodUnderTest,
-            operation);
+            (operation, CurrentFileLog));
     }
 
     public override void After(MethodInfo methodUnderTest)
     {
-        if (_operations.TryRemove(methodUnderTest, out var operation))
+        if (_operations.TryRemove(methodUnderTest, out var tuple))
         {
+            var (operation, fileLog) = tuple;
             operation.Dispose();
+            fileLog?.Dispose();
 
             if (CurrentOperation == operation)
             {
-                CurrentFileLog = default;
-                CurrentOperation = default;
+                CurrentFileLog = null;
+                CurrentOperation = null;
             }
         }
 
