@@ -226,10 +226,7 @@ public class ConfirmationLoggerTests : IDisposable
         var log = new LogEntryList();
 
         using (Subscribe(log.Add))
-        using (Log.ConfirmOnExit(exitArgs: () => new (string, object)[]
-               {
-                   ("hello", 123)
-               }))
+        using (Log.ConfirmOnExit(exitArgs: () => [("hello", 123)]))
         {
         }
 
@@ -246,10 +243,7 @@ public class ConfirmationLoggerTests : IDisposable
         var log = new List<string>();
 
         using (Subscribe(e => log.Add(e.ToLogString())))
-        using (Log.ConfirmOnExit(exitArgs: () => new (string, object)[]
-               {
-                   ("hello", 12345)
-               }))
+        using (Log.ConfirmOnExit(exitArgs: () => [("hello", 12345)]))
         {
         }
 
